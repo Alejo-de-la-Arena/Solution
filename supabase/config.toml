@@ -1,0 +1,7 @@
+# Configuración del proyecto Supabase.
+# La CLI usa este archivo al hacer deploy. Para wholesale-review debe aplicar verify_jwt = false
+# para que el gateway no rechace el request antes de llegar al handler.
+# Alternativa: deploy con flag --no-verify-jwt (ver checklist).
+
+[functions.wholesale-review]
+verify_jwt = false

@@ -1,0 +1,4 @@
+# verify_jwt: la CLI puede leer esto desde aquí O desde supabase/config.toml [functions.wholesale-review].
+# Si en producción sigue 401 "Missing authorization header" y no ves FUNC_START_OK en Logs,
+# desplegar con: supabase functions deploy wholesale-review --no-verify-jwt
+verify_jwt = false
