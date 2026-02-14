@@ -19,7 +19,7 @@ export function WholesaleRoute({ children }) {
   if (!user) return <Navigate to="/acceso" replace />;
   const isWholesale = profile?.role === 'wholesale' && profile?.wholesale_status === 'approved';
   if (!isWholesale && profile?.role !== 'admin') {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/programa-mayorista" replace />;
   }
 
   return children;

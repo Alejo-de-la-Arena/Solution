@@ -2,31 +2,35 @@ import { useEffect, useState } from 'react';
 import { listWholesaleApplications, reviewWholesaleApplication } from '../../services/admin';
 
 const STATUS_OPTIONS = [
-  { value: '', label: 'Todos' },
   { value: 'pending', label: 'Pendientes' },
   { value: 'approved', label: 'Aprobadas' },
   { value: 'rejected', label: 'Rechazadas' },
 ];
 
+// Selects dark theme: fondo #0b0b0b, borde acento, texto blanco
+const selectClass =
+  'bg-[#0b0b0b] border border-[rgb(255,0,255)] rounded px-3 py-2 text-white text-sm focus:border-[rgb(0,255,255)] focus:outline-none focus:ring-1 focus:ring-[rgb(0,255,255)]/30 appearance-none cursor-pointer';
+
 export default function AdminMayoristas() {
   const [applications, setApplications] = useState([]);
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('pending');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedId, setSelectedId] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
   const [approvePlan, setApprovePlan] = useState('A');
+  const [lastReviewResult, setLastReviewResult] = useState(null);
 
-  const fetchList = async () => {
-    setLoading(true);
+  const fetchList = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     setError('');
     try {
-      const list = await listWholesaleApplications(statusFilter || null);
+      const list = await listWholesaleApplications(statusFilter);
       setApplications(list);
     } catch (e) {
       setError(e.message || 'Error al cargar solicitudes');
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
@@ -35,13 +39,17 @@ export default function AdminMayoristas() {
   }, [statusFilter]);
 
   const selected = applications.find((a) => a.id === selectedId);
+  const isReviewed = selected && selected.status !== 'pending';
 
   const handleReview = async (applicationId, decision, plan) => {
+    if (actionLoading) return;
     setActionLoading(applicationId);
     setError('');
+    setLastReviewResult(null);
     try {
-      await reviewWholesaleApplication(applicationId, decision, plan);
-      await fetchList();
+      const data = await reviewWholesaleApplication(applicationId, decision, plan);
+      setLastReviewResult({ mode: data?.mode, emailSent: data?.emailSent });
+      await fetchList(true);
       setSelectedId(null);
     } catch (e) {
       setError(e.message || 'Error al procesar');
@@ -61,10 +69,11 @@ export default function AdminMayoristas() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-white/5 border border-white/20 rounded px-3 py-2 text-white text-sm focus:border-[rgb(255,0,255)] focus:outline-none"
+          className={selectClass}
+          style={{ colorScheme: 'dark' }}
         >
           {STATUS_OPTIONS.map((o) => (
-            <option key={o.value || 'all'} value={o.value}>
+            <option key={o.value} value={o.value} className="bg-[#0b0b0b] text-white">
               {o.label}
             </option>
           ))}
@@ -77,6 +86,21 @@ export default function AdminMayoristas() {
         </div>
       )}
 
+      {lastReviewResult && (
+        <div className="mb-6 space-y-2">
+          {lastReviewResult.mode === 'no_invite' && (
+            <div className="p-3 rounded border border-amber-500/50 bg-amber-500/10 text-amber-200 text-sm">
+              Aprobado (modo test: sin invite Supabase). Email enviado por Resend.
+            </div>
+          )}
+          {lastReviewResult.emailSent === false && (
+            <div className="p-3 rounded border border-amber-500/50 bg-amber-500/10 text-amber-200 text-sm">
+              El envío del email por Resend falló. Revisá RESEND_API_KEY y RESEND_FROM_EMAIL en la Edge Function.
+            </div>
+          )}
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center py-12">
           <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -85,7 +109,11 @@ export default function AdminMayoristas() {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             {applications.length === 0 ? (
-              <p className="text-white/50 text-sm">No hay solicitudes.</p>
+              <p className="text-white/50 text-sm">
+                {statusFilter === 'pending' && 'No hay solicitudes pendientes.'}
+                {statusFilter === 'approved' && 'No hay solicitudes aprobadas.'}
+                {statusFilter === 'rejected' && 'No hay solicitudes rechazadas.'}
+              </p>
             ) : (
               applications.map((app) => (
                 <button
@@ -110,6 +138,7 @@ export default function AdminMayoristas() {
                     }`}
                   >
                     {app.status}
+                    {app.wholesale_plan && app.status === 'approved' ? ` · Plan ${app.wholesale_plan}` : ''}
                   </span>
                 </button>
               ))
@@ -137,7 +166,12 @@ export default function AdminMayoristas() {
                   </div>
                   <div>
                     <dt className="text-white/60">Estado</dt>
-                    <dd className="text-white uppercase">{selected.status}</dd>
+                    <dd className="text-white uppercase">
+                      {selected.status}
+                      {selected.wholesale_plan && selected.status === 'approved'
+                        ? ` · Plan ${selected.wholesale_plan}`
+                        : ''}
+                    </dd>
                   </div>
                   {selected.answers && typeof selected.answers === 'object' && (
                     <div>
@@ -156,31 +190,38 @@ export default function AdminMayoristas() {
                       <select
                         value={approvePlan}
                         onChange={(e) => setApprovePlan(e.target.value)}
-                        className="bg-white/5 border border-white/20 rounded px-3 py-2 text-white text-sm focus:border-[rgb(255,0,255)] focus:outline-none"
+                        className={selectClass}
+                        style={{ colorScheme: 'dark' }}
                       >
-                        <option value="A">Plan A — Revendedor Inicial</option>
-                        <option value="B">Plan B — Revendedor Premium</option>
+                        <option value="A" className="bg-[#0b0b0b] text-white">Plan A — Revendedor Inicial</option>
+                        <option value="B" className="bg-[#0b0b0b] text-white">Plan B — Revendedor Premium</option>
                       </select>
                     </div>
                     <div className="flex gap-3">
                       <button
                         type="button"
-                        disabled={actionLoading !== null}
+                        disabled={!!actionLoading}
                         onClick={() => handleReview(selected.id, 'approve', approvePlan)}
-                        className="border border-emerald-500/60 text-emerald-400 px-4 py-2 text-sm uppercase tracking-widest hover:bg-emerald-500/10 disabled:opacity-50"
+                        className="border border-emerald-500/60 text-emerald-400 px-4 py-2 text-sm uppercase tracking-widest hover:bg-emerald-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {actionLoading === selected.id ? '...' : 'Aprobar'}
+                        {actionLoading === selected.id ? 'Enviando...' : 'Aprobar'}
                       </button>
                       <button
                         type="button"
-                        disabled={actionLoading !== null}
+                        disabled={!!actionLoading}
                         onClick={() => handleReview(selected.id, 'reject')}
-                        className="border border-red-500/60 text-red-400 px-4 py-2 text-sm uppercase tracking-widest hover:bg-red-500/10 disabled:opacity-50"
+                        className="border border-red-500/60 text-red-400 px-4 py-2 text-sm uppercase tracking-widest hover:bg-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {actionLoading === selected.id ? '...' : 'Rechazar'}
+                        {actionLoading === selected.id ? 'Enviando...' : 'Rechazar'}
                       </button>
                     </div>
                   </div>
+                )}
+
+                {isReviewed && (
+                  <p className="mt-6 text-white/50 text-sm">
+                    Esta solicitud ya fue revisada. No se pueden realizar más acciones.
+                  </p>
                 )}
               </>
             )}

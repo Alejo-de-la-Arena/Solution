@@ -45,9 +45,24 @@
 - **Esperado:** respuesta **200**, mensaje de éxito, lista se actualiza y en Logs aparece `FUNC_START_OK` con `authHeaderPresent: true`.
 - En **dev**, en consola debe aparecer el log con `tokenLength` y `tokenPrefix`; al volver a iniciar sesión, `tokenPrefix` puede cambiar.
 
-## 6. Resumen de archivos tocados
+## 6. Secrets (emails Resend)
+
+- Ver `SECRETS.md` en esta carpeta.
+- Para que se envíen emails al aprobar/rechazar: agregar **RESEND_API_KEY** en Edge Functions → Secrets.
+- Opcional: **RESEND_FROM_EMAIL** (remitente). **VITE_SITE_URL** o **SITE_URL** para links en el email.
+
+## 7. Mini checklist flujo mayorista
+
+- [ ] **Apruebo** → el registro sale de Pendientes, aparece en Aprobadas, llega email "Solicitud aprobada" con link a `/acceso`.
+- [ ] **Rechazo** → el registro sale de Pendientes, aparece en Rechazadas, llega email "Solicitud rechazada" (sin link).
+- [ ] **Usuario aprobado** (role=wholesale, wholesale_status=approved) entra a `/mayorista`; ve su plan (A/B) y precios.
+- [ ] **Usuario no aprobado** o sin sesión que intenta `/mayorista` → redirige a `/programa-mayorista`.
+
+## 8. Resumen de archivos tocados
 
 - `supabase/config.toml` – `[functions.wholesale-review]` con `verify_jwt = false`.
 - `supabase/functions/wholesale-review/config.toml` – comentarios y `verify_jwt = false`.
-- `supabase/functions/wholesale-review/index.ts` – log seguro `authHeaderPresent`, GET `{ pong, authHeaderPresent }`, uso de `authRaw`.
-- `client/src/services/admin.js` – `refreshSession()` + `session.access_token`, log dev con `tokenLength` y `tokenPrefix`.
+- `supabase/functions/wholesale-review/index.ts` – log seguro, GET pong, idempotencia 409, emails Resend (aprobado/rechazado).
+- `client/src/pages/admin/AdminMayoristas.jsx` – 3 secciones (Pendientes/Aprobadas/Rechazadas), selects dark, loading, deshabilitar ya revisados.
+- `client/src/guards/WholesaleRoute.jsx` – redirect a `/programa-mayorista` si no aprobado.
+- `client/src/services/admin.js` – refetch ya manejado en el componente.
