@@ -16,6 +16,7 @@ import AdminMayoristas from './pages/admin/AdminMayoristas';
 import Tienda from './pages/Tienda';
 import Producto from './pages/Producto';
 import Checkout from './pages/Checkout';
+import SetPassword from './pages/SetPassword.jsx'
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
               <Route path="mayoristas" element={<AdminMayoristas />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="/set-password" element={<SetPassword />} />
           </Routes>
         </BrowserRouter>
       </CartProvider>
