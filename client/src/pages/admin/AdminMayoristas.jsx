@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { listWholesaleApplications, reviewWholesaleApplication } from '../../services/admin';
+import { listWholesaleApplications, reviewWholesaleApplication } from "../../services/admin";
+import { listWholesaleOrdersForUser, getOrderItems, getWholesaleProducts } from "../../services/wholesaleOrders";
+
 
 const STATUS_OPTIONS = [
   { value: 'pending', label: 'Pendientes' },
@@ -21,6 +23,13 @@ export default function AdminMayoristas() {
   const [approvePlan, setApprovePlan] = useState('A');
   const [lastReviewResult, setLastReviewResult] = useState(null);
 
+  const [ordersAdmin, setOrdersAdmin] = useState([]);
+  const [ordersAdminLoading, setOrdersAdminLoading] = useState(false);
+  const [expandedAdminOrderId, setExpandedAdminOrderId] = useState(null);
+  const [adminOrderItemsById, setAdminOrderItemsById] = useState({});
+
+  const [productNameById, setProductNameById] = useState({});
+
   const fetchList = async (showLoading = true) => {
     if (showLoading) setLoading(true);
     setError('');
@@ -35,11 +44,59 @@ export default function AdminMayoristas() {
   };
 
   useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const prods = await getWholesaleProducts(); // trae id + name
+        if (cancelled) return;
+
+        const map = {};
+        for (const p of prods) map[p.id] = p.name;
+        setProductNameById(map);
+      } catch {
+        // si falla, no rompemos; se verá el id como fallback
+        if (!cancelled) setProductNameById({});
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, []);
+
+  const selected = applications.find((a) => a.id === selectedId);
+  const isReviewed = selected && selected.status !== "pending";
+
+  useEffect(() => {
     fetchList();
   }, [statusFilter]);
 
-  const selected = applications.find((a) => a.id === selectedId);
-  const isReviewed = selected && selected.status !== 'pending';
+  useEffect(() => {
+    if (!selected?.user_id) {
+      setOrdersAdmin([]);
+      setExpandedAdminOrderId(null);
+      setAdminOrderItemsById({});
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      setOrdersAdminLoading(true);
+      try {
+        const list = await listWholesaleOrdersForUser(selected.user_id);
+        if (!cancelled) setOrdersAdmin(list);
+      } catch (e) {
+        // si querés, podés mostrar error general con setError
+        if (!cancelled) setOrdersAdmin([e]);
+      } finally {
+        if (!cancelled) setOrdersAdminLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selected?.user_id]);
 
   const handleReview = async (applicationId, decision, plan) => {
     if (actionLoading) return;
@@ -120,22 +177,20 @@ export default function AdminMayoristas() {
                   key={app.id}
                   type="button"
                   onClick={() => setSelectedId(app.id)}
-                  className={`w-full text-left border rounded px-4 py-3 transition-colors ${
-                    selectedId === app.id
-                      ? 'border-[rgb(255,0,255)] bg-white/10'
-                      : 'border-white/20 hover:bg-white/5'
-                  }`}
+                  className={`w-full text-left border rounded px-4 py-3 transition-colors ${selectedId === app.id
+                    ? 'border-[rgb(255,0,255)] bg-white/10'
+                    : 'border-white/20 hover:bg-white/5'
+                    }`}
                 >
                   <span className="block font-medium text-white truncate">{app.full_name || app.email}</span>
                   <span className="block text-white/60 text-sm truncate">{app.email}</span>
                   <span
-                    className={`inline-block mt-1 text-xs uppercase ${
-                      app.status === 'pending'
-                        ? 'text-amber-400'
-                        : app.status === 'approved'
-                          ? 'text-emerald-400'
-                          : 'text-red-400'
-                    }`}
+                    className={`inline-block mt-1 text-xs uppercase ${app.status === 'pending'
+                      ? 'text-amber-400'
+                      : app.status === 'approved'
+                        ? 'text-emerald-400'
+                        : 'text-red-400'
+                      }`}
                   >
                     {app.status}
                     {app.wholesale_plan && app.status === 'approved' ? ` · Plan ${app.wholesale_plan}` : ''}
@@ -182,6 +237,69 @@ export default function AdminMayoristas() {
                     </div>
                   )}
                 </dl>
+
+                {selected.status === "approved" && selected.user_id && (
+                  <div className="mt-6 pt-6 border-t border-white/20">
+                    <h3 className="text-sm font-heading tracking-wider mb-3">Pedidos mayoristas</h3>
+
+                    {ordersAdminLoading ? (
+                      <p className="text-white/50 text-sm">Cargando pedidos…</p>
+                    ) : ordersAdmin.length === 0 ? (
+                      <p className="text-white/50 text-sm">Este mayorista todavía no tiene pedidos.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {ordersAdmin.map((o) => (
+                          <div key={o.id} className="border border-white/10 rounded p-3 bg-white/[0.02]">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="text-xs text-white/70">
+                                <span className="text-white">#{String(o.id).slice(0, 8)}</span> ·{" "}
+                                {new Date(o.created_at).toLocaleString("es-AR")} · {o.status}
+                                {o.wholesale_plan ? ` · Plan ${o.wholesale_plan}` : ""}
+                              </div>
+                              <div className="text-xs text-[rgb(0,255,255)]">
+                                {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(
+                                  Number(o.total || 0)
+                                )}
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              className="mt-2 text-xs uppercase tracking-widest border border-white/20 px-3 py-2 hover:bg-white/5"
+                              onClick={async () => {
+                                const next = expandedAdminOrderId === o.id ? null : o.id;
+                                setExpandedAdminOrderId(next);
+
+                                if (next && !adminOrderItemsById[o.id]) {
+                                  const items = await getOrderItems(o.id);
+                                  setAdminOrderItemsById((prev) => ({ ...prev, [o.id]: items }));
+                                }
+                              }}
+                            >
+                              {expandedAdminOrderId === o.id ? "Ocultar items" : "Ver items"}
+                            </button>
+
+                            {expandedAdminOrderId === o.id && (
+                              <div className="mt-3 text-xs text-white/70 space-y-1">
+                                {(adminOrderItemsById[o.id] ?? []).map((it) => (
+                                  <div key={it.id} className="flex justify-between border-t border-white/5 pt-2">
+                                    <span>{productNameById[it.product_id] ?? it.product_id}</span>
+                                    <span>
+                                      {it.quantity} u ×{" "}
+                                      {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(
+                                        Number(it.unit_price)
+                                      )}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {selected.status === 'pending' && (
                   <div className="mt-8 pt-6 border-t border-white/20 space-y-4">

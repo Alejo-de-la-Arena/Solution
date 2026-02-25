@@ -2,6 +2,7 @@ import { Outlet, NavLink, Link } from 'react-router-dom';
 
 const navItems = [
   { to: '/admin', end: true, label: 'Overview' },
+  { to: '/admin/usuarios', end: false, label: 'Usuarios' },
   { to: '/admin/mayoristas', end: false, label: 'Mayoristas' },
 ];
 
@@ -17,10 +18,9 @@ export default function AdminLayout() {
               to={to}
               end={end}
               className={({ isActive }) =>
-                `block px-3 py-2 text-sm uppercase tracking-widest border-l-2 transition-colors ${
-                  isActive
-                    ? 'border-[rgb(255,0,255)] text-white bg-white/5'
-                    : 'border-transparent text-white/60 hover:text-white/80 hover:bg-white/5'
+                `block px-3 py-2 text-sm uppercase tracking-widest border-l-2 transition-colors ${isActive
+                  ? 'border-[rgb(255,0,255)] text-white bg-white/5'
+                  : 'border-transparent text-white/60 hover:text-white/80 hover:bg-white/5'
                 }`
               }
             >

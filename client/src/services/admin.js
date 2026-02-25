@@ -72,3 +72,16 @@ export async function reviewWholesaleApplication(applicationId, decision, plan =
 
   return data;
 }
+
+export async function listWholesaleOrdersForUser(userId) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("channel", "wholesale")
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (error) throw error;
+  return data ?? [];
+}

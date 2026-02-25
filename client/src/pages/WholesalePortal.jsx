@@ -5,7 +5,9 @@ import {
   getWholesaleProducts,
   priceForPlan,
   saveWholesaleOrder,
-} from '../services/wholesaleOrders';
+  getMyWholesaleOrders,
+  getOrderItems,
+} from "../services/wholesaleOrders";
 
 const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || '5491112345678';
 
@@ -44,6 +46,11 @@ export default function WholesalePortal() {
   const [saveLoading, setSaveLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [orderItemsById, setOrderItemsById] = useState({});
+
   const plan = profile?.wholesale_plan === 'B' ? 'B' : 'A';
   const isPlanA = plan === 'A';
 
@@ -67,6 +74,23 @@ export default function WholesalePortal() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+
+    (async () => {
+      setOrdersLoading(true);
+      try {
+        const list = await getMyWholesaleOrders(user.id);
+        if (!cancelled) setOrders(list);
+      } finally {
+        if (!cancelled) setOrdersLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
   const setQty = (productId, value) => {
     const n = Math.max(0, parseInt(value, 10) || 0);
     setQuantities((prev) => ({ ...prev, [productId]: n }));
@@ -89,8 +113,16 @@ export default function WholesalePortal() {
     setSaveLoading(true);
     setMessage({ type: '', text: '' });
     try {
-      await saveWholesaleOrder(user.id, toSave);
+      await saveWholesaleOrder(
+        user.id,
+        { full_name: profile?.full_name, email: user?.email },
+        plan,
+        toSave
+      );
       setMessage({ type: 'success', text: 'Pedido guardado correctamente' });
+
+      const list = await getMyWholesaleOrders(user.id);
+      setOrders(list);
     } catch (e) {
       setMessage({ type: 'error', text: e.message || 'Error al guardar' });
     } finally {
@@ -118,21 +150,19 @@ export default function WholesalePortal() {
         {/* Bloques Plan A / Plan B: el no asignado en gris (upsell) */}
         <div className="grid gap-6 md:grid-cols-2 mb-12">
           <div
-            className={`border rounded-lg p-6 ${
-              isPlanA
-                ? 'border-[rgb(0,255,255)] bg-white/5'
-                : 'border-white/15 bg-white/[0.02] opacity-60 pointer-events-none'
-            }`}
+            className={`border rounded-lg p-6 ${isPlanA
+              ? 'border-[rgb(0,255,255)] bg-white/5'
+              : 'border-white/15 bg-white/[0.02] opacity-60 pointer-events-none'
+              }`}
           >
             <h2 className="text-lg font-heading tracking-wider mb-2">Plan A — Revendedor Inicial</h2>
             <p className="text-white/60 text-sm">Precios mayorista estándar.</p>
           </div>
           <div
-            className={`border rounded-lg p-6 ${
-              !isPlanA
-                ? 'border-[rgb(0,255,255)] bg-white/5'
-                : 'border-white/15 bg-white/[0.02] opacity-60 pointer-events-none'
-            }`}
+            className={`border rounded-lg p-6 ${!isPlanA
+              ? 'border-[rgb(0,255,255)] bg-white/5'
+              : 'border-white/15 bg-white/[0.02] opacity-60 pointer-events-none'
+              }`}
           >
             <h2 className="text-lg font-heading tracking-wider mb-2">Plan B — Revendedor Premium</h2>
             <p className="text-white/60 text-sm">Descuento adicional sobre precios mayoristas.</p>
@@ -209,9 +239,8 @@ export default function WholesalePortal() {
           </div>
           {message.text && (
             <p
-              className={`mt-4 text-sm ${
-                message.type === 'error' ? 'text-red-400' : 'text-emerald-400'
-              }`}
+              className={`mt-4 text-sm ${message.type === 'error' ? 'text-red-400' : 'text-emerald-400'
+                }`}
             >
               {message.text}
             </p>
@@ -236,6 +265,66 @@ export default function WholesalePortal() {
               Enviar por WhatsApp
             </a>
           </div>
+        </div>
+
+        <div className="border border-white/20 rounded-lg p-6 mb-8">
+          <h2 className="text-lg font-heading tracking-wider mb-4">Mis pedidos guardados</h2>
+
+          {ordersLoading ? (
+            <p className="text-white/50 text-sm">Cargando…</p>
+          ) : orders.length === 0 ? (
+            <p className="text-white/50 text-sm">Todavía no tenés pedidos guardados.</p>
+          ) : (
+            <div className="space-y-3">
+              {orders.map((o) => (
+                <div key={o.id} className="border border-white/10 rounded-lg p-4 bg-white/[0.02]">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="text-sm text-white/70">
+                      <span className="text-white">#{String(o.id).slice(0, 8)}</span> ·{" "}
+                      {new Date(o.created_at).toLocaleString("es-AR")} · {o.status}
+                      {o.wholesale_plan ? ` · Plan ${o.wholesale_plan}` : ""}
+                    </div>
+
+                    <div className="text-sm text-[rgb(0,255,255)]">
+                      {formatPrice(Number(o.total || 0))}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex gap-3">
+                    <button
+                      type="button"
+                      className="text-xs uppercase tracking-widest border border-white/20 px-3 py-2 hover:bg-white/5"
+                      onClick={async () => {
+                        const next = expandedOrderId === o.id ? null : o.id;
+                        setExpandedOrderId(next);
+
+                        if (next && !orderItemsById[o.id]) {
+                          const items = await getOrderItems(o.id);
+                          setOrderItemsById((prev) => ({ ...prev, [o.id]: items }));
+                        }
+                      }}
+                    >
+                      {expandedOrderId === o.id ? "Ocultar items" : "Ver items"}
+                    </button>
+                  </div>
+
+                  {expandedOrderId === o.id && (
+                    <div className="mt-3 text-xs text-white/70 space-y-1">
+                      {(orderItemsById[o.id] ?? []).map((it) => {
+                        const p = products.find((x) => x.id === it.product_id);
+                        return (
+                          <div key={it.id} className="flex justify-between border-t border-white/5 pt-2">
+                            <span>{p?.name ?? it.product_id}</span>
+                            <span>{it.quantity} u × {formatPrice(Number(it.unit_price))}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <Link to="/" className="text-[rgb(0,255,255)] hover:underline text-sm tracking-widest">
