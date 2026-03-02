@@ -172,6 +172,8 @@ Deno.serve(async (req) => {
     // Body
     const body = await req.json().catch(() => ({}));
     const { application_id, decision, plan } = body;
+    
+    console.log("REQUEST_BODY", { application_id, decision, plan });
 
     if (!application_id || !decision || !["approve", "reject"].includes(decision)) {
       return new Response(
@@ -179,11 +181,28 @@ Deno.serve(async (req) => {
         { status: 400, headers: jsonHeaders() }
       );
     }
-    if (decision === "approve" && !["A", "B"].includes(plan)) {
-      return new Response(JSON.stringify({ error: "Bad request", message: "plan A o B requerido al aprobar" }), {
-        status: 400,
-        headers: jsonHeaders(),
-      });
+    const validPlans = ["starter", "pro", "elite", "A", "B"] as const;
+
+    if (decision === "approve") {
+      if (!plan) {
+        return new Response(
+          JSON.stringify({
+            error: "Bad request",
+            message: "Falta el plan al aprobar (starter | pro | elite).",
+          }),
+          { status: 400, headers: jsonHeaders() }
+        );
+      }
+
+      if (!validPlans.includes(plan)) {
+        return new Response(
+          JSON.stringify({
+            error: "Bad request",
+            message: `Plan inválido: ${plan}. Debe ser starter | pro | elite.`,
+          }),
+          { status: 400, headers: jsonHeaders() }
+        );
+      }
     }
 
     // Fetch application
@@ -260,17 +279,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    const planLabel = plan === "B" ? "Revendedor Premium (Plan B)" : "Revendedor Inicial (Plan A)";
-    const loginLink = `${siteUrl}/programa-mayorista`;   // ✅ importante
+    const planToStore = plan === "A" ? "starter" : plan === "B" ? "pro" : plan;
+    const planLabelEmail =
+      planToStore === "elite"
+        ? "Plan Elite (30%, +25 u/pedido)"
+        : planToStore === "pro"
+          ? "Plan Pro (25%, 16-25 u/pedido)"
+          : "Plan Starter (20%, 10-15 u/pedido)";
+    const loginLink = `${siteUrl}/programa-mayorista`;
     const mayoristaLink = `${siteUrl}/mayorista`;
     const programaLink = `${siteUrl}/programa-mayorista`;
 
-    // update approved (igual)
     await assertOk(
       "update wholesale_applications(approved)",
       admin
         .from("wholesale_applications")
-        .update({ status: "approved", reviewed_at: reviewedAt, reviewed_by: user.id, wholesale_plan: plan })
+        .update({ status: "approved", reviewed_at: reviewedAt, reviewed_by: user.id, wholesale_plan: planToStore })
         .eq("id", application_id)
         .select("id,status,wholesale_plan")
         .single()
@@ -282,7 +306,7 @@ Deno.serve(async (req) => {
       const approveHtml = `
     <p>Hola ${fullName},</p>
     <p>Tu solicitud al programa mayorista de Solution fue <strong>aprobada</strong>.</p>
-    <p>Plan asignado: <strong>${planLabel}</strong>.</p>
+    <p>Plan asignado: <strong>${planLabelEmail}</strong>.</p>
     <p><strong>Beneficios:</strong> acceso al portal mayorista, precios según tu plan, y compra por volumen.</p>
     <p>Ingresar / Registrarte: <a href="${loginLink}">${loginLink}</a></p>
     <p>Portal mayorista: <a href="${mayoristaLink}">${mayoristaLink}</a></p>
@@ -320,7 +344,7 @@ Deno.serve(async (req) => {
       email: realTo,
       options: {
         redirectTo: `${siteUrl}/set-password`,
-        data: { full_name: (app as any).full_name, wholesale_plan: plan },
+        data: { full_name: (app as any).full_name, wholesale_plan: planToStore },
       },
     });
 
@@ -344,7 +368,7 @@ Deno.serve(async (req) => {
               full_name: (app as any).full_name,
               role: "wholesale",
               wholesale_status: "approved",
-              wholesale_plan: plan,
+              wholesale_plan: planToStore,
               updated_at: reviewedAt,
             },
             { onConflict: "id" }
@@ -368,7 +392,7 @@ Deno.serve(async (req) => {
     const approveHtml = `
   <p>Hola ${fullName},</p>
   <p>Tu solicitud al programa mayorista de Solution fue <strong>aprobada</strong>.</p>
-  <p>Plan asignado: <strong>${planLabel}</strong>.</p>
+  <p>Plan asignado: <strong>${planLabelEmail}</strong>.</p>
   <p>Para activar tu cuenta y crear tu contraseña, hacé click acá:</p>
   <p><a href="${actionLink}">Crear contraseña / Activar cuenta</a></p>
   <p>Luego podés ingresar desde: <a href="${siteUrl}/programa-mayorista">${siteUrl}/programa-mayorista</a></p>

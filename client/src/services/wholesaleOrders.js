@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabaseClient";
+import { priceForPlanFromTable } from "../data/wholesalePlans";
 
 /**
  * Productos activos para el portal mayorista (precios retail y wholesale).
@@ -15,12 +16,10 @@ export async function getWholesaleProducts() {
 }
 
 /**
- * Precio por plan: A = price_wholesale, B = 10% adicional de descuento sobre wholesale.
+ * Precio por plan (starter/pro/elite). Compatible con A/B legacy: usa tabla real o fallback por %.
  */
 export function priceForPlan(product, plan) {
-  const w = Number(product?.price_wholesale ?? 0);
-  if (plan === "B") return Math.round(w * 0.9);
-  return w;
+  return priceForPlanFromTable(product, plan);
 }
 
 /**
@@ -29,7 +28,7 @@ export function priceForPlan(product, plan) {
  *
  * @param {string} userId
  * @param {{ full_name?: string, email?: string }} customer
- * @param {'A'|'B'} plan
+ * @param {'starter'|'pro'|'elite'|'A'|'B'} plan
  * @param {Array<{ product_id: string, quantity: number, unit_price: number }>} items
  * @param {string} currency
  */

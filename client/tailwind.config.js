@@ -32,6 +32,15 @@ export default {
       backgroundImage: {
         'gradient-radial': 'radial-gradient(circle, var(--tw-gradient-stops))',
       },
+      keyframes: {
+        'wholesale-cta': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.92' },
+        },
+      },
+      animation: {
+        'wholesale-cta': 'wholesale-cta 2.5s ease-in-out infinite',
+      },
     },
   },
   plugins: [],

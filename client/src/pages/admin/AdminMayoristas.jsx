@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { listWholesaleApplications, reviewWholesaleApplication } from "../../services/admin";
 import { listWholesaleOrdersForUser, getOrderItems, getWholesaleProducts } from "../../services/wholesaleOrders";
+import { planLabel } from "../../data/wholesalePlans";
 
 
 const STATUS_OPTIONS = [
@@ -20,7 +21,7 @@ export default function AdminMayoristas() {
   const [error, setError] = useState('');
   const [selectedId, setSelectedId] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
-  const [approvePlan, setApprovePlan] = useState('A');
+  const [approvePlan, setApprovePlan] = useState("starter");
   const [lastReviewResult, setLastReviewResult] = useState(null);
 
   const [ordersAdmin, setOrdersAdmin] = useState([]);
@@ -193,7 +194,7 @@ export default function AdminMayoristas() {
                       }`}
                   >
                     {app.status}
-                    {app.wholesale_plan && app.status === 'approved' ? ` · Plan ${app.wholesale_plan}` : ''}
+                    {app.wholesale_plan && app.status === "approved" ? ` · ${planLabel(app.wholesale_plan)}` : ""}
                   </span>
                 </button>
               ))
@@ -223,9 +224,9 @@ export default function AdminMayoristas() {
                     <dt className="text-white/60">Estado</dt>
                     <dd className="text-white uppercase">
                       {selected.status}
-                      {selected.wholesale_plan && selected.status === 'approved'
-                        ? ` · Plan ${selected.wholesale_plan}`
-                        : ''}
+                      {selected.wholesale_plan && selected.status === "approved"
+                        ? ` · ${planLabel(selected.wholesale_plan)}`
+                        : ""}
                     </dd>
                   </div>
                   {selected.answers && typeof selected.answers === 'object' && (
@@ -254,7 +255,7 @@ export default function AdminMayoristas() {
                               <div className="text-xs text-white/70">
                                 <span className="text-white">#{String(o.id).slice(0, 8)}</span> ·{" "}
                                 {new Date(o.created_at).toLocaleString("es-AR")} · {o.status}
-                                {o.wholesale_plan ? ` · Plan ${o.wholesale_plan}` : ""}
+                                {o.wholesale_plan ? ` · ${planLabel(o.wholesale_plan)}` : ""}
                               </div>
                               <div className="text-xs text-[rgb(0,255,255)]">
                                 {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(
@@ -311,8 +312,9 @@ export default function AdminMayoristas() {
                         className={selectClass}
                         style={{ colorScheme: 'dark' }}
                       >
-                        <option value="A" className="bg-[#0b0b0b] text-white">Plan A — Revendedor Inicial</option>
-                        <option value="B" className="bg-[#0b0b0b] text-white">Plan B — Revendedor Premium</option>
+                        <option value="starter" className="bg-[#0b0b0b] text-white">Plan Starter (20%, 10-15 u)</option>
+                        <option value="pro" className="bg-[#0b0b0b] text-white">Plan Pro (25%, 16-25 u)</option>
+                        <option value="elite" className="bg-[#0b0b0b] text-white">Plan Elite (30%, +25 u)</option>
                       </select>
                     </div>
                     <div className="flex gap-3">

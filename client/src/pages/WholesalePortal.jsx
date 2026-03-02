@@ -8,21 +8,22 @@ import {
   getMyWholesaleOrders,
   getOrderItems,
 } from "../services/wholesaleOrders";
+import { normalizePlan, planLabel, WHOLESALE_PLANS_LANDING } from "../data/wholesalePlans";
 
-const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || '5491112345678';
+const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || "5491112345678";
 
 function formatPrice(n) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
     maximumFractionDigits: 0,
   }).format(n);
 }
 
 function buildWhatsAppText(items, products, plan, totalUnits, totalAmount) {
   const lines = [
-    'Pedido mayorista SOLUTION',
-    `Plan: ${plan === 'A' ? 'Revendedor Inicial' : 'Revendedor Premium'}`,
+    "Pedido mayorista SOLUTION",
+    `Plan: ${planLabel(plan)}`,
     '',
     ...items
       .filter((i) => i.quantity > 0)
@@ -51,8 +52,7 @@ export default function WholesalePortal() {
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [orderItemsById, setOrderItemsById] = useState({});
 
-  const plan = profile?.wholesale_plan === 'B' ? 'B' : 'A';
-  const isPlanA = plan === 'A';
+  const plan = normalizePlan(profile?.wholesale_plan);
 
   useEffect(() => {
     let cancelled = false;
@@ -144,29 +144,37 @@ export default function WholesalePortal() {
         <div className="w-16 h-0.5 bg-[rgb(0,255,255)] mb-6" />
         <h1 className="text-3xl sm:text-4xl font-heading tracking-wider mb-2">Portal mayorista</h1>
         <p className="text-white/70 mb-10">
-          Tu plan: <strong>{isPlanA ? 'Plan A — Revendedor Inicial' : 'Plan B — Revendedor Premium'}</strong>
+          Tu plan: <strong>{planLabel(plan)}</strong>
         </p>
 
-        {/* Bloques Plan A / Plan B: el no asignado en gris (upsell) */}
-        <div className="grid gap-6 md:grid-cols-2 mb-12">
-          <div
-            className={`border rounded-lg p-6 ${isPlanA
-              ? 'border-[rgb(0,255,255)] bg-white/5'
-              : 'border-white/15 bg-white/[0.02] opacity-60 pointer-events-none'
-              }`}
-          >
-            <h2 className="text-lg font-heading tracking-wider mb-2">Plan A — Revendedor Inicial</h2>
-            <p className="text-white/60 text-sm">Precios mayorista estándar.</p>
-          </div>
-          <div
-            className={`border rounded-lg p-6 ${!isPlanA
-              ? 'border-[rgb(0,255,255)] bg-white/5'
-              : 'border-white/15 bg-white/[0.02] opacity-60 pointer-events-none'
-              }`}
-          >
-            <h2 className="text-lg font-heading tracking-wider mb-2">Plan B — Revendedor Premium</h2>
-            <p className="text-white/60 text-sm">Descuento adicional sobre precios mayoristas.</p>
-          </div>
+        {/* 3 planes: solo el asignado activo, el resto bloqueado */}
+        <div className="grid gap-4 md:grid-cols-3 mb-12">
+          {WHOLESALE_PLANS_LANDING.map((p) => {
+            const isActive = p.key === plan;
+            return (
+              <div
+                key={p.key}
+                className={`border rounded-lg p-4 ${
+                  isActive
+                    ? "border-[rgb(0,255,255)] bg-white/5"
+                    : "border-white/15 bg-white/[0.02] opacity-50 pointer-events-none"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-base font-heading tracking-wider">{p.title}</h2>
+                  {!isActive && (
+                    <span className="text-xs uppercase text-white/50 border border-white/20 px-2 py-0.5 rounded">
+                      No disponible
+                    </span>
+                  )}
+                  {isActive && (
+                    <span className="text-xs uppercase text-[rgb(0,255,255)]">Activo</span>
+                  )}
+                </div>
+                <p className="text-white/60 text-sm">{p.discount} · {p.unitsRange}</p>
+              </div>
+            );
+          })}
         </div>
 
         {/* Listado productos */}
@@ -282,7 +290,7 @@ export default function WholesalePortal() {
                     <div className="text-sm text-white/70">
                       <span className="text-white">#{String(o.id).slice(0, 8)}</span> ·{" "}
                       {new Date(o.created_at).toLocaleString("es-AR")} · {o.status}
-                      {o.wholesale_plan ? ` · Plan ${o.wholesale_plan}` : ""}
+                      {o.wholesale_plan ? ` · ${planLabel(o.wholesale_plan)}` : ""}
                     </div>
 
                     <div className="text-sm text-[rgb(0,255,255)]">
