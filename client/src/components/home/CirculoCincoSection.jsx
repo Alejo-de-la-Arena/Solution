@@ -87,16 +87,8 @@ export default function CirculoCincoSection() {
         >
           <a
             href="#tienda"
-            className="inline-flex items-center gap-3 border px-8 py-4 text-sm tracking-widest text-white transition-all duration-300 hover:bg-[rgb(0,150,255)] hover:text-black"
+            className="btn-home-cta inline-flex items-center gap-3 rounded border px-8 py-4 text-sm tracking-widest text-white transition-all duration-300 hover:bg-[rgb(0,150,255)] hover:text-black hover:shadow-[0_0_28px_-4px_rgba(0,150,255,0.4)]"
             style={{ borderColor: CIRCLE_ACCENT }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = CIRCLE_ACCENT;
-              e.currentTarget.style.color = 'black';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.color = 'white';
-            }}
           >
             EXPLORAR LA COLECCIÓN
             <span className="inline-block w-4 h-4 ml-1" aria-hidden>

@@ -1,17 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../contexts/CartContext';
 import CartDrawer from '../cart/CartDrawer';
 
+const SCROLL_THRESHOLD = 60;
+
 export default function Navbar() {
   const { user, profile, loading, signOut, isWholesaleApproved, isAdmin } = useAuth();
   const { totalItems, toggleCart } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const isCheckoutPage = location.pathname === '/checkout';
+  const isHome = location.pathname === '/';
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > SCROLL_THRESHOLD);
+    onScroll(); // init
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const navTransparent = isHome && !scrolled;
 
   const handleLogout = async () => {
     await signOut();
@@ -24,7 +37,11 @@ export default function Navbar() {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className="fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-sm"
+      className={`fixed top-0 left-0 right-0 z-50 transition-[background-color,border-color] duration-300 ${
+        navTransparent
+          ? 'bg-transparent'
+          : 'bg-black/50 backdrop-blur-md border-b border-white/10'
+      }`}
     >
       <div className="container mx-auto px-6 md:px-12 lg:px-16 py-4">
         <div className="flex items-center justify-between">
@@ -38,13 +55,13 @@ export default function Navbar() {
           <div className="flex items-center gap-6 md:gap-8">
             <Link
               to="/"
-              className="text-white font-body text-sm md:text-base uppercase tracking-[0.06em] hover:text-white/80 transition-colors"
+              className="nav-link-underline text-white font-body text-sm md:text-base uppercase tracking-[0.06em] hover:text-white/90 transition-colors"
             >
               INICIO
             </Link>
             <Link
               to="/tienda"
-              className="text-white font-body text-sm md:text-base uppercase tracking-[0.06em] hover:text-white/80 transition-colors"
+              className="nav-link-underline text-white font-body text-sm md:text-base uppercase tracking-[0.06em] hover:text-white/90 transition-colors"
             >
               TIENDA
             </Link>
@@ -55,14 +72,14 @@ export default function Navbar() {
                   <>
                     <Link
                       to={isWholesaleApproved ? '/mayorista' : '/programa-mayorista'}
-                      className="text-white font-body text-sm md:text-base uppercase tracking-[0.06em] hover:text-white/80 transition-colors"
+                      className="nav-link-underline text-white font-body text-sm md:text-base uppercase tracking-[0.06em] hover:text-white/90 transition-colors"
                     >
                       MAYORISTA
                     </Link>
                     {isAdmin && (
                       <Link
                         to="/admin"
-                        className="text-white font-body text-sm md:text-base uppercase tracking-[0.06em] hover:text-white/80 transition-colors"
+                        className="nav-link-underline text-white font-body text-sm md:text-base uppercase tracking-[0.06em] hover:text-white/90 transition-colors"
                       >
                         ADMIN
                       </Link>
@@ -102,7 +119,7 @@ export default function Navbar() {
                 ) : (
                   <Link
                     to="/programa-mayorista"
-                    className="text-white font-body text-sm md:text-base uppercase tracking-[0.06em] hover:text-white/80 transition-colors"
+                    className="nav-link-underline text-white font-body text-sm md:text-base uppercase tracking-[0.06em] hover:text-white/90 transition-colors"
                   >
                     MAYORISTA
                   </Link>

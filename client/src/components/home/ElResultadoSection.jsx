@@ -56,7 +56,7 @@ export default function ElResultadoSection() {
         <motion.div {...motionProps} transition={{ ...motionProps.transition, delay: 0.3 }} className="pt-6">
           <a
             href="#tienda"
-            className="inline-flex items-center gap-3 border border-white/30 px-8 py-3 text-sm tracking-widest text-white hover:border-white hover:bg-white/5 transition-all"
+            className="btn-home-cta inline-flex items-center gap-3 rounded border border-white/40 bg-white/5 px-8 py-3 text-sm tracking-widest text-white backdrop-blur-sm"
           >
             EXPLORAR COLECCIÓN
             <span className="inline-block w-4 h-4" aria-hidden>→</span>

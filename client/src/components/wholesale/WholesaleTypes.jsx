@@ -47,20 +47,8 @@ function PlanCard({ data }) {
 
 export default function WholesaleTypes() {
   return (
-    <section className="relative bg-black text-white py-12 md:py-20 px-4 overflow-hidden">
-      {/* Glows de fondo (muy suaves) */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden>
-        <div
-          className="absolute w-[60vw] max-w-xl h-[40vh] rounded-full blur-[100px] opacity-[0.06] mix-blend-screen"
-          style={{ background: "rgb(255, 0, 255)", top: "20%", left: "-10%" }}
-        />
-        <div
-          className="absolute w-[50vw] max-w-md h-[35vh] rounded-full blur-[80px] opacity-[0.06] mix-blend-screen"
-          style={{ background: "rgb(0, 255, 255)", bottom: "20%", right: "-10%" }}
-        />
-      </div>
-
-      <div className="relative max-w-6xl mx-auto">
+    <section className="section-tipos-bg relative bg-black text-white py-12 md:py-20 px-4 overflow-hidden">
+      <div className="relative z-10 max-w-6xl mx-auto">
         <h2 className="font-heading text-3xl md:text-4xl font-semibold tracking-wider text-center mb-4">
           Tipos de revendedores
         </h2>

@@ -5,8 +5,12 @@ export default function DelReventaSection() {
   const { ref, motionProps } = useScrollMotion();
 
   return (
-    <section ref={ref} className="py-20 px-4 bg-black text-white">
-      <div className="mx-auto max-w-7xl">
+    <section ref={ref} className="relative py-20 px-4 bg-black text-white overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none" aria-hidden>
+        <div className="absolute w-[50vw] max-w-md h-[40vh] rounded-full blur-[100px] opacity-[0.06] mix-blend-screen" style={{ background: 'rgb(255, 0, 255)', top: '10%', left: '-10%' }} />
+        <div className="absolute w-[40vw] max-w-sm h-[30vh] rounded-full blur-[80px] opacity-[0.05] mix-blend-screen" style={{ background: 'rgb(0, 255, 255)', bottom: '20%', right: '-5%' }} />
+      </div>
+      <div className="relative mx-auto max-w-7xl">
         <div className="text-center space-y-12 max-w-4xl mx-auto">
           <div>
             <motion.div

@@ -22,11 +22,9 @@ export default function CtaColeccionSection() {
             {...motionProps}
             transition={{ ...motionProps.transition, delay: 0.05 }}
             href="#tienda"
-            className="inline-flex items-center gap-3 text-sm tracking-widest text-white group"
+            className="btn-home-cta inline-flex items-center gap-3 rounded border border-white/30 px-5 py-2.5 text-sm tracking-widest text-white group"
           >
-            <span className="border-b border-white/30 group-hover:border-white pb-1 transition-all">
-              VER LA COLECCIÓN
-            </span>
+            <span className="pb-0.5">VER LA COLECCIÓN</span>
             <span className="w-4 h-4 inline-block group-hover:translate-x-2 transition-transform" aria-hidden>→</span>
           </motion.a>
         </div>

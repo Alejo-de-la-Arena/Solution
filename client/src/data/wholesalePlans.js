@@ -65,8 +65,8 @@ export const WHOLESALE_PLANS_LANDING = [
   {
     key: "starter",
     tag: "STARTER",
-    tagBg: "rgb(0, 255, 255)",
-    borderColor: "rgb(0, 255, 255)",
+    tagBg: "rgb(255, 215, 0)",
+    borderColor: "rgb(255, 215, 0)",
     title: "Plan Starter",
     discount: "20%",
     unitsRange: "10 a 15 unidades por pedido",
@@ -101,8 +101,8 @@ export const WHOLESALE_PLANS_LANDING = [
   {
     key: "elite",
     tag: "ELITE",
-    tagBg: "rgb(255, 215, 0)",
-    borderColor: "rgb(255, 215, 0)",
+    tagBg: "rgb(0, 255, 255)",
+    borderColor: "rgb(0, 255, 255)",
     title: "Plan Elite",
     discount: "30%",
     unitsRange: "+25 unidades por pedido",

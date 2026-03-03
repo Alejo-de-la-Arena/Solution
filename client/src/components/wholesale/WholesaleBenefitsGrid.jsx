@@ -34,7 +34,7 @@ const BENEFITS = [
 function CheckIcon({ color }) {
   return (
     <span
-      className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors duration-300"
+      className="benefit-icon shrink-0 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-400 ease-out"
       style={{ borderColor: color, color }}
     >
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,17 +46,20 @@ function CheckIcon({ color }) {
 
 export default function WholesaleBenefitsGrid() {
   return (
-    <section id="beneficios" className="bg-black text-white py-16 md:py-24 px-4">
-      <div className="max-w-6xl mx-auto">
+    <section id="beneficios" className="section-beneficios-bg bg-black text-white py-16 md:py-24 px-4">
+      <div className="relative z-10 max-w-6xl mx-auto">
         <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-semibold tracking-wider text-center mb-14 md:mb-20">
           Beneficios del programa
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-12 md:gap-y-16">
           {BENEFITS.map((item) => (
-            <div key={item.title} className="flex gap-4 text-left">
+            <div
+              key={item.title}
+              className="benefit-card flex gap-4 text-left rounded-lg p-3 -m-3 transition-all duration-400 ease-out border border-transparent hover:border-white/10"
+            >
               <CheckIcon color={item.iconColor} />
-              <div>
+              <div className="min-w-0">
                 <h3 className="font-heading text-lg md:text-xl font-bold text-white mb-2">{item.title}</h3>
                 <p className="text-white/70 text-sm md:text-base leading-relaxed">{item.description}</p>
               </div>
