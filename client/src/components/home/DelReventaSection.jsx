@@ -24,25 +24,74 @@ export default function DelReventaSection() {
               transition={{ ...motionProps.transition, delay: 0.05 }}
               className="text-4xl sm:text-6xl tracking-wider leading-tight mb-8 font-heading"
             >
-              Del reventa a la creación
+              Los primeros pasos
             </motion.h2>
           </div>
           <div className="space-y-6 opacity-80 text-lg leading-relaxed max-w-2xl mx-auto">
             <motion.p {...motionProps} transition={{ ...motionProps.transition, delay: 0.1 }}>
-              SOLUTION comenzó como muchos: revendiendo fragancias importadas. Nos fue bien. Construimos presencia, aprendimos el mercado, entendimos lo que funcionaba.
+              Solution comenzó acercando al mercado las fragancias más reconocidas del rubro.
             </motion.p>
-            <motion.p {...motionProps} transition={{ ...motionProps.transition, delay: 0.15 }} className="opacity-70">
+            <motion.p {...motionProps} transition={{ ...motionProps.transition, delay: 0.15 }}>
+              Y la verdad que nos fue bien. Construimos presencia, aprendimos del mercado y entendimos lo que funcionaba.
+            </motion.p>
+            <motion.p {...motionProps} transition={{ ...motionProps.transition, delay: 0.2 }} className="opacity-70">
               Pero siempre supimos que algo faltaba.
             </motion.p>
-            <motion.p {...motionProps} transition={{ ...motionProps.transition, delay: 0.2 }}>
-              No estábamos creando nada. Solo distribuíamos. Y esa inquietud nos llevó a tomar una decisión: si íbamos a seguir en este mercado, teníamos que hacerlo de verdad.
+            <motion.p {...motionProps} transition={{ ...motionProps.transition, delay: 0.25 }}>
+              No estábamos creando nada, solo distribuimos. Y esa inquietud nos llevó a tomar una decisión:
             </motion.p>
-            <motion.p {...motionProps} transition={{ ...motionProps.transition, delay: 0.25 }} className="opacity-60 text-base italic pt-4">
-              Sin depender de terceros. Con identidad propia. Con producto propio.
+            <motion.p {...motionProps} transition={{ ...motionProps.transition, delay: 0.3 }} className="opacity-70">
+              Si íbamos a seguir en este mercado, teníamos que hacerlo de verdad.
             </motion.p>
+            <motion.div
+              {...motionProps}
+              transition={{ ...motionProps.transition, delay: 0.35 }}
+              className="pt-6"
+            >
+              <div className="inline-flex flex-col items-center gap-3">
+                <motion.div
+                  className="h-px w-24"
+                  style={{ background: 'linear-gradient(to right, rgba(255,255,255,0.08), rgb(0, 255, 255), rgba(255,255,255,0.08))' }}
+                  initial={{ scaleX: 0, opacity: 0 }}
+                  whileInView={{ scaleX: 1, opacity: 1 }}
+                  viewport={{ once: true, amount: 0.6 }}
+                  transition={{ duration: 0.7, delay: 0.4 }}
+                />
+                <div className="space-y-2 text-center">
+                  <motion.p
+                    className="text-base sm:text-lg tracking-[0.12em] text-white/80"
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.7 }}
+                    transition={{ duration: 0.45, delay: 0.42 }}
+                  >
+                    Sin depender de terceros.
+                  </motion.p>
+                  <motion.p
+                    className="text-lg sm:text-[1.35rem] tracking-[0.16em] text-white"
+                    style={{ textShadow: '0 0 22px rgba(0, 255, 255, 0.08)' }}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.7 }}
+                    transition={{ duration: 0.45, delay: 0.48 }}
+                  >
+                    Con identidad propia.
+                  </motion.p>
+                  <motion.p
+                    className="text-base sm:text-lg tracking-[0.12em] text-white/80"
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.7 }}
+                    transition={{ duration: 0.45, delay: 0.54 }}
+                  >
+                    Con producto propio.
+                  </motion.p>
+                </div>
+              </div>
+            </motion.div>
           </div>
 
-          <motion.div {...motionProps} transition={{ ...motionProps.transition, delay: 0.3 }} className="relative pt-8">
+          <motion.div {...motionProps} transition={{ ...motionProps.transition, delay: 0.4 }} className="relative pt-8">
             <img
               src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1080&q=80"
               alt="Origin Story"

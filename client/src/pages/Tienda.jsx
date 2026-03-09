@@ -27,13 +27,13 @@ function ChevronDownIcon({ className = 'w-6 h-6' }) {
   );
 }
 
-function useUsage(intensity) {
+function getUsage(intensity) {
   if (intensity >= 8) return 'Noche / Eventos';
   if (intensity >= 6) return 'Día / Noche';
   return 'Diario';
 }
 
-function useOcasion(intensity) {
+function getOcasion(intensity) {
   if (intensity >= 8) return 'Formal / Elegante';
   if (intensity >= 6) return 'Versátil';
   return 'Casual / Sport';
@@ -161,28 +161,25 @@ function ProductBlock({ perfume, index, testimonials }) {
     <motion.div ref={ref} {...motionProps} className="relative">
       <div className="text-center mb-12">
         <h2 className="font-heading text-5xl sm:text-6xl lg:text-7xl tracking-wider mb-4">{perfume.name}</h2>
-        <p className="text-xl sm:text-2xl opacity-70">{perfume.tagline}</p>
+        {perfume.tagline ? (
+          <p className="text-xl sm:text-2xl opacity-70">{perfume.tagline}</p>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start max-w-7xl mx-auto">
         {/* Left */}
         <div className="lg:col-span-3 space-y-8 order-2 lg:order-1 text-center">
           <div>
-            <div className="text-xs tracking-[0.2em] mb-3 uppercase" style={{ color: accentColor }}>Tipo de uso</div>
-            <p className="text-sm opacity-90 leading-relaxed">{perfume.tipo_de_uso || useUsage(perfume.intensity)}</p>
+            <div className="text-xs tracking-[0.2em] mb-3 uppercase" style={{ color: accentColor }}>Momento ideal</div>
+            <p className="text-sm opacity-90 leading-relaxed">{perfume.tipo_de_uso || getUsage(perfume.intensity)}</p>
           </div>
           <div>
-            <div className="text-xs tracking-[0.2em] mb-3 uppercase" style={{ color: accentColor }}>Ocasión</div>
-            <p className="text-sm opacity-90 leading-relaxed">{perfume.ocasion || useOcasion(perfume.intensity)}</p>
+            <div className="text-xs tracking-[0.2em] mb-3 uppercase" style={{ color: accentColor }}>Ocasión clave</div>
+            <p className="text-sm opacity-90 leading-relaxed">{perfume.ocasion || getOcasion(perfume.intensity)}</p>
           </div>
           <div>
-            <div className="text-xs tracking-[0.2em] mb-3 uppercase" style={{ color: accentColor }}>Intensidad</div>
-            <div className="flex items-center gap-2 justify-center">
-              <div className="w-20 h-1 bg-white/10 overflow-hidden rounded">
-                <div className="h-full rounded" style={{ backgroundColor: accentColor, width: `${perfume.intensity * 10}%` }} />
-              </div>
-              <span className="text-sm opacity-90">{perfume.intensity}/10</span>
-            </div>
+            <div className="text-xs tracking-[0.2em] mb-3 uppercase" style={{ color: accentColor }}>Personalidad</div>
+            <p className="text-sm opacity-90 leading-relaxed">{perfume.personality || `${perfume.intensity}/10`}</p>
           </div>
         </div>
 
@@ -204,7 +201,7 @@ function ProductBlock({ perfume, index, testimonials }) {
               </div>
             </div>
           </Link>
-          <div className="text-center mt-12 space-y-6">
+          <div className="text-center mt-10 space-y-5">
             <div>
               <div className="flex items-baseline justify-center gap-3 mb-2">
                 <span className="text-4xl tracking-tight">${perfume.price.toLocaleString('es-AR')}</span>
@@ -226,22 +223,18 @@ function ProductBlock({ perfume, index, testimonials }) {
         {/* Right */}
         <div className="lg:col-span-3 space-y-8 order-3 text-center">
           <div>
-            <div className="text-xs tracking-[0.2em] mb-3 uppercase" style={{ color: accentColor }}>Perfil olfativo</div>
-            <p className="text-sm opacity-90 leading-relaxed">{perfume.feeling}</p>
+            <div className="text-xs tracking-[0.2em] mb-3 uppercase" style={{ color: accentColor }}>Familia olfativa</div>
+            <p className="text-sm opacity-90 leading-relaxed">{perfume.family || perfume.feeling}</p>
           </div>
           <div>
             <div className="text-xs tracking-[0.2em] mb-3 uppercase" style={{ color: accentColor }}>Notas principales</div>
             <p className="text-sm opacity-90 leading-relaxed">{perfume.notes.top.slice(0, 3).join(', ')}</p>
           </div>
           <div>
-            <div className="text-xs tracking-[0.2em] mb-3 uppercase" style={{ color: accentColor }}>Momento ideal</div>
-            <p className="text-sm opacity-90 leading-relaxed">{perfume.usage.split('.')[0]}</p>
+            <div className="text-xs tracking-[0.2em] mb-3 uppercase" style={{ color: accentColor }}>Perfil general</div>
+            <p className="text-sm opacity-90 leading-relaxed">{perfume.profileGeneral || perfume.usage}</p>
           </div>
         </div>
-      </div>
-
-      <div className="text-center mt-12 max-w-2xl mx-auto">
-        <p className="opacity-70 leading-relaxed">{perfume.description}</p>
       </div>
 
       {index === 1 && (
@@ -403,11 +396,11 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                 {perfume1 && (
                   <div className="border-t border-b py-6" style={{ borderColor: 'rgb(0, 255, 255)' }}>
                     <h3 className="font-heading text-2xl tracking-wider mb-2">{perfume1.name}</h3>
-                    <p className="text-sm opacity-70 mb-4">{perfume1.tagline}</p>
+                    {perfume1.tagline ? <p className="text-sm opacity-70 mb-4">{perfume1.tagline}</p> : null}
                     <div className="flex justify-center gap-8 text-sm">
                       <div>
                         <span className="opacity-40 text-xs tracking-wider block mb-1">USO</span>
-                        <span>{useUsage(perfume1.intensity)}</span>
+                        <span>{perfume1.tipo_de_uso || getUsage(perfume1.intensity)}</span>
                       </div>
                       <div>
                         <span className="opacity-40 text-xs tracking-wider block mb-1">INTENSIDAD</span>
@@ -419,11 +412,11 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                 {perfume2 && (
                   <div className="border-t border-b py-6" style={{ borderColor: 'rgb(255, 0, 255)' }}>
                     <h3 className="font-heading text-2xl tracking-wider mb-2">{perfume2.name}</h3>
-                    <p className="text-sm opacity-70 mb-4">{perfume2.tagline}</p>
+                    {perfume2.tagline ? <p className="text-sm opacity-70 mb-4">{perfume2.tagline}</p> : null}
                     <div className="flex justify-center gap-8 text-sm">
                       <div>
                         <span className="opacity-40 text-xs tracking-wider block mb-1">USO</span>
-                        <span>{useUsage(perfume2.intensity)}</span>
+                        <span>{perfume2.tipo_de_uso || getUsage(perfume2.intensity)}</span>
                       </div>
                       <div>
                         <span className="opacity-40 text-xs tracking-wider block mb-1">INTENSIDAD</span>
