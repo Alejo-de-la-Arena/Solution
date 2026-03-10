@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { useScrollMotion } from '../hooks/useScrollMotion';
 import { getPublicProducts, productToPerfume } from '../services/products';
 import { ACCENT_COLORS } from '../data/perfumes';
+import { getComboProfile, normalizeComboKey } from '../data/comboProfiles';
 
 const testimonials = [
   { name: 'Martín G.', text: 'MIDNIGHT es increíble. Nunca pensé que iba a encontrar esta calidad a este precio en Argentina.', rating: 5 },
@@ -311,13 +312,23 @@ function TiendaFinalTestimonial({ testimonials }) {
 
 function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, selectedPerfume2, setSelectedPerfume2, perfume1, perfume2, comboPrice }) {
   const { ref, motionProps } = useScrollMotion();
+  const comboProfile = getComboProfile(selectedPerfume1, selectedPerfume2);
+  const comboProfileKey = comboProfile
+    ? normalizeComboKey(selectedPerfume1, selectedPerfume2)
+    : `${selectedPerfume1 || 'empty'}__${selectedPerfume2 || 'empty'}`;
+
   return (
     <motion.section ref={ref} {...motionProps} className="py-32 px-4 border-t border-white/10">
       <div className="mx-auto max-w-7xl">
-        <div className="text-center mb-16">
-          <div className="text-sm tracking-[0.3em] mb-4" style={{ color: 'rgb(255, 0, 255)' }}>OFERTA ESPECIAL</div>
-          <h2 className="font-heading text-4xl sm:text-5xl tracking-wider mb-4">Combo de 2 fragancias</h2>
-          <p className="text-lg opacity-70">Elegí tu combinación ideal y ahorrá un 15%</p>
+        <div className="text-center mb-16 space-y-4">
+          <div className="text-sm tracking-[0.3em] uppercase" style={{ color: 'rgb(255, 0, 255)' }}>Oferta especial</div>
+          <h2 className="font-heading text-4xl sm:text-5xl tracking-[0.16em]">COMBO SOLUTION</h2>
+          <p className="text-base sm:text-lg opacity-72">2 perfumes de la colección a elección</p>
+          <div className="inline-flex items-center justify-center">
+            <div className="border border-white/10 bg-white/[0.03] px-5 py-3 text-[0.72rem] sm:text-xs tracking-[0.22em] uppercase text-white/82 backdrop-blur-sm">
+              ENVÍO GRATIS A TODO EL PAÍS + 3 CUOTAS SIN INTERES
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
@@ -337,7 +348,10 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
             </div>
             <div className="space-y-6 max-w-md mx-auto">
               <div>
-                <p className="text-xs tracking-[0.2em] mb-3 opacity-60">SELECCIONÁ TUS FRAGANCIAS</p>
+                <p className="text-xs tracking-[0.2em] mb-3 opacity-60 uppercase">Selecciona y combina tus dos fragancias</p>
+                <p className="text-sm opacity-60 leading-relaxed mb-5">
+                  a medida que vayas seleccionando te vamos a mostrar el perfil de la combinación que estás creando
+                </p>
                 <div className="mb-4">
                   <label className="text-xs tracking-wider opacity-40 mb-2 block">FRAGANCIA 1</label>
                   <div className="grid grid-cols-5 gap-2">
@@ -427,22 +441,69 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                 )}
               </div>
               <div className="h-px bg-white/10" />
+              <motion.div
+                key={comboProfileKey}
+                initial={{ opacity: 0, y: 10, filter: 'blur(6px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+                className="max-w-2xl mx-auto"
+              >
+                {comboProfile ? (
+                  <div className="space-y-5">
+                    <div className="space-y-3">
+                      <div className="text-[0.72rem] tracking-[0.28em] uppercase text-white/42">Perfil de la combinación</div>
+                      <motion.div
+                        className="h-px w-28 mx-auto"
+                        style={{ background: 'linear-gradient(to right, rgba(255,255,255,0.05), rgb(255, 0, 255), rgba(255,255,255,0.05))' }}
+                        initial={{ scaleX: 0, opacity: 0 }}
+                        animate={{ scaleX: 1, opacity: 1 }}
+                        transition={{ duration: 0.4, delay: 0.05 }}
+                      />
+                    </div>
+                    <div className="space-y-4">
+                      <h3 className="font-heading text-3xl sm:text-4xl tracking-[0.14em] text-white">
+                        {comboProfile.nickname}
+                      </h3>
+                      <p className="text-base sm:text-lg text-white/74 tracking-[0.08em]">
+                        {comboProfile.summary}
+                      </p>
+                    </div>
+                    <div className="space-y-4 max-w-xl mx-auto">
+                      {comboProfile.description.map((paragraph, index) => (
+                        <p
+                          key={`${comboProfileKey}-${index}`}
+                          className={`leading-[1.9] ${index === 0 ? 'text-white/82 text-[1rem]' : 'text-white/62 text-sm uppercase tracking-[0.12em]'}`}
+                        >
+                          {paragraph}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4 max-w-xl mx-auto">
+                    <div className="text-[0.72rem] tracking-[0.28em] uppercase text-white/42">Perfil de la combinación</div>
+                    <p className="text-2xl sm:text-3xl font-heading tracking-[0.14em] text-white/86">
+                      Combiná dos fragancias
+                    </p>
+                    <p className="text-sm sm:text-base text-white/60 leading-[1.9]">
+                      Selecciona dos perfumes distintos para descubrir el subtítulo, la bajada y la descripción completa de la combinación.
+                    </p>
+                  </div>
+                )}
+              </motion.div>
               <div className="space-y-4 max-w-lg mx-auto">
-                <p className="text-sm opacity-70 leading-relaxed">
-                  Este combo te permite tener dos fragancias complementarias: una para el día a día y otra para ocasiones especiales. Versátil, completo y con ahorro garantizado.
-                </p>
                 <ul className="space-y-2 text-sm opacity-80">
                   <li className="flex items-center justify-center gap-2">
                     <span style={{ color: 'rgb(255, 0, 255)' }}>•</span>
-                    <span>2 × 100ml Eau de Parfum</span>
+                    <span>X2 perfumes a elección</span>
                   </li>
                   <li className="flex items-center justify-center gap-2">
                     <span style={{ color: 'rgb(255, 0, 255)' }}>•</span>
-                    <span>15% de descuento incluido</span>
+                    <span>Envío gratis a todo el país</span>
                   </li>
                   <li className="flex items-center justify-center gap-2">
                     <span style={{ color: 'rgb(255, 0, 255)' }}>•</span>
-                    <span>Envío gratis sin mínimo de compra</span>
+                    <span>3 cuotas sin interes</span>
                   </li>
                 </ul>
               </div>

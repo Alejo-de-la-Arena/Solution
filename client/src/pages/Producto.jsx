@@ -277,7 +277,7 @@ export default function Producto() {
                 >
                   <span className="absolute left-0 top-7 bottom-0 w-px bg-white/12" />
                   <span
-                    className="absolute left-0 top-7 h-px w-28"
+                    className="absolute left-0 top-0 h-px w-28"
                     style={{ background: `linear-gradient(to right, ${accentColor}, rgba(255,255,255,0.08))` }}
                   />
                   <span className="text-[0.72rem] sm:text-xs tracking-[0.28em] uppercase block mb-4 text-white/60">Perfil general</span>
