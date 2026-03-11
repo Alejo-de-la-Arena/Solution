@@ -21,6 +21,7 @@ export function productToPerfume(p) {
   if (!p) return null;
   return {
     id: p.slug,
+    productId: p.id,
     name: p.name,
     tagline: p.tagline || '',
     price: Number(p.price_retail) || 0,

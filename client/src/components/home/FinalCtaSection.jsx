@@ -34,15 +34,15 @@ export default function FinalCtaSection() {
         >
           <Link
             to="/#tienda"
-            className="inline-block bg-white text-black px-12 py-5 tracking-widest text-sm hover:bg-white/90 transition-all duration-300"
+            className="inline-block bg-white text-black px-12 py-5 tracking-widest text-sm font-semibold rounded hover:bg-white/90 hover:shadow-[0_0_30px_-5px_rgba(255,255,255,0.3)] transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           >
             IR A LA TIENDA
           </Link>
           <Link
             to="/aplicar-mayorista"
-            className="inline-flex items-center gap-2 text-sm tracking-widest opacity-50 hover:opacity-100 transition-opacity group"
+            className="nav-link-underline inline-flex items-center gap-2 text-sm tracking-widest opacity-60 hover:opacity-100 transition-opacity group text-white"
           >
-            <span className="border-b border-white/0 group-hover:border-white transition-all pb-1">O VENDER SOLUTION</span>
+            <span className="pb-1">O VENDER SOLUTION</span>
             <span className="w-4 h-4 inline-block group-hover:translate-x-1 transition-transform" aria-hidden>→</span>
           </Link>
         </motion.div>

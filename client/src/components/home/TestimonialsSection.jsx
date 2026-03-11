@@ -16,7 +16,7 @@ export default function TestimonialsSection() {
           <motion.div
             {...motionProps}
             transition={{ ...motionProps.transition, delay: 0.1 }}
-            className="md:col-span-5 border-l border-white/20 pl-8"
+            className="card-premium md:col-span-5 rounded-lg border border-white/10 bg-white/[0.02] backdrop-blur-sm border-l-2 border-l-[rgb(0,255,255)]/50 pl-8 pr-6 py-6"
           >
             <p className="opacity-80 leading-relaxed mb-10 text-xl">
               &quot;La calidad es excepcional. MIDNIGHT se convirtió en mi fragancia de confianza para cada ocasión importante.&quot;
@@ -30,7 +30,7 @@ export default function TestimonialsSection() {
           <motion.div
             {...motionProps}
             transition={{ ...motionProps.transition, delay: 0.15 }}
-            className="md:col-span-4 border-l border-white/20 pl-8 md:mt-12"
+            className="card-premium md:col-span-4 rounded-lg border border-white/10 bg-white/[0.02] backdrop-blur-sm border-l-2 border-l-[rgb(255,0,255)]/50 pl-8 pr-6 py-6 md:mt-12"
           >
             <p className="opacity-70 leading-relaxed mb-8 text-base">
               &quot;Nunca imaginé encontrar esta relación precio-calidad. CARBON es perfecto para el día a día.&quot;
@@ -44,7 +44,7 @@ export default function TestimonialsSection() {
           <motion.div
             {...motionProps}
             transition={{ ...motionProps.transition, delay: 0.2 }}
-            className="md:col-span-3 border-l border-white/20 pl-8 md:mt-20"
+            className="card-premium md:col-span-3 rounded-lg border border-white/10 bg-white/[0.02] backdrop-blur-sm border-l-2 border-l-[rgb(0,255,127)]/50 pl-8 pr-6 py-6 md:mt-20"
           >
             <p className="opacity-70 leading-relaxed mb-8 text-base">
               &quot;SOLUTION cambió mi percepción sobre las fragancias premium.&quot;

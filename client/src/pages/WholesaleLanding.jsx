@@ -9,11 +9,11 @@ export default function WholesaleLanding() {
   return (
     <div className="bg-black text-white min-h-screen">
       <WholesaleHero />
-      <div className="border-t border-white/10" />
+      <div className="border-t border-white/10" aria-hidden />
       <WholesaleBenefitsGrid />
-      <div className="border-t border-white/10" />
+      <div className="border-t border-white/10" aria-hidden />
       <WholesaleImages />
-      <div className="border-t border-white/10" />
+      <div className="border-t border-white/10" aria-hidden />
       <WholesaleTypes />
       <WholesalePriceTable />
       <WholesaleAccess />

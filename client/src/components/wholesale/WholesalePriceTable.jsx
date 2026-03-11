@@ -10,8 +10,8 @@ function formatPrice(n) {
 
 export default function WholesalePriceTable() {
   return (
-    <section className="bg-black text-white py-12 md:py-20 px-4">
-      <div className="max-w-5xl mx-auto">
+    <section className="section-precios-bg bg-black text-white py-12 md:py-20 px-4">
+      <div className="relative z-10 max-w-5xl mx-auto">
         <h2 className="font-heading text-2xl md:text-3xl font-semibold tracking-wider text-center mb-6">
           Precios mayoristas
         </h2>
@@ -19,7 +19,7 @@ export default function WholesalePriceTable() {
           Valores de referencia por plan (ARS).
         </p>
 
-        <div className="overflow-x-auto border border-white/20 rounded-lg">
+        <div className="section-precios-panel overflow-x-auto border border-white/20 rounded-lg p-px">
           <table className="w-full text-left min-w-[600px]">
             <thead>
               <tr className="border-b border-white/20 bg-white/5">
@@ -38,9 +38,9 @@ export default function WholesalePriceTable() {
                   <tr key={slug} className="border-b border-white/10">
                     <td className="px-4 py-3 text-white">{model}</td>
                     <td className="px-4 py-3 text-right text-white/90">${formatPrice(row.retail)}</td>
-                    <td className="px-4 py-3 text-right text-[rgb(0,255,255)]">${formatPrice(row.starter)}</td>
+                    <td className="px-4 py-3 text-right text-[rgb(255,215,0)]">${formatPrice(row.starter)}</td>
                     <td className="px-4 py-3 text-right text-[rgb(255,0,255)]">${formatPrice(row.pro)}</td>
-                    <td className="px-4 py-3 text-right text-[rgb(255,215,0)]">${formatPrice(row.elite)}</td>
+                    <td className="px-4 py-3 text-right text-[rgb(0,255,255)]">${formatPrice(row.elite)}</td>
                   </tr>
                 );
               })}

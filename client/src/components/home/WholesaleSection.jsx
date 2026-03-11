@@ -34,16 +34,16 @@ export default function WholesaleSection() {
         </motion.p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-3xl mx-auto pt-8">
-          <motion.div {...motionProps} transition={{ ...motionProps.transition, delay: 0.15 }} className="space-y-3">
-            <div className="w-12 h-px mx-auto" style={{ backgroundColor: 'rgb(0, 255, 255)' }} />
+          <motion.div {...motionProps} transition={{ ...motionProps.transition, delay: 0.15 }} className="card-premium space-y-3 rounded-lg border border-white/10 px-6 py-5">
+            <div className="w-12 h-px" style={{ backgroundColor: 'rgb(0, 255, 255)' }} />
             <p className="text-sm opacity-70 leading-relaxed">40% descuento en toda la colección</p>
           </motion.div>
-          <motion.div {...motionProps} transition={{ ...motionProps.transition, delay: 0.2 }} className="space-y-3">
-            <div className="w-12 h-px mx-auto" style={{ backgroundColor: 'rgb(255, 0, 255)' }} />
+          <motion.div {...motionProps} transition={{ ...motionProps.transition, delay: 0.2 }} className="card-premium space-y-3 rounded-lg border border-white/10 px-6 py-5">
+            <div className="w-12 h-px" style={{ backgroundColor: 'rgb(255, 0, 255)' }} />
             <p className="text-sm opacity-70 leading-relaxed">Material oficial de marca</p>
           </motion.div>
-          <motion.div {...motionProps} transition={{ ...motionProps.transition, delay: 0.25 }} className="space-y-3">
-            <div className="w-12 h-px mx-auto" style={{ backgroundColor: 'rgb(0, 255, 127)' }} />
+          <motion.div {...motionProps} transition={{ ...motionProps.transition, delay: 0.25 }} className="card-premium space-y-3 rounded-lg border border-white/10 px-6 py-5">
+            <div className="w-12 h-px" style={{ backgroundColor: 'rgb(0, 255, 127)' }} />
             <p className="text-sm opacity-70 leading-relaxed">Soporte personalizado</p>
           </motion.div>
         </div>
@@ -51,7 +51,7 @@ export default function WholesaleSection() {
         <motion.div {...motionProps} transition={{ ...motionProps.transition, delay: 0.3 }} className="pt-8">
           <Link
             to="/aplicar-mayorista"
-            className="inline-flex items-center gap-3 border border-white px-10 py-4 tracking-widest text-sm text-white hover:bg-white hover:text-black transition-all duration-300"
+            className="btn-home-cta inline-flex items-center gap-3 rounded border border-white/50 px-10 py-4 tracking-widest text-sm text-white hover:bg-white hover:text-black transition-all duration-300"
           >
             CONOCER PROGRAMA
             <span className="w-4 h-4 inline-block" aria-hidden>→</span>

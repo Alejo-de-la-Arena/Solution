@@ -7,18 +7,25 @@ function scrollToBeneficios() {
 export default function WholesaleHero() {
   return (
     <section className="relative bg-black text-white min-h-[85vh] flex flex-col items-center justify-center px-4 py-20 md:py-28 overflow-hidden">
-      {/* Glows de fondo (muy suaves) */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        aria-hidden
-      >
+      {/* Glows con breathing (scale + translate suave, 20–40s) */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden>
         <div
-          className="absolute w-[80vw] max-w-2xl h-[60vh] rounded-full blur-[120px] opacity-[0.08] mix-blend-screen"
-          style={{ background: "rgb(255, 0, 255)", top: "10%", left: "-20%" }}
+          className="glow-breathing-a absolute w-[80vw] max-w-2xl h-[60vh] rounded-full blur-[120px] mix-blend-screen"
+          style={{
+            background: "rgb(255, 0, 255)",
+            top: "10%",
+            left: "-20%",
+            opacity: 0.16,
+          }}
         />
         <div
-          className="absolute w-[70vw] max-w-xl h-[50vh] rounded-full blur-[100px] opacity-[0.08] mix-blend-screen"
-          style={{ background: "rgb(0, 255, 255)", bottom: "5%", right: "-15%" }}
+          className="glow-breathing-b absolute w-[70vw] max-w-xl h-[50vh] rounded-full blur-[100px] mix-blend-screen"
+          style={{
+            background: "rgb(0, 255, 255)",
+            bottom: "5%",
+            right: "-15%",
+            opacity: 0.15,
+          }}
         />
       </div>
 
@@ -32,33 +39,31 @@ export default function WholesaleHero() {
 
         <Link
           to="/aplicar-mayorista"
-          className="inline-block px-10 py-4 font-semibold uppercase tracking-widest text-sm rounded border-2 border-[rgb(0,255,255)] transition-all duration-500 ease-out hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-[rgb(0,255,255)] focus:ring-offset-2 focus:ring-offset-black animate-wholesale-cta"
-          style={{
-            background: "linear-gradient(135deg, rgb(255,0,255) 0%, rgba(255,0,255,0.9) 50%, rgba(0,255,255,0.15) 100%)",
-            boxShadow: "0 0 30px rgba(255,0,255,0.35), 0 0 60px rgba(0,255,255,0.15)",
-          }}
+          className="btn-animated-gradient-wholesale inline-block px-8 sm:px-10 py-3.5 sm:py-4 font-semibold uppercase tracking-widest text-sm rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(0,255,255)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          aria-label="Aplicar para ser mayorista"
         >
-          Aplicar para ser mayorista
+          <span>Aplicar para ser mayorista</span>
         </Link>
-
-        <button
-          type="button"
-          onClick={scrollToBeneficios}
-          className="mt-12 flex flex-col items-center gap-2 text-white/70 hover:text-[rgb(0,255,255)] transition-colors duration-300 focus:outline-none focus:text-[rgb(0,255,255)]"
-          aria-label="Ir a beneficios del programa"
-        >
-          <span className="text-xs uppercase tracking-widest">Ver más</span>
-          <svg
-            className="w-6 h-6 text-[rgb(0,255,255)] animate-bounce"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-          </svg>
-        </button>
       </div>
+
+      {/* Scroll indicator: ancla al bottom del hero, sin estilo botón */}
+      <button
+        type="button"
+        onClick={scrollToBeneficios}
+        className="scroll-indicator absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 text-white/60 hover:text-white/90 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded"
+        aria-label="Deslizá para ver más"
+      >
+        <span className="text-[10px] uppercase tracking-[0.2em]">Deslizá para ver más</span>
+        <svg
+          className="w-6 h-6 animate-bounce"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+        </svg>
+      </button>
     </section>
   );
 }
