@@ -24,7 +24,8 @@ export function productToPerfume(p) {
   const notes = localPerfume?.notes || { top: p.notas_principales || [], heart: [], base: [] };
 
   return {
-    id: p.slug,
+    id: p.slug,             
+    productId: p.id,         
     name: localPerfume?.name || p.name,
     tagline: localPerfume ? localPerfume.tagline : (p.tagline || ''),
     price: Number(p.price_retail) || 0,
@@ -46,7 +47,6 @@ export function productToPerfume(p) {
     price_wholesale: Number(p.price_wholesale) || 0,
   };
 }
-
 /**
  * Un producto por slug (para página /producto/:slug).
  */
