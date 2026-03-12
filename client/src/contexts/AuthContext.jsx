@@ -13,23 +13,12 @@ export function AuthProvider({ children }) {
       setProfile(null);
       return;
     }
-    const { data: adminRow } = await supabase
-      .from('admins')
-      .select('user_id')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    const { data: profileData, error } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
-
-    if (adminRow) {
-      setProfile({ ...(profileData || {}), role: 'admin' });
-      return;
-    }
-    if (!error) setProfile(profileData);
+    if (!error) setProfile(data);
     else setProfile(null);
   };
 

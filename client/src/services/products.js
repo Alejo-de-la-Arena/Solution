@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
+import { PERFUMES_BY_SLUG } from '../data/perfumes';
 
 /**
  * Productos activos para la tienda pública. Orden por sort_order.
@@ -19,21 +20,28 @@ export async function getPublicProducts() {
  */
 export function productToPerfume(p) {
   if (!p) return null;
+  const localPerfume = PERFUMES_BY_SLUG[p.slug];
+  const notes = localPerfume?.notes || { top: p.notas_principales || [], heart: [], base: [] };
+
   return {
     id: p.slug,
-    productId: p.id,
-    name: p.name,
-    tagline: p.tagline || '',
+    name: localPerfume?.name || p.name,
+    tagline: localPerfume ? localPerfume.tagline : (p.tagline || ''),
     price: Number(p.price_retail) || 0,
-    image: p.image_url || '',
-    intensity: Number(p.intensidad) ?? 0,
-    feeling: p.perfil_olfativo || '',
-    notes: { top: p.notas_principales || [] },
-    usage: p.momento_ideal || p.tipo_de_uso || '',
-    tipo_de_uso: p.tipo_de_uso || '',
-    ocasion: p.ocasion || '',
-    description: p.description || '',
-    accent_color: p.accent_color,
+    image: localPerfume?.image || p.image_url || '',
+    intensity: localPerfume?.intensity ?? Number(p.intensidad || 0),
+    feeling: localPerfume?.feeling || p.perfil_olfativo || '',
+    family: localPerfume?.family || p.perfil_olfativo || '',
+    personality: localPerfume?.personality || '',
+    notes,
+    usage: localPerfume?.usage || p.momento_ideal || p.tipo_de_uso || '',
+    tipo_de_uso: localPerfume?.tipo_de_uso || p.tipo_de_uso || '',
+    ocasion: localPerfume?.ocasion || p.ocasion || '',
+    description: localPerfume?.description || p.description || '',
+    descriptionParagraphs: localPerfume?.descriptionParagraphs || [],
+    shortDescription: localPerfume?.shortDescription || p.description || '',
+    profileGeneral: localPerfume?.profileGeneral || '',
+    accent_color: p.accent_color || localPerfume?.accent_color,
     slug: p.slug,
     price_wholesale: Number(p.price_wholesale) || 0,
   };
