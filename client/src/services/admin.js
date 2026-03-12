@@ -85,3 +85,37 @@ export async function listWholesaleOrdersForUser(userId) {
   if (error) throw error;
   return data ?? [];
 }
+
+const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+
+/**
+ * Lista todas las órdenes para admin (retail + wholesale) con ítems y nombres de producto.
+ * Requiere sesión de admin.
+ * @param {Object} [filters] - channel, status, dateFrom (YYYY-MM-DD), dateTo, q (buscar nombre/email)
+ */
+export async function getAdminOrders(filters = {}) {
+  const { data: sessionData } = await supabase.auth.refreshSession();
+  const session = sessionData?.session ?? (await supabase.auth.getSession()).data?.session;
+  if (!session?.access_token) {
+    throw new Error('Debes iniciar sesión como administrador');
+  }
+
+  const url = new URL(`${API_URL}/api/admin/orders`);
+  const { channel, status, dateFrom, dateTo, q } = filters;
+  if (channel) url.searchParams.set('channel', channel);
+  if (status) url.searchParams.set('status', status);
+  if (dateFrom) url.searchParams.set('date_from', dateFrom);
+  if (dateTo) url.searchParams.set('date_to', dateTo);
+  if (q && String(q).trim()) url.searchParams.set('q', String(q).trim());
+
+  const res = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data?.error || `Error ${res.status}`);
+  }
+  return data.orders ?? [];
+}
