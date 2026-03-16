@@ -370,122 +370,130 @@ function PerfumeStoreImage({ perfume, accentColor }) {
   );
 }
 
-function ComboShowcaseSlider() {
-  const slides = [
-    {
-      src: mediaUrl('all-products/thumb/packaging-all.webp'),
-      alt: 'Packaging completo Solution',
-    },
-    {
-      src: mediaUrl('combos/thumb/combo-bc-rd.webp'),
-      alt: 'Combo Black Code + Red Desire',
-    },
-    {
-      src: mediaUrl('combos/thumb/combo-yb-dp.webp'),
-      alt: 'Combo Yellow Bloom + Deep Blue',
-    },
-  ];
 
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % slides.length);
-    }, 4200);
-
-    return () => window.clearInterval(interval);
-  }, [slides.length]);
+function ComboCollectionShowcase() {
+  const mainImage = mediaUrl('all-products/thumb/perfumes.webp');
+  const packagingImage = mediaUrl('all-products/medium/packagin-all.webp');
 
   return (
-    <div className="relative mx-auto w-full max-w-[560px]">
-      {/* Glow */}
+    <div className="relative mx-auto w-full max-w-[540px]">
+      {/* glow exterior */}
       <motion.div
-        className="absolute inset-0 rounded-[28px] blur-[60px]"
+        className="absolute inset-0 rounded-[30px] blur-[70px]"
         animate={{
           opacity: [0.12, 0.18, 0.12],
-          scale: [0.97, 1.01, 0.97],
+          scale: [0.985, 1.02, 0.985],
         }}
         transition={{
-          duration: 4.2,
+          duration: 4.8,
           repeat: Infinity,
           ease: 'easeInOut',
         }}
         style={{
           background:
-            'radial-gradient(circle at center, rgba(0,255,255,0.14) 0%, rgba(255,0,255,0.08) 45%, rgba(0,0,0,0) 78%)',
+            'radial-gradient(circle at center, rgba(0,255,255,0.12) 0%, rgba(255,0,255,0.08) 46%, rgba(0,0,0,0) 78%)',
         }}
       />
 
-      <div className="relative z-10 overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#0b0b0b_0%,#050505_100%)] shadow-[0_24px_70px_rgba(0,0,0,0.44)]">
-        <div className="relative aspect-[16/10] overflow-hidden">
-          {slides.map((slide, index) => (
-            <motion.img
-              key={slide.src}
-              src={slide.src}
-              alt={slide.alt}
-              className="absolute inset-0 h-full w-full object-cover object-center"
-              initial={false}
-              animate={{
-                opacity: activeIndex === index ? 1 : 0,
-                scale: activeIndex === index ? 1 : 1.02,
-                filter: activeIndex === index ? 'blur(0px)' : 'blur(3px)',
-              }}
-              transition={{
-                opacity: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-                scale: { duration: 1.05, ease: [0.22, 1, 0.36, 1] },
-                filter: { duration: 0.55, ease: 'easeOut' },
-              }}
-              loading="eager"
-              draggable={false}
-            />
-          ))}
-
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.08)_0%,rgba(0,0,0,0.02)_42%,rgba(0,0,0,0.18)_100%)]" />
-
-          <motion.div
-            className="pointer-events-none absolute inset-y-0 left-[-18%] w-[14%] rotate-12 bg-white/10 blur-xl"
-            animate={{ x: ['0%', '650%'] }}
+      <div className="relative z-10 overflow-hidden rounded-[30px] border border-white/10 bg-[#050505] shadow-[0_24px_70px_rgba(0,0,0,0.44)]">
+        <div className="relative aspect-[4/5] sm:aspect-[5/6] overflow-hidden">
+          {/* fondo blur */}
+          <motion.img
+            src={mainImage}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover scale-[1.12] blur-[22px] opacity-28"
+            animate={{
+              scale: [1.12, 1.14, 1.12],
+            }}
             transition={{
-              duration: 3.4,
+              duration: 8,
               repeat: Infinity,
               ease: 'easeInOut',
-              repeatDelay: 1.1,
+            }}
+            draggable={false}
+          />
+
+          <div className="absolute inset-0 bg-black/28" />
+
+          {/* imagen principal completa */}
+          <div className="absolute inset-0 p-3 sm:p-4">
+            <motion.img
+              src={mainImage}
+              alt="Colección completa Solution"
+              className="h-full w-full object-contain object-center"
+              animate={{
+                scale: [1, 1.01, 1],
+              }}
+              transition={{
+                duration: 8,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+              draggable={false}
+            />
+          </div>
+
+          {/* overlays premium */}
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_54%,rgba(0,0,0,0.18)_100%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.10)_0%,rgba(0,0,0,0.04)_38%,rgba(0,0,0,0.22)_100%)]" />
+
+          {/* label */}
+          <div className="absolute left-4 top-4 rounded-full border border-white/10 bg-black/35 px-4 py-2 backdrop-blur-md">
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.26em] text-white/80">
+              Colección completa
+            </p>
+          </div>
+
+          {/* packaging flotante */}
+          <motion.div
+            className="absolute bottom-4 right-4 w-[38%] overflow-hidden rounded-[20px] border border-white/10 bg-black/55 shadow-[0_18px_40px_rgba(0,0,0,0.38)] backdrop-blur-md"
+            animate={{ y: [0, -5, 0] }}
+            transition={{
+              duration: 4.2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          >
+            <div className="relative aspect-[4/5] overflow-hidden">
+              <img
+                src={packagingImage}
+                alt="Packaging Solution"
+                className="h-full w-full object-cover object-center"
+                draggable={false}
+              />
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.06)_0%,rgba(0,0,0,0.18)_100%)]" />
+            </div>
+
+            <div className="border-t border-white/10 px-3 py-2">
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.22em] text-white/70">
+                Packaging
+              </p>
+            </div>
+          </motion.div>
+
+          {/* shine */}
+          <motion.div
+            className="pointer-events-none absolute inset-y-0 left-[-22%] w-[18%] rotate-12 bg-white/10 blur-xl"
+            animate={{ x: ['0%', '620%'] }}
+            transition={{
+              duration: 4.2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+              repeatDelay: 1.2,
             }}
           />
-        </div>
-
-        <div className="flex items-center justify-center gap-2 py-4">
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              type="button"
-              aria-label={`Ir al slide ${index + 1}`}
-              onClick={() => setActiveIndex(index)}
-              className="group p-1"
-            >
-              <motion.span
-                className="block h-[6px] rounded-full"
-                animate={{
-                  width: activeIndex === index ? 26 : 8,
-                  opacity: activeIndex === index ? 1 : 0.3,
-                  backgroundColor: activeIndex === index ? 'rgb(255,255,255)' : 'rgba(255,255,255,0.55)',
-                }}
-                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              />
-            </button>
-          ))}
         </div>
       </div>
     </div>
   );
 }
-
 function TiendaInfoSection() {
   const { ref, motionProps } = useScrollMotion();
 
   return (
     <motion.section ref={ref} {...motionProps} className="py-20 px-4 border-t border-white/10">
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-[1380px]">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           <div className="text-center">
             <h3 className="font-heading text-xl tracking-widest mb-4">ENVÍOS A TODO EL PAÍS</h3>
@@ -542,8 +550,8 @@ function TiendaComboSection({
 
   return (
     <motion.section ref={ref} {...motionProps} className="py-32 px-4 border-t border-white/10">
-      <div className="mx-auto max-w-7xl">
-        <div className="text-center mb-16 space-y-4">
+      <div className="mx-auto max-w-[1380px]">
+        <div className="text-center mb-20 space-y-4">
           <div className="text-sm tracking-[0.3em] uppercase" style={{ color: 'rgb(255, 0, 255)' }}>Oferta especial</div>
           <h2 className="font-heading text-4xl sm:text-5xl tracking-[0.16em]">COMBO SOLUTION</h2>
           <p className="text-base sm:text-lg opacity-72">2 perfumes de la colección a elección</p>
@@ -554,11 +562,14 @@ function TiendaComboSection({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-          <div className="lg:col-span-6 space-y-8">
-            <ComboShowcaseSlider />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-14 xl:gap-20 items-center">
+          {/* Columna izquierda: imagen + selectores */}
+          <div className="lg:col-span-5 space-y-10">
+            <div className="max-w-[520px] mx-auto w-full">
+              <ComboCollectionShowcase />
+            </div>
 
-            <div className="space-y-6 max-w-md mx-auto">
+            <div className="space-y-7 max-w-[620px] mx-auto">
               <div>
                 <p className="text-xs tracking-[0.2em] mb-3 opacity-60 uppercase">Selecciona y combina tus dos fragancias</p>
                 <p className="text-sm opacity-60 leading-relaxed mb-5">
@@ -616,9 +627,10 @@ function TiendaComboSection({
             </div>
           </div>
 
-          <div className="lg:col-span-6">
-            <div className="space-y-8 text-center">
-              <div className="space-y-6 max-w-lg mx-auto">
+          {/* Columna derecha: perfil + precio + CTA */}
+          <div className="lg:col-span-7">
+            <div className="space-y-10 text-center max-w-[640px] mx-auto">
+              <div className="space-y-6">
                 {perfume1 && (
                   <div className="border-t border-b py-6" style={{ borderColor: 'rgb(0, 255, 255)' }}>
                     <h3 className="font-heading text-2xl tracking-wider mb-2">{perfume1.name}</h3>
