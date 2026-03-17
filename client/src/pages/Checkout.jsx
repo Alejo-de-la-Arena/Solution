@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { Link } from 'react-router-dom';
-import { createCheckoutOrder } from '../services/checkout';
+import { createNavePayment } from '../services/checkout';
 
 const inputClass =
   'w-full bg-zinc-900 border-white/10 border rounded-sm p-3 focus:ring-1 focus:ring-[rgb(0,255,255)] focus:border-[rgb(0,255,255)] transition-colors';
@@ -11,6 +11,10 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [orderId, setOrderId] = useState(null);
+
+  const [naveData, setNaveData] = useState(null);
+  const [iframeLoading, setIframeLoading] = useState(true);
+  const [paymentResult, setPaymentResult] = useState(null);
 
   const [form, setForm] = useState({
     email: '',
@@ -33,9 +37,41 @@ export default function Checkout() {
   const itemsWithProductId = cart.filter((item) => item.productId);
   const canSubmit = itemsWithProductId.length > 0 && itemsWithProductId.length === cart.length;
 
+  // ── PostMessage listener for Nave iframe ──
+  const handleNaveMessage = useCallback(
+    (event) => {
+      const msg = event.data;
+      if (!msg || msg.type !== 'PAYMENT_MODAL_RESPONSE') return;
+
+      if (msg.data?.success && !msg.data?.closeModal) {
+        setPaymentResult('success');
+        setNaveData(null);
+        clearCart();
+      } else if (msg.data?.rejected) {
+        setPaymentResult('rejected');
+        setNaveData(null);
+      } else if (msg.data?.expiration) {
+        setPaymentResult('expired');
+        setNaveData(null);
+      } else if (msg.data?.closeModal) {
+        setNaveData(null);
+      }
+    },
+    [clearCart],
+  );
+
+  useEffect(() => {
+    if (!naveData) return;
+    window.addEventListener('message', handleNaveMessage);
+    return () => window.removeEventListener('message', handleNaveMessage);
+  }, [naveData, handleNaveMessage]);
+
+  // ── Submit: create order + Nave payment request ──
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setPaymentResult(null);
+
     const name = (form.name || '').trim();
     const email = (form.email || '').trim();
     if (!name || !email) {
@@ -62,33 +98,54 @@ export default function Checkout() {
         shipping_notes: (form.notes || '').trim() || undefined,
         shipping_method: 'standard',
         shipping_cost: 0,
+        callback_url: window.location.origin + '/checkout',
         items: itemsWithProductId.map((item) => ({
           product_id: item.productId,
           quantity: item.quantity,
           unit_price: item.price,
+          name: item.name || 'Producto',
         })),
       };
-      const { order } = await createCheckoutOrder(payload);
-      setOrderId(order.id);
-      clearCart();
+
+      const data = await createNavePayment(payload);
+      setOrderId(data.order_id);
+      setNaveData(data);
+      setIframeLoading(true);
     } catch (err) {
-      setError(err.message || 'Error al procesar la compra.');
+      setError(err.message || 'Error al procesar el pago.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (orderId) {
+  const handleCloseModal = () => {
+    setNaveData(null);
+    setPaymentResult('closed');
+  };
+
+  const handleRetry = () => {
+    setPaymentResult(null);
+    setError('');
+  };
+
+  // ── Payment result screens ──
+
+  if (paymentResult === 'success') {
     return (
       <div className="bg-black text-white min-h-screen">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24">
           <div className="max-w-lg mx-auto text-center space-y-8">
-            <h1 className="text-3xl sm:text-4xl font-heading tracking-widest">COMPRA RECIBIDA</h1>
+            <div className="w-20 h-20 mx-auto rounded-full border-2 border-[rgb(0,255,255)] flex items-center justify-center">
+              <svg className="w-10 h-10 text-[rgb(0,255,255)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-heading tracking-widest">PAGO APROBADO</h1>
             <p className="text-white/70">
-              Tu orden <span className="text-[rgb(0,255,255)] font-medium">{orderId}</span> fue registrada correctamente.
+              Tu orden <span className="text-[rgb(0,255,255)] font-medium">{orderId}</span> fue procesada correctamente.
             </p>
             <p className="text-sm text-white/50">
-              Te contactaremos por email para coordinar el pago y el envío.
+              Te enviaremos un email con los detalles de tu compra y la info de envío.
             </p>
             <Link
               to="/tienda"
@@ -102,8 +159,125 @@ export default function Checkout() {
     );
   }
 
+  if (paymentResult === 'rejected') {
+    return (
+      <div className="bg-black text-white min-h-screen">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24">
+          <div className="max-w-lg mx-auto text-center space-y-8">
+            <div className="w-20 h-20 mx-auto rounded-full border-2 border-red-500 flex items-center justify-center">
+              <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-heading tracking-widest">PAGO RECHAZADO</h1>
+            <p className="text-white/70">
+              El pago no pudo ser procesado. Verificá los datos de tu tarjeta o intentá con otro medio.
+            </p>
+            <button
+              onClick={handleRetry}
+              className="inline-block bg-white text-black py-3 px-8 text-sm tracking-[0.2em] uppercase font-bold hover:bg-[rgb(0,255,255)] transition-colors duration-300 rounded-sm"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (paymentResult === 'expired') {
+    return (
+      <div className="bg-black text-white min-h-screen">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24">
+          <div className="max-w-lg mx-auto text-center space-y-8">
+            <div className="w-20 h-20 mx-auto rounded-full border-2 border-yellow-500 flex items-center justify-center">
+              <svg className="w-10 h-10 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-heading tracking-widest">TIEMPO AGOTADO</h1>
+            <p className="text-white/70">
+              La sesión de pago expiró. Podés volver a intentarlo.
+            </p>
+            <button
+              onClick={handleRetry}
+              className="inline-block bg-white text-black py-3 px-8 text-sm tracking-[0.2em] uppercase font-bold hover:bg-[rgb(0,255,255)] transition-colors duration-300 rounded-sm"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (paymentResult === 'closed') {
+    return (
+      <div className="bg-black text-white min-h-screen">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24">
+          <div className="max-w-lg mx-auto text-center space-y-8">
+            <h1 className="text-3xl sm:text-4xl font-heading tracking-widest">PAGO PENDIENTE</h1>
+            <p className="text-white/70">
+              Cerraste la ventana de pago. Tu orden <span className="text-[rgb(0,255,255)] font-medium">{orderId}</span> quedó pendiente.
+            </p>
+            <p className="text-sm text-white/50">
+              Si el pago se completó, te enviaremos confirmación por email. Si no, podés volver a intentar.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={handleRetry}
+                className="inline-block bg-white text-black py-3 px-8 text-sm tracking-[0.2em] uppercase font-bold hover:bg-[rgb(0,255,255)] transition-colors duration-300 rounded-sm"
+              >
+                Reintentar pago
+              </button>
+              <Link
+                to="/tienda"
+                className="inline-block border border-white/30 text-white py-3 px-8 text-sm tracking-[0.2em] uppercase font-bold hover:border-white transition-colors duration-300 rounded-sm"
+              >
+                Volver a la tienda
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-black text-white min-h-screen">
+      {/* ── Nave Payment Modal ── */}
+      {naveData && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-2xl h-[85vh] bg-zinc-950 rounded-lg overflow-hidden border border-white/10">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-zinc-900">
+              <span className="text-sm text-white/70 tracking-widest uppercase">Completá tu pago</span>
+              <button
+                onClick={handleCloseModal}
+                className="text-white/50 hover:text-white transition-colors text-xl leading-none"
+                aria-label="Cerrar"
+              >
+                &times;
+              </button>
+            </div>
+            {iframeLoading && (
+              <div className="absolute inset-0 flex items-center justify-center pt-12">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-8 h-8 border-2 border-[rgb(0,255,255)] border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm text-white/50">Cargando pasarela de pago...</span>
+                </div>
+              </div>
+            )}
+            <iframe
+              src={naveData.iframe_url}
+              className="w-full h-[calc(85vh-52px)]"
+              title="Nave Checkout"
+              onLoad={() => setIframeLoading(false)}
+              allow="payment"
+            />
+          </div>
+        </div>
+      )}
+
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24">
         <div className="text-center mb-12 sm:mb-16">
           <h1 className="text-3xl sm:text-4xl font-heading tracking-widest">FINALIZAR COMPRA</h1>
@@ -161,14 +335,17 @@ export default function Checkout() {
               </div>
               <div>
                 <h2 className="text-lg font-heading tracking-widest border-b border-white/10 pb-4 mb-6">MÉTODO DE PAGO</h2>
-                <div className="space-y-4">
-                  <div className="flex items-center p-4 bg-zinc-900 rounded-sm border border-white/20 has-[:checked]:border-[rgb(0,255,255)] has-[:checked]:bg-cyan-900/10">
-                    <input id="mercado-pago" name="payment-method" type="radio" className="h-4 w-4 text-[rgb(0,255,255)] bg-zinc-800 border-white/30 focus:ring-offset-0 focus:ring-1 focus:ring-[rgb(0,255,255)]" defaultChecked />
-                    <label htmlFor="mercado-pago" className="ml-3 block text-sm font-medium text-white">Mercado Pago</label>
-                  </div>
-                  <div className="flex items-center p-4 bg-zinc-900 rounded-sm border border-white/20 has-[:checked]:border-[rgb(0,255,255)] has-[:checked]:bg-cyan-900/10">
-                    <input id="credit-card" name="payment-method" type="radio" className="h-4 w-4 text-[rgb(0,255,255)] bg-zinc-800 border-white/30 focus:ring-offset-0 focus:ring-1 focus:ring-[rgb(0,255,255)]" />
-                    <label htmlFor="credit-card" className="ml-3 block text-sm font-medium text-white">Tarjeta de Crédito o Débito</label>
+                <div className="flex items-center p-4 bg-zinc-900 rounded-sm border border-[rgb(0,255,255)] bg-cyan-900/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded bg-white flex items-center justify-center">
+                      <svg className="w-5 h-5 text-zinc-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">Nave</p>
+                      <p className="text-xs text-white/50">Tarjeta de crédito o débito</p>
+                    </div>
                   </div>
                 </div>
               </div>
