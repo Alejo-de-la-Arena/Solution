@@ -1,20 +1,21 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from '../contexts/CartContext';
-import { Link } from 'react-router-dom';
-import { createNavePayment } from '../services/checkout';
+import { Link, useSearchParams } from 'react-router-dom';
+import { createNavePayment, getPaymentStatus } from '../services/checkout';
 
 const inputClass =
   'w-full bg-zinc-900 border-white/10 border rounded-sm p-3 focus:ring-1 focus:ring-[rgb(0,255,255)] focus:border-[rgb(0,255,255)] transition-colors';
 
+const NAVE_ORDER_KEY = 'nave_pending_order';
+
 export default function Checkout() {
   const { cart, totalPrice, updateQuantity, removeFromCart, clearCart } = useCart();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [orderId, setOrderId] = useState(null);
-
-  const [naveData, setNaveData] = useState(null);
-  const [iframeLoading, setIframeLoading] = useState(true);
   const [paymentResult, setPaymentResult] = useState(null);
+  const [resultOrderId, setResultOrderId] = useState(null);
+  const [checking, setChecking] = useState(false);
 
   const [form, setForm] = useState({
     email: '',
@@ -28,6 +29,38 @@ export default function Checkout() {
     notes: '',
   });
 
+  // On mount: if returning from Nave, check the order status
+  useEffect(() => {
+    const orderIdParam = searchParams.get('order_id');
+    const savedOrder = localStorage.getItem(NAVE_ORDER_KEY);
+
+    const pendingOrderId = orderIdParam || savedOrder;
+    if (!pendingOrderId) return;
+
+    localStorage.removeItem(NAVE_ORDER_KEY);
+    setChecking(true);
+    setResultOrderId(pendingOrderId);
+
+    getPaymentStatus(pendingOrderId)
+      .then((data) => {
+        const status = data.order_status || '';
+        if (status === 'paid') {
+          setPaymentResult('success');
+          clearCart();
+        } else if (status === 'payment_failed') {
+          setPaymentResult('rejected');
+        } else if (status === 'pending_payment') {
+          setPaymentResult('pending');
+        } else {
+          setPaymentResult('pending');
+        }
+      })
+      .catch(() => {
+        setPaymentResult('pending');
+      })
+      .finally(() => setChecking(false));
+  }, [searchParams, clearCart]);
+
   const handleChange = (e) => {
     const { id, value } = e.target;
     setForm((prev) => ({ ...prev, [id]: value }));
@@ -37,40 +70,9 @@ export default function Checkout() {
   const itemsWithProductId = cart.filter((item) => item.productId);
   const canSubmit = itemsWithProductId.length > 0 && itemsWithProductId.length === cart.length;
 
-  // ── PostMessage listener for Nave iframe ──
-  const handleNaveMessage = useCallback(
-    (event) => {
-      const msg = event.data;
-      if (!msg || msg.type !== 'PAYMENT_MODAL_RESPONSE') return;
-
-      if (msg.data?.success && !msg.data?.closeModal) {
-        setPaymentResult('success');
-        setNaveData(null);
-        clearCart();
-      } else if (msg.data?.rejected) {
-        setPaymentResult('rejected');
-        setNaveData(null);
-      } else if (msg.data?.expiration) {
-        setPaymentResult('expired');
-        setNaveData(null);
-      } else if (msg.data?.closeModal) {
-        setNaveData(null);
-      }
-    },
-    [clearCart],
-  );
-
-  useEffect(() => {
-    if (!naveData) return;
-    window.addEventListener('message', handleNaveMessage);
-    return () => window.removeEventListener('message', handleNaveMessage);
-  }, [naveData, handleNaveMessage]);
-
-  // ── Submit: create order + Nave payment request ──
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setPaymentResult(null);
 
     const name = (form.name || '').trim();
     const email = (form.email || '').trim();
@@ -98,7 +100,7 @@ export default function Checkout() {
         shipping_notes: (form.notes || '').trim() || undefined,
         shipping_method: 'standard',
         shipping_cost: 0,
-        callback_url: window.location.origin + '/checkout',
+        callback_url: `${window.location.origin}/checkout?order_id=PLACEHOLDER`,
         items: itemsWithProductId.map((item) => ({
           product_id: item.productId,
           quantity: item.quantity,
@@ -108,25 +110,29 @@ export default function Checkout() {
       };
 
       const data = await createNavePayment(payload);
-      setOrderId(data.order_id);
-      setNaveData(data);
-      setIframeLoading(true);
+
+      // Save order id so we can check status when user returns
+      localStorage.setItem(NAVE_ORDER_KEY, data.order_id);
+
+      // Redirect to Nave checkout page
+      window.location.href = data.checkout_url;
     } catch (err) {
       setError(err.message || 'Error al procesar el pago.');
-    } finally {
       setLoading(false);
     }
   };
 
-  const handleCloseModal = () => {
-    setNaveData(null);
-    setPaymentResult('closed');
-  };
-
-  const handleRetry = () => {
-    setPaymentResult(null);
-    setError('');
-  };
+  // ── Loading state while checking order on return ──
+  if (checking) {
+    return (
+      <div className="bg-black text-white min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-2 border-[rgb(0,255,255)] border-t-transparent rounded-full animate-spin" />
+          <span className="text-white/50 tracking-widest text-sm uppercase">Verificando tu pago...</span>
+        </div>
+      </div>
+    );
+  }
 
   // ── Payment result screens ──
 
@@ -142,7 +148,7 @@ export default function Checkout() {
             </div>
             <h1 className="text-3xl sm:text-4xl font-heading tracking-widest">PAGO APROBADO</h1>
             <p className="text-white/70">
-              Tu orden <span className="text-[rgb(0,255,255)] font-medium">{orderId}</span> fue procesada correctamente.
+              Tu orden <span className="text-[rgb(0,255,255)] font-medium">{resultOrderId}</span> fue procesada correctamente.
             </p>
             <p className="text-sm text-white/50">
               Te enviaremos un email con los detalles de tu compra y la info de envío.
@@ -173,19 +179,19 @@ export default function Checkout() {
             <p className="text-white/70">
               El pago no pudo ser procesado. Verificá los datos de tu tarjeta o intentá con otro medio.
             </p>
-            <button
-              onClick={handleRetry}
+            <Link
+              to="/checkout"
               className="inline-block bg-white text-black py-3 px-8 text-sm tracking-[0.2em] uppercase font-bold hover:bg-[rgb(0,255,255)] transition-colors duration-300 rounded-sm"
             >
               Reintentar
-            </button>
+            </Link>
           </div>
         </div>
       </div>
     );
   }
 
-  if (paymentResult === 'expired') {
+  if (paymentResult === 'pending') {
     return (
       <div className="bg-black text-white min-h-screen">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24">
@@ -195,44 +201,18 @@ export default function Checkout() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-heading tracking-widest">TIEMPO AGOTADO</h1>
-            <p className="text-white/70">
-              La sesión de pago expiró. Podés volver a intentarlo.
-            </p>
-            <button
-              onClick={handleRetry}
-              className="inline-block bg-white text-black py-3 px-8 text-sm tracking-[0.2em] uppercase font-bold hover:bg-[rgb(0,255,255)] transition-colors duration-300 rounded-sm"
-            >
-              Reintentar
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (paymentResult === 'closed') {
-    return (
-      <div className="bg-black text-white min-h-screen">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24">
-          <div className="max-w-lg mx-auto text-center space-y-8">
             <h1 className="text-3xl sm:text-4xl font-heading tracking-widest">PAGO PENDIENTE</h1>
             <p className="text-white/70">
-              Cerraste la ventana de pago. Tu orden <span className="text-[rgb(0,255,255)] font-medium">{orderId}</span> quedó pendiente.
+              Tu orden <span className="text-[rgb(0,255,255)] font-medium">{resultOrderId}</span> está siendo procesada.
             </p>
             <p className="text-sm text-white/50">
-              Si el pago se completó, te enviaremos confirmación por email. Si no, podés volver a intentar.
+              Cuando se confirme el pago, te enviaremos un email de confirmación.
+              Si el pago fue rechazado o expiró, podés volver a intentar.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={handleRetry}
-                className="inline-block bg-white text-black py-3 px-8 text-sm tracking-[0.2em] uppercase font-bold hover:bg-[rgb(0,255,255)] transition-colors duration-300 rounded-sm"
-              >
-                Reintentar pago
-              </button>
               <Link
                 to="/tienda"
-                className="inline-block border border-white/30 text-white py-3 px-8 text-sm tracking-[0.2em] uppercase font-bold hover:border-white transition-colors duration-300 rounded-sm"
+                className="inline-block bg-white text-black py-3 px-8 text-sm tracking-[0.2em] uppercase font-bold hover:bg-[rgb(0,255,255)] transition-colors duration-300 rounded-sm"
               >
                 Volver a la tienda
               </Link>
@@ -245,39 +225,6 @@ export default function Checkout() {
 
   return (
     <div className="bg-black text-white min-h-screen">
-      {/* ── Nave Payment Modal ── */}
-      {naveData && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-2xl h-[85vh] bg-zinc-950 rounded-lg overflow-hidden border border-white/10">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-zinc-900">
-              <span className="text-sm text-white/70 tracking-widest uppercase">Completá tu pago</span>
-              <button
-                onClick={handleCloseModal}
-                className="text-white/50 hover:text-white transition-colors text-xl leading-none"
-                aria-label="Cerrar"
-              >
-                &times;
-              </button>
-            </div>
-            {iframeLoading && (
-              <div className="absolute inset-0 flex items-center justify-center pt-12">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-8 h-8 border-2 border-[rgb(0,255,255)] border-t-transparent rounded-full animate-spin" />
-                  <span className="text-sm text-white/50">Cargando pasarela de pago...</span>
-                </div>
-              </div>
-            )}
-            <iframe
-              src={naveData.iframe_url}
-              className="w-full h-[calc(85vh-52px)]"
-              title="Nave Checkout"
-              onLoad={() => setIframeLoading(false)}
-              allow="payment"
-            />
-          </div>
-        </div>
-      )}
-
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24">
         <div className="text-center mb-12 sm:mb-16">
           <h1 className="text-3xl sm:text-4xl font-heading tracking-widest">FINALIZAR COMPRA</h1>
@@ -287,6 +234,7 @@ export default function Checkout() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-16">
+
           {/* Left Column: Form + Payment */}
           <div className="space-y-8 lg:order-2">
             <form onSubmit={handleSubmit} className="space-y-8">
@@ -357,7 +305,7 @@ export default function Checkout() {
                 disabled={loading || cart.length === 0}
                 className="w-full bg-white text-black py-4 text-sm tracking-[0.2em] uppercase font-bold hover:bg-[rgb(0,255,255)] transition-colors duration-300 rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Procesando...' : `Pagar $${totalPrice.toLocaleString('es-AR')}`}
+                {loading ? 'Redirigiendo a Nave...' : `Pagar $${totalPrice.toLocaleString('es-AR')}`}
               </button>
             </form>
           </div>
@@ -436,6 +384,7 @@ export default function Checkout() {
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </div>

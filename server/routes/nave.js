@@ -231,7 +231,9 @@ router.post('/nave/create-payment', async (req, res) => {
         },
       },
       additional_info: {
-        callback_url: callback_url || undefined,
+        callback_url: callback_url
+          ? callback_url.replace('PLACEHOLDER', order.id)
+          : undefined,
       },
       duration_time: 3000,
     };
@@ -259,18 +261,10 @@ router.post('/nave/create-payment', async (req, res) => {
       })
       .eq('id', order.id);
 
-    // ── 5. Build iframe checkout URL ──
-    const checkoutBase = getCheckoutBaseUrl();
-    const iframeUrl =
-      `${checkoutBase}/galicia/nave/checkout` +
-      `?payment_request_id=${navePayment.id}` +
-      `&qr_data=${encodeURIComponent(navePayment.qr_data || '')}`;
-
     return res.status(201).json({
       order_id: order.id,
       payment_request_id: navePayment.id,
       checkout_url: navePayment.checkout_url,
-      iframe_url: iframeUrl,
       qr_data: navePayment.qr_data,
     });
   } catch (error) {

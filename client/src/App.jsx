@@ -14,7 +14,6 @@ import WholesalePortal from './pages/WholesalePortal';
 
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminOverview from './pages/admin/AdminOverview';
-import AdminPedidos from './pages/admin/AdminPedidos';
 import AdminMayoristas from './pages/admin/AdminMayoristas';
 import AdminUsuarios from './pages/admin/AdminUsuarios';
 
@@ -50,7 +49,6 @@ function AppRoutes() {
         />
         <Route path="/admin" element={<RoleRoute><AdminLayout /></RoleRoute>}>
           <Route index element={<AdminOverview />} />
-          <Route path="pedidos" element={<AdminPedidos />} />
           <Route path="usuarios" element={<AdminUsuarios />} /> 
           <Route path="mayoristas" element={<AdminMayoristas />} />
         </Route>

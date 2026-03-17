@@ -37,15 +37,41 @@ export default function ElProcesoSection() {
               transition={{ ...motionProps.transition, delay: 0.15 }}
               className="text-3xl sm:text-5xl tracking-wider font-heading"
             >
-              El proceso: de cero
+              Aprender para crear
             </motion.h3>
             <div className="space-y-6 text-lg opacity-80 leading-relaxed">
               <motion.p {...motionProps} transition={{ ...motionProps.transition, delay: 0.2 }}>
-                Invertimos en investigación olfativa, trabajamos con perfumistas especializados y desarrollamos fórmulas propias que respondieran a lo que realmente buscaba nuestro público.
+                Entendimos qué busca realmente el mercado: identidad, calidad y una fragancia que se sienta propia.
               </motion.p>
-              <motion.p {...motionProps} transition={{ ...motionProps.transition, delay: 0.25 }} className="text-base opacity-60">
-                Calidad, personalidad y durabilidad real.
+              <motion.p {...motionProps} transition={{ ...motionProps.transition, delay: 0.25 }}>
+                Sumamos perfumistas especializados al proceso y desarrollamos fórmulas con criterio y dirección clara.
               </motion.p>
+              <motion.div
+                {...motionProps}
+                transition={{ ...motionProps.transition, delay: 0.3 }}
+                className="pt-4"
+              >
+                <div className="inline-flex flex-col items-center gap-3">
+                  <motion.p
+                    className="text-base sm:text-xl tracking-[0.12em] text-white/88"
+                    style={{ textShadow: '0 0 22px rgba(255, 0, 255, 0.08)' }}
+                    initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+                    whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                    viewport={{ once: true, amount: 0.7 }}
+                    transition={{ duration: 0.55, delay: 0.34 }}
+                  >
+                    Todo ese aprendizaje se ve reflejado en esta colección
+                  </motion.p>
+                  <motion.div
+                    className="h-px w-36"
+                    style={{ background: 'linear-gradient(to right, rgba(255,255,255,0.05), rgb(255, 0, 255), rgba(255,255,255,0.05))' }}
+                    initial={{ scaleX: 0, opacity: 0 }}
+                    whileInView={{ scaleX: 1, opacity: 1 }}
+                    viewport={{ once: true, amount: 0.7 }}
+                    transition={{ duration: 0.65, delay: 0.4 }}
+                  />
+                </div>
+              </motion.div>
             </div>
           </div>
         </div>
