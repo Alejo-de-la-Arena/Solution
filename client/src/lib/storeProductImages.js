@@ -3,24 +3,24 @@ export function getStoreProductImages(slug) {
 
     const imageMap = {
         'black-code': {
-            default: 'black-code/medium/black-code.webp',
-            hover: 'black-code/large/combo-black-code.webp',
+            default: 'black-code/bc-notas-2.webp',
+            hover: 'black-code/medium/black-code-bg.webp',
         },
         'red-desire': {
-            default: 'red-desire/thumb/red-desire.webp',
-            hover: 'red-desire/thumb/combo-red-desire.webp',
+            default: 'red-desire/medium/rd-notas.webp',
+            hover: 'red-desire/medium/red-desire-bg.webp',
         },
         'white-ice': {
-            default: 'white-ice/thumb/white-ice.webp',
-            hover: 'white-ice/thumb/combo-white-ice.webp',
+            default: 'white-ice/medium/wi-notas.webp',
+            hover: 'white-ice/medium/white-ice-bg.webp',
         },
         'deep-blue': {
-            default: 'deep-blue/thumb/deep-blue.webp',
-            hover: 'deep-blue/thumb/combo-deep-blue.webp',
+            default: 'deep-blue/medium/dp-notas.webp',
+            hover: 'deep-blue/medium/deep-blue-bg-2.webp',
         },
         'yellow-bloom': {
-            default: 'yellow-bloom/thumb/yellow-bloom.webp',
-            hover: 'yellow-bloom/thumb/combo-yellow-bloom.webp',
+            default: 'yellow-bloom/medium/yb-notas.webp',
+            hover: 'yellow-bloom/medium/yellow-bloom-bg.webp',
         },
     };
 
