@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getProductBySlug, productToPerfume } from '../services/products';
 import { useCart } from '../contexts/CartContext';
+import { mediaUrl } from '../lib/mediaUrl';
+import { getProductGalleryImages } from '../lib/productGalleryImages';
 
 export default function Producto() {
   const { id: slug } = useParams();
   const [perfume, setPerfume] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -31,6 +34,25 @@ export default function Producto() {
       });
     return () => { cancelled = true; };
   }, [slug]);
+
+  // Reset índice de galería cuando cambia el perfume
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [perfume?.slug]);
+
+  // Auto-advance suave de la galería
+  useEffect(() => {
+    if (!perfume) return undefined;
+    const items = getProductGalleryImages(perfume.slug, perfume.image);
+    const length = items.length;
+    if (length <= 1) return undefined;
+
+    const id = window.setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % length);
+    }, 9000);
+
+    return () => window.clearInterval(id);
+  }, [perfume?.slug, perfume?.image]);
 
   if (loading) {
     return (
@@ -59,6 +81,10 @@ export default function Producto() {
     : perfume.description
       ? [perfume.description]
       : [];
+  const galleryItems = perfume ? getProductGalleryImages(perfume.slug, perfume.image) : [];
+  const safeIndex = galleryItems.length > 0 ? Math.min(activeIndex, galleryItems.length - 1) : 0;
+  const activeItem = galleryItems[safeIndex] || null;
+
   const noteGroups = [
     {
       key: 'top',
@@ -123,18 +149,131 @@ export default function Producto() {
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             className="relative"
           >
-            <div className="aspect-[3/4] overflow-hidden relative group">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10" />
-              <motion.img
-                src={perfume.image}
-                alt={perfume.name}
-                className="w-full h-full object-cover"
-                whileHover={{ scale: 1.03 }}
-                transition={{ duration: 0.7, ease: "easeOut" }}
+            <div className="relative mx-auto w-full max-w-[560px]">
+              {/* Glow exterior */}
+              <motion.div
+                className="absolute inset-0 rounded-[30px] blur-[70px]"
+                style={{ backgroundColor: accentColor }}
+                animate={{
+                  opacity: [0.16, 0.24, 0.16],
+                  scale: [0.9, 1.02, 0.9],
+                }}
+                transition={{
+                  duration: 6,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
               />
+
+              {/* Card */}
+              <div className="relative z-10 overflow-hidden rounded-[30px] border border-white/10 bg-[#050505] shadow-[0_24px_70px_rgba(0,0,0,0.6)]">
+                <div className="relative aspect-[4/5] sm:aspect-[5/6] overflow-hidden">
+                  {/* Fondo blur */}
+                  <AnimatePresence initial={false} mode="popLayout">
+                    {activeItem && (
+                      <motion.img
+                        key={`bg-${activeItem.path}`}
+                        src={activeItem.path.startsWith('http') ? activeItem.path : mediaUrl(activeItem.path)}
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 h-full w-full object-cover scale-[1.15] blur-[26px] opacity-30"
+                        initial={{ opacity: 0, scale: 1.18 }}
+                        animate={{ opacity: 0.3, scale: 1.15 }}
+                        exit={{ opacity: 0, scale: 1.18 }}
+                        transition={{ duration: 0.6, ease: 'easeInOut' }}
+                        draggable={false}
+                      />
+                    )}
+                  </AnimatePresence>
+
+                  <div className="absolute inset-0 bg-black/25" />
+
+                  {/* Imagen principal */}
+                  <AnimatePresence initial={false} mode="wait">
+                    {activeItem && (
+                      <motion.img
+                        key={activeItem.path}
+                        src={activeItem.path.startsWith('http') ? activeItem.path : mediaUrl(activeItem.path)}
+                        alt={perfume.name}
+                        className="absolute inset-0 h-full w-full object-contain object-center"
+                        initial={{ opacity: 0, scale: 1.04, y: 10, filter: 'blur(8px)' }}
+                        animate={{ opacity: 1, scale: 1.02, y: 0, filter: 'blur(0px)' }}
+                        exit={{ opacity: 0, scale: 0.98, y: -8, filter: 'blur(6px)' }}
+                        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                        draggable={false}
+                      />
+                    )}
+                  </AnimatePresence>
+
+                  {/* Overlays premium */}
+                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_55%,rgba(0,0,0,0.32)_100%)]" />
+                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.10)_0%,rgba(0,0,0,0.06)_38%,rgba(0,0,0,0.32)_100%)]" />
+
+                  {/* Badge */}
+                  <div className="absolute left-4 top-4 rounded-full border border-white/12 bg-black/40 px-4 py-2 backdrop-blur-md">
+                    <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.26em] text-white/80">
+                      Colección Solution
+                    </p>
+                  </div>
+
+                  {/* Indicador numerado */}
+                  {galleryItems.length > 1 && (
+                    <div className="absolute right-4 bottom-4 flex items-center gap-2 rounded-full border border-white/14 bg-black/45 px-3 py-1.5 backdrop-blur-md">
+                      <span className="h-1 w-8 rounded-full bg-gradient-to-r from-white/60 to-white/10" />
+                      <span className="text-[10px] tracking-[0.22em] uppercase text-white/70">
+                        {String(activeIndex + 1).padStart(2, '0')}/{String(galleryItems.length).padStart(2, '0')}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-            {/* Decorative elements around image */}
-            <div className="absolute -inset-4 border border-white/5 z-[-1] translate-x-4 translate-y-4 hidden sm:block" />
+
+            {/* Thumbnails / navegación secundaria */}
+            {galleryItems.length > 1 && (
+              <div className="mt-7 space-y-3 max-w-[560px] mx-auto">
+                <div className="flex items-center justify-between gap-4 px-1">
+                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.26em] text-white/45">
+                    <span className="inline-block h-px w-6 bg-white/20" />
+                    <span>Galería</span>
+                  </div>
+                  <span className="hidden sm:inline-block text-[10px] uppercase tracking-[0.22em] text-white/40">
+                    Desliza o toca para cambiar
+                  </span>
+                </div>
+                <div className="flex gap-3 overflow-x-auto pb-1 px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {galleryItems.map((item, index) => {
+                    const isActive = index === activeIndex;
+                    const src = item.path.startsWith('http') ? item.path : mediaUrl(item.path);
+
+                    return (
+                      <button
+                        key={item.path}
+                        type="button"
+                        onClick={() => setActiveIndex(index)}
+                        className={`relative h-16 w-16 sm:h-[4.75rem] sm:w-[4.75rem] flex-shrink-0 overflow-hidden rounded-2xl border transition-all duration-200 ${
+                          isActive ? 'border-white/80 shadow-[0_0_24px_rgba(0,0,0,0.9)]' : 'border-white/14 opacity-70 hover:opacity-100'
+                        }`}
+                        style={{
+                          backgroundColor: '#050505',
+                        }}
+                      >
+                        <img
+                          src={src}
+                          alt=""
+                          className="h-full w-full object-cover object-center"
+                          loading="lazy"
+                          draggable={false}
+                        />
+                        {isActive && (
+                          <div className="pointer-events-none absolute inset-0 border border-white/40 mix-blend-screen" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </motion.div>
 
           {/* Content Column */}
@@ -176,24 +315,17 @@ export default function Producto() {
 
               {descriptionParagraphs.length > 0 && (
                 <motion.div
-                  className="relative max-w-2xl pl-6 sm:pl-8 space-y-4 sm:space-y-5 text-white/80 leading-[1.9] text-[1.02rem] sm:text-[1.08rem] font-light"
+                  className="max-w-2xl space-y-4 sm:space-y-5 text-white/80 leading-[1.9] text-[1.02rem] sm:text-[1.08rem] font-light"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.7, delay: 0.5 }}
                 >
-                  <motion.span
-                    className="absolute left-0 top-1 h-14 w-px"
-                    style={{ background: `linear-gradient(to bottom, ${accentColor}, transparent)` }}
-                    initial={{ scaleY: 0, opacity: 0 }}
-                    animate={{ scaleY: 1, opacity: 1 }}
-                    transition={{ duration: 0.6, delay: 0.58 }}
-                  />
                   {descriptionParagraphs.map((paragraph, index) => (
                     <motion.p
                       key={`${perfume.id}-description-${index}`}
                       initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
                       animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                      transition={{ duration: 0.45, delay: 0.58 + index * 0.04 }}
+                      transition={{ duration: 0.45, delay: 0.56 + index * 0.04 }}
                       className={index === 0 ? 'text-white text-[1.15rem] sm:text-[1.25rem] font-normal leading-[1.75]' : ''}
                     >
                       {paragraph}
@@ -273,11 +405,10 @@ export default function Producto() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.7, delay: 0.86 }}
-                  className="relative max-w-2xl pt-7 pl-6 sm:pl-7"
+                  className="relative max-w-2xl pt-7"
                 >
-                  <span className="absolute left-0 top-7 bottom-0 w-px bg-white/12" />
                   <span
-                    className="absolute left-0 top-0 h-px w-28"
+                    className="block h-px w-28 mb-4"
                     style={{ background: `linear-gradient(to right, ${accentColor}, rgba(255,255,255,0.08))` }}
                   />
                   <span className="text-[0.72rem] sm:text-xs tracking-[0.28em] uppercase block mb-4 text-white/60">Perfil general</span>

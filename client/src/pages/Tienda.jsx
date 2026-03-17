@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useScrollMotion } from '../hooks/useScrollMotion';
 import { getPublicProducts, productToPerfume } from '../services/products';
 import { ACCENT_COLORS } from '../data/perfumes';
 import { getComboProfile, normalizeComboKey } from '../data/comboProfiles';
+import { mediaUrl } from '../lib/mediaUrl';
+import { getStoreProductImages } from '../lib/storeProductImages';
 
 const testimonials = [
   { name: 'Martín G.', text: 'MIDNIGHT es increíble. Nunca pensé que iba a encontrar esta calidad a este precio en Argentina.', rating: 5 },
@@ -62,13 +64,16 @@ export default function Tienda() {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
     if (perfumes.length > 0 && !selectedPerfume1) setSelectedPerfume1(perfumes[0].id);
     if (perfumes.length > 1 && !selectedPerfume2) setSelectedPerfume2(perfumes[1].id);
-  }, [perfumes]);
+  }, [perfumes, selectedPerfume1, selectedPerfume2]);
 
   const perfume1 = perfumes.find((p) => p.id === selectedPerfume1);
   const perfume2 = perfumes.find((p) => p.id === selectedPerfume2);
@@ -84,10 +89,8 @@ export default function Tienda() {
 
   return (
     <div className="bg-black text-white">
-      {/* Hero */}
       <TiendaHero />
 
-      {/* Products Grid */}
       <section className="py-20 px-4">
         <div className="mx-auto max-w-7xl">
           <div className="space-y-48">
@@ -102,13 +105,9 @@ export default function Tienda() {
         </div>
       </section>
 
-      {/* Info Section */}
       <TiendaInfoSection />
-
-      {/* Final Testimonial */}
       <TiendaFinalTestimonial testimonials={testimonials} />
 
-      {/* Combo Section */}
       {perfumes.length >= 2 && (
         <TiendaComboSection
           perfumes={perfumes}
@@ -127,6 +126,7 @@ export default function Tienda() {
 
 function TiendaHero() {
   const { ref, motionProps } = useScrollMotion();
+
   return (
     <motion.section
       ref={ref}
@@ -140,6 +140,7 @@ function TiendaHero() {
             Cinco fragancias diseñadas para diferentes momentos, estilos y personalidades. Todas con la misma calidad premium que nos define.
           </p>
         </div>
+
         <div className="space-y-8 pt-8">
           <div className="space-y-2">
             <p className="text-xs tracking-[0.4em] opacity-40 uppercase">Colección</p>
@@ -162,13 +163,10 @@ function ProductBlock({ perfume, index, testimonials }) {
     <motion.div ref={ref} {...motionProps} className="relative">
       <div className="text-center mb-12">
         <h2 className="font-heading text-5xl sm:text-6xl lg:text-7xl tracking-wider mb-4">{perfume.name}</h2>
-        {perfume.tagline ? (
-          <p className="text-xl sm:text-2xl opacity-70">{perfume.tagline}</p>
-        ) : null}
+        {perfume.tagline ? <p className="text-xl sm:text-2xl opacity-70">{perfume.tagline}</p> : null}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start max-w-7xl mx-auto">
-        {/* Left */}
         <div className="lg:col-span-3 space-y-8 order-2 lg:order-1 text-center">
           <div>
             <div className="text-xs tracking-[0.2em] mb-3 uppercase" style={{ color: accentColor }}>Momento ideal</div>
@@ -184,24 +182,9 @@ function ProductBlock({ perfume, index, testimonials }) {
           </div>
         </div>
 
-        {/* Center */}
         <div className="lg:col-span-6 order-1 lg:order-2">
-          <Link to={`/producto/${perfume.id}`} className="group block">
-            <div className="relative max-w-md mx-auto">
-              <div className="absolute inset-0 blur-3xl opacity-20 rounded-full" style={{ backgroundColor: accentColor }} />
-              <div className="relative z-10 aspect-[3/4] overflow-hidden">
-                <img
-                  src={perfume.image}
-                  alt={perfume.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                  style={{
-                    maskImage: 'radial-gradient(ellipse at center, black 50%, transparent 100%)',
-                    WebkitMaskImage: 'radial-gradient(ellipse at center, black 50%, transparent 100%)',
-                  }}
-                />
-              </div>
-            </div>
-          </Link>
+          <PerfumeStoreImage perfume={perfume} accentColor={accentColor} />
+
           <div className="text-center mt-10 space-y-5">
             <div>
               <div className="flex items-baseline justify-center gap-3 mb-2">
@@ -221,7 +204,6 @@ function ProductBlock({ perfume, index, testimonials }) {
           </div>
         </div>
 
-        {/* Right */}
         <div className="lg:col-span-3 space-y-8 order-3 text-center">
           <div>
             <div className="text-xs tracking-[0.2em] mb-3 uppercase" style={{ color: accentColor }}>Familia olfativa</div>
@@ -251,6 +233,7 @@ function ProductBlock({ perfume, index, testimonials }) {
           </div>
         </div>
       )}
+
       {index === 3 && (
         <div className="mt-24 max-w-xl mx-auto text-center">
           <div className="border-t border-white/10 pt-12">
@@ -268,11 +251,249 @@ function ProductBlock({ perfume, index, testimonials }) {
   );
 }
 
+function PerfumeStoreImage({ perfume, accentColor }) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [defaultError, setDefaultError] = useState(false);
+  const [hoverError, setHoverError] = useState(false);
+
+  const productImages = getStoreProductImages(perfume.slug);
+
+  const defaultSrc = productImages?.default ? mediaUrl(productImages.default) : null;
+  const hoverSrc = productImages?.hover ? mediaUrl(productImages.hover) : null;
+
+  if (!defaultSrc) {
+    return (
+      <div className="relative mx-auto w-full max-w-[420px] aspect-[4/5] rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#111_0%,#050505_100%)] flex items-center justify-center">
+        <p className="text-white/40 text-sm tracking-wider">Imagen no configurada</p>
+      </div>
+    );
+  }
+
+  return (
+    <Link to={`/producto/${perfume.id}`} className="group block">
+      <motion.div
+        className="relative mx-auto w-full max-w-[420px]"
+        onHoverStart={() => setIsHovered(true)}
+        onHoverEnd={() => setIsHovered(false)}
+        initial={false}
+        whileHover={{ y: -4 }}
+        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+      >
+        {/* Glow exterior */}
+        <motion.div
+          className="absolute inset-0 rounded-[28px] blur-[58px]"
+          style={{ backgroundColor: accentColor }}
+          animate={{
+            opacity: isHovered ? 0.28 : 0.16,
+            scale: isHovered ? 1.04 : 0.94,
+          }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        />
+
+        {/* Card */}
+        <motion.div
+          className="relative z-10 aspect-[4/5] overflow-hidden rounded-[28px] border border-white/10 bg-[#080808]"
+          animate={{
+            borderColor: isHovered ? `${accentColor}55` : 'rgba(255,255,255,0.10)',
+            boxShadow: isHovered
+              ? `0 22px 70px rgba(0,0,0,0.52), 0 0 24px ${accentColor}18`
+              : '0 16px 48px rgba(0,0,0,0.38)',
+            scale: isHovered ? 1.008 : 1,
+          }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {/* Glow interno */}
+          <motion.div
+            className="pointer-events-none absolute inset-x-[18%] bottom-[6%] h-[24%] rounded-full blur-[56px]"
+            style={{ backgroundColor: accentColor }}
+            animate={{
+              opacity: isHovered ? 0.26 : 0.14,
+              scale: isHovered ? 1.08 : 1,
+            }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          />
+
+          {/* Imagen base */}
+          {!defaultError && (
+            <motion.img
+              src={defaultSrc}
+              alt={perfume.name}
+              className="absolute inset-0 h-full w-full object-cover object-center"
+              loading="lazy"
+              animate={{
+                opacity: isHovered && hoverSrc && !hoverError ? 0 : 1,
+                scale: isHovered ? 1.02 : 1,
+                filter: isHovered ? 'blur(2px)' : 'blur(0px)',
+              }}
+              transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+              onError={() => setDefaultError(true)}
+            />
+          )}
+
+          {/* Imagen hover */}
+          {hoverSrc && !hoverError && (
+            <motion.img
+              src={hoverSrc}
+              alt={`${perfume.name} combo`}
+              className="absolute inset-0 h-full w-full object-cover object-center"
+              loading="lazy"
+              initial={false}
+              animate={{
+                opacity: isHovered ? 1 : 0,
+                scale: isHovered ? 1.015 : 1.04,
+                filter: isHovered ? 'blur(0px)' : 'blur(2px)',
+              }}
+              transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+              onError={() => setHoverError(true)}
+            />
+          )}
+
+          {/* Overlay premium */}
+          <motion.div
+            className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.10)_0%,rgba(0,0,0,0.03)_38%,rgba(0,0,0,0.18)_100%)]"
+            animate={{ opacity: isHovered ? 0.82 : 1 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          />
+
+          {/* Shine */}
+          <motion.div
+            className="pointer-events-none absolute inset-y-0 left-[-24%] w-[18%] rotate-12 bg-white/10 blur-xl"
+            animate={{
+              x: isHovered ? '420%' : '-10%',
+              opacity: isHovered ? 0.16 : 0,
+            }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          />
+        </motion.div>
+      </motion.div>
+    </Link>
+  );
+}
+
+
+function ComboCollectionShowcase() {
+  const mainImage = mediaUrl('all-products/thumb/perfumes.webp');
+  const packagingImage = mediaUrl('all-products/medium/packagin-all.webp');
+
+  return (
+    <div className="relative mx-auto w-full max-w-[540px]">
+      {/* glow exterior */}
+      <motion.div
+        className="absolute inset-0 rounded-[30px] blur-[70px]"
+        animate={{
+          opacity: [0.12, 0.18, 0.12],
+          scale: [0.985, 1.02, 0.985],
+        }}
+        transition={{
+          duration: 4.8,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+        style={{
+          background:
+            'radial-gradient(circle at center, rgba(0,255,255,0.12) 0%, rgba(255,0,255,0.08) 46%, rgba(0,0,0,0) 78%)',
+        }}
+      />
+
+      <div className="relative z-10 overflow-hidden rounded-[30px] border border-white/10 bg-[#050505] shadow-[0_24px_70px_rgba(0,0,0,0.44)]">
+        <div className="relative aspect-[4/5] sm:aspect-[5/6] overflow-hidden">
+          {/* fondo blur */}
+          <motion.img
+            src={mainImage}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover scale-[1.12] blur-[22px] opacity-28"
+            animate={{
+              scale: [1.12, 1.14, 1.12],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            draggable={false}
+          />
+
+          <div className="absolute inset-0 bg-black/28" />
+
+          {/* imagen principal completa */}
+          <div className="absolute inset-0 p-3 sm:p-4">
+            <motion.img
+              src={mainImage}
+              alt="Colección completa Solution"
+              className="h-full w-full object-contain object-center"
+              animate={{
+                scale: [1, 1.01, 1],
+              }}
+              transition={{
+                duration: 8,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+              draggable={false}
+            />
+          </div>
+
+          {/* overlays premium */}
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_54%,rgba(0,0,0,0.18)_100%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.10)_0%,rgba(0,0,0,0.04)_38%,rgba(0,0,0,0.22)_100%)]" />
+
+          {/* label */}
+          <div className="absolute left-4 top-4 rounded-full border border-white/10 bg-black/35 px-4 py-2 backdrop-blur-md">
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.26em] text-white/80">
+              Colección completa
+            </p>
+          </div>
+
+          {/* packaging flotante */}
+          <motion.div
+            className="absolute bottom-4 right-4 w-[38%] overflow-hidden rounded-[20px] border border-white/10 bg-black/55 shadow-[0_18px_40px_rgba(0,0,0,0.38)] backdrop-blur-md"
+            animate={{ y: [0, -5, 0] }}
+            transition={{
+              duration: 4.2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          >
+            <div className="relative aspect-[4/5] overflow-hidden">
+              <img
+                src={packagingImage}
+                alt="Packaging Solution"
+                className="h-full w-full object-cover object-center"
+                draggable={false}
+              />
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.06)_0%,rgba(0,0,0,0.18)_100%)]" />
+            </div>
+
+            <div className="border-t border-white/10 px-3 py-2">
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.22em] text-white/70">
+                Packaging
+              </p>
+            </div>
+          </motion.div>
+
+          {/* shine */}
+          <motion.div
+            className="pointer-events-none absolute inset-y-0 left-[-22%] w-[18%] rotate-12 bg-white/10 blur-xl"
+            animate={{ x: ['0%', '620%'] }}
+            transition={{
+              duration: 4.2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+              repeatDelay: 1.2,
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 function TiendaInfoSection() {
   const { ref, motionProps } = useScrollMotion();
+
   return (
     <motion.section ref={ref} {...motionProps} className="py-20 px-4 border-t border-white/10">
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-[1380px]">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           <div className="text-center">
             <h3 className="font-heading text-xl tracking-widest mb-4">ENVÍOS A TODO EL PAÍS</h3>
@@ -295,6 +516,7 @@ function TiendaInfoSection() {
 function TiendaFinalTestimonial({ testimonials }) {
   const { ref, motionProps } = useScrollMotion();
   const t = testimonials[2];
+
   return (
     <motion.section ref={ref} {...motionProps} className="py-20 px-4">
       <div className="mx-auto max-w-3xl text-center">
@@ -310,7 +532,16 @@ function TiendaFinalTestimonial({ testimonials }) {
   );
 }
 
-function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, selectedPerfume2, setSelectedPerfume2, perfume1, perfume2, comboPrice }) {
+function TiendaComboSection({
+  perfumes,
+  selectedPerfume1,
+  setSelectedPerfume1,
+  selectedPerfume2,
+  setSelectedPerfume2,
+  perfume1,
+  perfume2,
+  comboPrice,
+}) {
   const { ref, motionProps } = useScrollMotion();
   const comboProfile = getComboProfile(selectedPerfume1, selectedPerfume2);
   const comboProfileKey = comboProfile
@@ -319,8 +550,8 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
 
   return (
     <motion.section ref={ref} {...motionProps} className="py-32 px-4 border-t border-white/10">
-      <div className="mx-auto max-w-7xl">
-        <div className="text-center mb-16 space-y-4">
+      <div className="mx-auto max-w-[1380px]">
+        <div className="text-center mb-20 space-y-4">
           <div className="text-sm tracking-[0.3em] uppercase" style={{ color: 'rgb(255, 0, 255)' }}>Oferta especial</div>
           <h2 className="font-heading text-4xl sm:text-5xl tracking-[0.16em]">COMBO SOLUTION</h2>
           <p className="text-base sm:text-lg opacity-72">2 perfumes de la colección a elección</p>
@@ -331,27 +562,20 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-          <div className="lg:col-span-6 space-y-8">
-            <div className="max-w-md mx-auto">
-              <div className="aspect-square overflow-hidden relative">
-                <img
-                  src="https://images.unsplash.com/photo-1615634260167-c8cdede054de?w=800&q=80"
-                  alt="Combo de perfumes"
-                  className="w-full h-full object-cover"
-                  style={{
-                    maskImage: 'radial-gradient(circle at center, black 50%, transparent 100%)',
-                    WebkitMaskImage: 'radial-gradient(circle at center, black 50%, transparent 100%)',
-                  }}
-                />
-              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-14 xl:gap-20 items-center">
+          {/* Columna izquierda: imagen + selectores */}
+          <div className="lg:col-span-5 space-y-10">
+            <div className="max-w-[520px] mx-auto w-full">
+              <ComboCollectionShowcase />
             </div>
-            <div className="space-y-6 max-w-md mx-auto">
+
+            <div className="space-y-7 max-w-[620px] mx-auto">
               <div>
                 <p className="text-xs tracking-[0.2em] mb-3 opacity-60 uppercase">Selecciona y combina tus dos fragancias</p>
                 <p className="text-sm opacity-60 leading-relaxed mb-5">
                   a medida que vayas seleccionando te vamos a mostrar el perfil de la combinación que estás creando
                 </p>
+
                 <div className="mb-4">
                   <label className="text-xs tracking-wider opacity-40 mb-2 block">FRAGANCIA 1</label>
                   <div className="grid grid-cols-5 gap-2">
@@ -362,9 +586,8 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                           key={p.id}
                           type="button"
                           onClick={() => setSelectedPerfume1(p.id)}
-                          className={`border py-3 px-2 text-xs tracking-widest transition-all duration-300 ${
-                            selectedPerfume1 === p.id ? 'text-black' : 'border-white/20 opacity-50 hover:opacity-100 text-white'
-                          }`}
+                          className={`border py-3 px-2 text-xs tracking-widest transition-all duration-300 ${selectedPerfume1 === p.id ? 'text-black' : 'border-white/20 opacity-50 hover:opacity-100 text-white'
+                            }`}
                           style={{
                             backgroundColor: selectedPerfume1 === p.id ? ac : 'transparent',
                             borderColor: selectedPerfume1 === p.id ? ac : undefined,
@@ -376,6 +599,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                     })}
                   </div>
                 </div>
+
                 <div>
                   <label className="text-xs tracking-wider opacity-40 mb-2 block">FRAGANCIA 2</label>
                   <div className="grid grid-cols-5 gap-2">
@@ -386,9 +610,8 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                           key={p.id}
                           type="button"
                           onClick={() => setSelectedPerfume2(p.id)}
-                          className={`border py-3 px-2 text-xs tracking-widest transition-all duration-300 ${
-                            selectedPerfume2 === p.id ? 'text-black' : 'border-white/20 opacity-50 hover:opacity-100 text-white'
-                          }`}
+                          className={`border py-3 px-2 text-xs tracking-widest transition-all duration-300 ${selectedPerfume2 === p.id ? 'text-black' : 'border-white/20 opacity-50 hover:opacity-100 text-white'
+                            }`}
                           style={{
                             backgroundColor: selectedPerfume2 === p.id ? ac : 'transparent',
                             borderColor: selectedPerfume2 === p.id ? ac : undefined,
@@ -404,9 +627,10 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
             </div>
           </div>
 
-          <div className="lg:col-span-6">
-            <div className="space-y-8 text-center">
-              <div className="space-y-6 max-w-lg mx-auto">
+          {/* Columna derecha: perfil + precio + CTA */}
+          <div className="lg:col-span-7">
+            <div className="space-y-10 text-center max-w-[640px] mx-auto">
+              <div className="space-y-6">
                 {perfume1 && (
                   <div className="border-t border-b py-6" style={{ borderColor: 'rgb(0, 255, 255)' }}>
                     <h3 className="font-heading text-2xl tracking-wider mb-2">{perfume1.name}</h3>
@@ -423,6 +647,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                     </div>
                   </div>
                 )}
+
                 {perfume2 && (
                   <div className="border-t border-b py-6" style={{ borderColor: 'rgb(255, 0, 255)' }}>
                     <h3 className="font-heading text-2xl tracking-wider mb-2">{perfume2.name}</h3>
@@ -440,7 +665,9 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                   </div>
                 )}
               </div>
+
               <div className="h-px bg-white/10" />
+
               <motion.div
                 key={comboProfileKey}
                 initial={{ opacity: 0, y: 10, filter: 'blur(6px)' }}
@@ -460,6 +687,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                         transition={{ duration: 0.4, delay: 0.05 }}
                       />
                     </div>
+
                     <div className="space-y-4">
                       <h3 className="font-heading text-3xl sm:text-4xl tracking-[0.14em] text-white">
                         {comboProfile.nickname}
@@ -468,6 +696,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                         {comboProfile.summary}
                       </p>
                     </div>
+
                     <div className="space-y-4 max-w-xl mx-auto">
                       {comboProfile.description.map((paragraph, index) => (
                         <p
@@ -491,6 +720,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                   </div>
                 )}
               </motion.div>
+
               <div className="space-y-4 max-w-lg mx-auto">
                 <ul className="space-y-2 text-sm opacity-80">
                   <li className="flex items-center justify-center gap-2">
@@ -507,6 +737,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                   </li>
                 </ul>
               </div>
+
               <div className="pt-4">
                 <div className="flex items-baseline justify-center gap-3 mb-6 flex-wrap">
                   <span className="text-5xl tracking-tight">${comboPrice.toLocaleString('es-AR')}</span>
@@ -517,6 +748,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                     </span>
                   )}
                 </div>
+
                 <button
                   type="button"
                   className="border border-[rgb(255,0,255)] text-white px-12 py-4 text-sm tracking-widest transition-all duration-300 hover:bg-[rgb(255,0,255)] hover:text-black"
