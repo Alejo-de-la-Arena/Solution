@@ -16,9 +16,11 @@ app.use(express.urlencoded({ extended: true }));
 const gestionarRouter = require('./routes/gestionar');
 const checkoutRouter = require('./routes/checkout');
 const adminRouter = require('./routes/admin');
+const naveRouter = require('./routes/nave');
 app.use('/api', gestionarRouter);
 app.use('/api/checkout', checkoutRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api', naveRouter);
 
 app.get('/', (req, res) => {
   res.send('Hello World!');
