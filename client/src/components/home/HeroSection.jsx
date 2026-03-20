@@ -279,7 +279,7 @@ export default function HeroSection() {
           </AnimatePresence>
         </div>
 
-        <div className="relative z-10 flex flex-col lg:flex-row items-stretch min-h-screen px-4 sm:px-8 lg:px-16">
+        <div className="container mx-auto relative z-10 flex flex-col lg:flex-row items-stretch min-h-screen px-4 sm:px-8 lg:px-16">
           <div className="flex-1 flex items-center py-24">
             <div className="max-w-xl lg:max-w-2xl space-y-10">
               <AnimatePresence mode="wait" initial={false}>
@@ -490,7 +490,7 @@ export default function HeroSection() {
                 index === activeIndex ? (
                   <motion.div
                     key={`${slide.id}-visual`}
-                    className="relative w-full max-w-[420px] sm:max-w-[480px] lg:max-w-[520px]"
+                    className="relative w-full max-w-[85%] "
                     initial={reducedMotion ? { opacity: 0 } : { opacity: 0, filter: 'blur(10px)' }}
                     animate={reducedMotion ? { opacity: 1 } : { opacity: 1, filter: 'blur(0px)' }}
                     exit={reducedMotion ? { opacity: 0 } : { opacity: 0, filter: 'blur(10px)' }}
@@ -542,20 +542,12 @@ export default function HeroSection() {
                         <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-4">
                           <div className="space-y-2 max-w-[70%]">
                             <p className="text-xs tracking-[0.26em] uppercase text-white/60">Fragrancia activa</p>
-                            <p className="text-lg sm:text-xl font-heading tracking-[0.18em] uppercase">
+                            <p className="text-lg sm:text-xl font-heading tracking-[0.18em] uppercase font-semibold">
                               {slide.name}
                             </p>
                           </div>
 
-                          <div className="relative w-16 h-16 rounded-2xl overflow-hidden border border-white/10 bg-black/50 backdrop-blur-md">
-                            <img
-                              src={slide.image}
-                              alt=""
-                              className="h-full w-full object-cover object-center opacity-85"
-                              loading="lazy"
-                            />
-                            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.06)_0%,rgba(0,0,0,0.6)_100%)]" />
-                          </div>
+
                         </div>
 
                         <motion.div
