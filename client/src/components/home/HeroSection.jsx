@@ -136,10 +136,83 @@ export default function HeroSection() {
     exit: {},
   };
 
+  const detailsBlock = (
+    <>
+      <motion.div
+        variants={textItemVariants}
+        transition={{ duration: 0.52, ease: EASE }}
+        className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-5 text-xs sm:text-sm text-white/65"
+      >
+        <div className="space-y-1.5">
+          <p
+            className="tracking-[0.22em] uppercase text-[0.68rem]"
+            style={{ color: `${currentSlide.accent}99` }}
+          >
+            Perfil
+          </p>
+          <p className="leading-relaxed text-white/80">{currentSlide.feeling}</p>
+        </div>
+
+        <div className="space-y-1.5">
+          <p
+            className="tracking-[0.22em] uppercase text-[0.68rem]"
+            style={{ color: `${currentSlide.accent}99` }}
+          >
+            Uso ideal
+          </p>
+          <p className="leading-relaxed text-white/80">{currentSlide.usage}</p>
+        </div>
+
+
+      </motion.div>
+
+      <motion.div
+        variants={textItemVariants}
+        transition={{ duration: 0.55, ease: EASE }}
+        className="pt-2 sm:pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4"
+      >
+        <Link
+          to={`/producto/${currentSlide.id}`}
+          className="group relative inline-flex w-full sm:w-auto items-center justify-center overflow-hidden rounded-full border px-8 py-3.5 text-xs sm:text-sm tracking-[0.26em] uppercase transition-all duration-300 will-change-transform"
+          style={{
+            borderColor: currentSlide.accent,
+            boxShadow: `0 18px 45px rgba(0,0,0,0.65), 0 0 32px ${currentSlide.accent}22`,
+          }}
+        >
+          <span
+            className="absolute inset-0 origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100"
+            style={{
+              background: `linear-gradient(90deg, ${currentSlide.accent}, ${currentSlide.accent}DD)`,
+            }}
+          />
+          <span
+            className="absolute inset-0 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-40"
+            style={{ backgroundColor: currentSlide.accent }}
+          />
+          <span className="relative z-10 inline-flex items-center gap-3 text-white transition-colors duration-300 group-hover:text-black">
+            Ver perfume
+            <span
+              className="inline-block text-lg transition-transform duration-300 group-hover:translate-x-1"
+              aria-hidden
+            >
+              →
+            </span>
+          </span>
+        </Link>
+
+        <Link
+          to="/tienda"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full border border-white/25 bg-white/[0.02] px-7 py-3 text-[0.7rem] sm:text-xs tracking-[0.26em] uppercase text-white/80 transition-all duration-300 will-change-transform hover:border-white/60 hover:bg-white/[0.06] hover:text-white"
+        >
+          Explorar colección completa
+        </Link>
+      </motion.div>
+    </>
+  );
 
   return (
     <section
-      className="relative min-h-screen flex items-stretch bg-black text-white overflow-hidden"
+      className="relative min-h-screen lg:min-h-screen flex items-stretch bg-black text-white overflow-hidden"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -158,15 +231,14 @@ export default function HeroSection() {
                 >
                   <div className="absolute inset-0 overflow-hidden">
                     <>
-                      {/* humo/glow principal */}
                       <motion.div
                         className="pointer-events-none absolute inset-[-24%] mix-blend-screen blur-[110px]"
                         style={{
                           background: `
-        radial-gradient(circle at 74% 30%, ${slide.accent}85 0%, transparent 20%),
-        radial-gradient(circle at 82% 42%, ${slide.accent}55 0%, transparent 30%),
-        radial-gradient(circle at 70% 58%, ${slide.accent}40 0%, transparent 40%)
-      `,
+                            radial-gradient(circle at 74% 30%, ${slide.accent}85 0%, transparent 20%),
+                            radial-gradient(circle at 82% 42%, ${slide.accent}55 0%, transparent 30%),
+                            radial-gradient(circle at 70% 58%, ${slide.accent}40 0%, transparent 40%)
+                          `,
                         }}
                         animate={
                           reducedMotion
@@ -189,14 +261,13 @@ export default function HeroSection() {
                         }
                       />
 
-                      {/* nube secundaria más amplia */}
                       <motion.div
                         className="pointer-events-none absolute inset-[-30%] mix-blend-screen blur-[150px]"
                         style={{
                           background: `
-        radial-gradient(circle at 80% 50%, ${slide.accent}45 0%, transparent 26%),
-        radial-gradient(circle at 62% 52%, ${slide.accent}24 0%, transparent 42%)
-      `,
+                            radial-gradient(circle at 80% 50%, ${slide.accent}45 0%, transparent 26%),
+                            radial-gradient(circle at 62% 52%, ${slide.accent}24 0%, transparent 42%)
+                          `,
                         }}
                         animate={
                           reducedMotion
@@ -219,14 +290,13 @@ export default function HeroSection() {
                         }
                       />
 
-                      {/* foco detrás de la card */}
                       <motion.div
                         className="pointer-events-none absolute inset-0 mix-blend-screen blur-[80px]"
                         style={{
                           background: `
-        radial-gradient(circle at 80% 46%, ${slide.accent}60 0%, transparent 24%),
-        radial-gradient(circle at 76% 52%, ${slide.accent}35 0%, transparent 34%)
-      `,
+                            radial-gradient(circle at 80% 46%, ${slide.accent}60 0%, transparent 24%),
+                            radial-gradient(circle at 76% 52%, ${slide.accent}35 0%, transparent 34%)
+                          `,
                         }}
                         animate={
                           reducedMotion
@@ -279,9 +349,9 @@ export default function HeroSection() {
           </AnimatePresence>
         </div>
 
-        <div className="container mx-auto relative z-10 flex flex-col lg:flex-row items-stretch min-h-screen px-4 sm:px-8 lg:px-16">
-          <div className="flex-1 flex items-center py-24">
-            <div className="max-w-xl lg:max-w-2xl space-y-10">
+        <div className="container mx-auto relative z-10 flex flex-col lg:flex-row items-stretch min-h-screen px-4 sm:px-8 lg:px-16 pt-24 pb-12 lg:py-0">
+          <div className="flex-1 flex items-start lg:items-center py-0 lg:py-24 order-1">
+            <div className="max-w-xl lg:max-w-2xl w-full">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={currentSlide.id}
@@ -290,7 +360,7 @@ export default function HeroSection() {
                   animate="animate"
                   exit="exit"
                   transition={{ duration: 0.55, ease: EASE }}
-                  className="space-y-7"
+                  className="space-y-6 sm:space-y-7"
                 >
                   <motion.div
                     variants={textItemVariants}
@@ -301,13 +371,18 @@ export default function HeroSection() {
                     <span>Colección New Era</span>
                   </motion.div>
 
-                  <motion.div variants={textItemVariants} transition={{ duration: 0.5, ease: EASE }} className="space-y-4">
-                    <div className="flex items-baseline gap-4 flex-wrap">
+                  <motion.div
+                    variants={textItemVariants}
+                    transition={{ duration: 0.5, ease: EASE }}
+                    className="space-y-4"
+                  >
+                    <div className="space-y-4">
                       <h1 className="font-heading text-4xl sm:text-6xl lg:text-7xl tracking-[0.24em] uppercase">
                         Solution
                       </h1>
+
                       <div
-                        className="rounded-full border px-4 py-1.5 text-[0.7rem] tracking-[0.22em] uppercase text-white/80 backdrop-blur-md"
+                        className="inline-flex w-fit rounded-full border px-4 py-1.5 text-[0.7rem] tracking-[0.22em] uppercase text-white/80 backdrop-blur-md"
                         style={{
                           borderColor: `${currentSlide.accent}66`,
                           background:
@@ -318,93 +393,20 @@ export default function HeroSection() {
                       </div>
                     </div>
 
-                    <p className="text-base sm:text-lg text-white/80 leading-relaxed">
+                    <p className="max-w-[34rem] text-base sm:text-lg text-white/80 leading-relaxed">
                       {currentSlide.tagline}
                     </p>
                   </motion.div>
 
-                  <motion.div
-                    variants={textItemVariants}
-                    transition={{ duration: 0.52, ease: EASE }}
-                    className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs sm:text-sm text-white/65"
-                  >
-                    <div className="space-y-1">
-                      <p
-                        className="tracking-[0.22em] uppercase text-[0.68rem]"
-                        style={{ color: `${currentSlide.accent}99` }}
-                      >
-                        Perfil
-                      </p>
-                      <p className="leading-relaxed text-white/80">{currentSlide.feeling}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p
-                        className="tracking-[0.22em] uppercase text-[0.68rem]"
-                        style={{ color: `${currentSlide.accent}99` }}
-                      >
-                        Uso ideal
-                      </p>
-                      <p className="leading-relaxed text-white/80">{currentSlide.usage}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p
-                        className="tracking-[0.22em] uppercase text-[0.68rem]"
-                        style={{ color: `${currentSlide.accent}99` }}
-                      >
-                        Colección
-                      </p>
-                      <p className="leading-relaxed text-white/80">Cinco fragancias, cinco personalidades.</p>
-                    </div>
-                  </motion.div>
-
-                  <motion.div
-                    variants={textItemVariants}
-                    transition={{ duration: 0.55, ease: EASE }}
-                    className="pt-4 flex flex-col sm:flex-row items-center gap-4"
-                  >
-                    <Link
-                      to={`/producto/${currentSlide.id}`}
-                      className="group relative inline-flex items-center justify-center overflow-hidden rounded-full border px-8 py-3.5 text-xs sm:text-sm tracking-[0.26em] uppercase transition-all duration-300 will-change-transform"
-                      style={{
-                        borderColor: currentSlide.accent,
-                        boxShadow: `0 18px 45px rgba(0,0,0,0.65), 0 0 32px ${currentSlide.accent}22`,
-                      }}
-                    >
-                      <span
-                        className="absolute inset-0 origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100"
-                        style={{
-                          background: `linear-gradient(90deg, ${currentSlide.accent}, ${currentSlide.accent}DD)`,
-                        }}
-                      />
-                      <span
-                        className="absolute inset-0 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-40"
-                        style={{ backgroundColor: currentSlide.accent }}
-                      />
-                      <span className="relative z-10 inline-flex items-center gap-3 text-white transition-colors duration-300 group-hover:text-black">
-                        Ver perfume
-                        <span
-                          className="inline-block text-lg transition-transform duration-300 group-hover:translate-x-1"
-                          aria-hidden
-                        >
-                          →
-                        </span>
-                      </span>
-                    </Link>
-
-                    <Link
-                      to="/tienda"
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-white/25 bg-white/[0.02] px-7 py-3 text-[0.7rem] sm:text-xs tracking-[0.26em] uppercase text-white/80 transition-all duration-300 will-change-transform hover:border-white/60 hover:bg-white/[0.06] hover:text-white"
-                    >
-                      Explorar colección completa
-                    </Link>
-                  </motion.div>
+                  <div className="hidden lg:block space-y-7">
+                    {detailsBlock}
+                  </div>
                 </motion.div>
               </AnimatePresence>
             </div>
           </div>
 
-          <div className="relative mt-10 lg:mt-0 lg:w-[44%] flex items-center justify-center">
-            {/* capa de atmósfera / humo premium que ocupa gran parte del lado derecho */}
+          <div className="relative order-2 mt-8 lg:mt-0 lg:w-[44%] flex items-center justify-center">
             <div className="pointer-events-none absolute inset-0">
               <motion.div
                 className="absolute inset-y-[-18%] right-[-12%] w-[100vw] lg:w-[60vw] h-[130%] blur-[90px] lg:blur-[140px]"
@@ -490,14 +492,14 @@ export default function HeroSection() {
                 index === activeIndex ? (
                   <motion.div
                     key={`${slide.id}-visual`}
-                    className="relative w-full max-w-[85%] "
+                    className="relative w-full"
                     initial={reducedMotion ? { opacity: 0 } : { opacity: 0, filter: 'blur(10px)' }}
                     animate={reducedMotion ? { opacity: 1 } : { opacity: 1, filter: 'blur(0px)' }}
                     exit={reducedMotion ? { opacity: 0 } : { opacity: 0, filter: 'blur(10px)' }}
                     transition={{ duration: reducedMotion ? 0.4 : 0.62, ease: EASE }}
                   >
                     <motion.div
-                      className="absolute inset-0 rounded-[44px] blur-[58px]"
+                      className="absolute inset-0 rounded-[38px] lg:rounded-[44px] blur-[58px]"
                       style={{ backgroundColor: slide.accent }}
                       animate={
                         reducedMotion
@@ -518,9 +520,8 @@ export default function HeroSection() {
                       }
                     />
 
-                    {/* marco negro para darle más aire */}
-                    <div className="relative z-10 rounded-[44px] bg-black p-[7px] shadow-[0_36px_100px_rgba(0,0,0,0.85)]">
-                      <div className="relative aspect-[4/5] rounded-[36px] bg-[#050505] overflow-hidden">
+                    <div className="relative z-10 rounded-[38px] lg:rounded-[44px] bg-black p-[6px] lg:p-[7px] shadow-[0_36px_100px_rgba(0,0,0,0.85)]">
+                      <div className="relative aspect-[4/5] rounded-[30px] lg:rounded-[36px] bg-[#050505] overflow-hidden">
                         <div className="absolute inset-0">
                           <img
                             src={slide.image}
@@ -541,13 +542,39 @@ export default function HeroSection() {
 
                         <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-4">
                           <div className="space-y-2 max-w-[70%]">
-                            <p className="text-xs tracking-[0.26em] uppercase text-white/60">Fragrancia activa</p>
+                            <p className="text-xs tracking-[0.26em] uppercase text-white/60">
+                              Fragrancia activa
+                            </p>
                             <p className="text-lg sm:text-xl font-heading tracking-[0.18em] uppercase font-semibold">
                               {slide.name}
                             </p>
                           </div>
 
+                          <div className="flex items-center gap-2 lg:hidden">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePrev();
+                              }}
+                              className="w-10 h-10 flex items-center justify-center rounded-full border border-white/25 bg-black/40 text-xs text-white/70 transition-all duration-200 hover:bg-white/10 hover:border-white/60 hover:text-white"
+                              aria-label="Slide anterior"
+                            >
+                              ←
+                            </button>
 
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleNext();
+                              }}
+                              className="w-10 h-10 flex items-center justify-center rounded-full border border-white/25 bg-black/40 text-xs text-white/70 transition-all duration-200 hover:bg-white/10 hover:border-white/60 hover:text-white"
+                              aria-label="Slide siguiente"
+                            >
+                              →
+                            </button>
+                          </div>
                         </div>
 
                         <motion.div
@@ -573,43 +600,73 @@ export default function HeroSection() {
                         />
                       </div>
                     </div>
+
+                    <div className="mt-4 lg:hidden space-y-3">
+                      <div className="flex items-center justify-center gap-2">
+                        {slides.map((dotSlide, dotIndex) => (
+                          <button
+                            key={dotSlide.id}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              goToIndex(dotIndex);
+                            }}
+                            className="relative h-[12px] w-[12px] rounded-full border border-white/20 bg-black/50 backdrop-blur-md overflow-hidden transition-transform duration-200"
+                            aria-label={`Ir al perfume ${dotIndex + 1}`}
+                          >
+                            <motion.span
+                              className="absolute inset-[2px] rounded-full"
+                              style={{ backgroundColor: slides[dotIndex].accent }}
+                              animate={{
+                                opacity: activeIndex === dotIndex ? 1 : 0,
+                                scale: activeIndex === dotIndex ? 1 : 0.4,
+                              }}
+                              transition={{ duration: 0.35, ease: EASE }}
+                            />
+                          </button>
+                        ))}
+                      </div>
+
+                      {!reducedMotion && (
+                        <div className="w-full h-[2px] bg-white/10 overflow-hidden rounded-full">
+                          <motion.div
+                            key={cycleId}
+                            className="h-full"
+                            style={{
+                              background: `linear-gradient(90deg, ${currentSlide.accent}, rgba(255,255,255,0.8))`,
+                            }}
+                            initial={{ width: '0%' }}
+                            animate={{ width: '100%' }}
+                            transition={{ duration: AUTOPLAY_MS / 1000, ease: 'linear' }}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </motion.div>
                 ) : null
               )}
             </AnimatePresence>
           </div>
+
+          <div className="order-3 lg:hidden mt-8">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={`${currentSlide.id}-mobile-details`}
+                variants={textContainerVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ duration: 0.45, ease: EASE }}
+                className="space-y-7"
+              >
+                {detailsBlock}
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
 
-        <div className="absolute inset-x-0 bottom-5 z-20 flex flex-col items-center gap-4 px-6">
-          <div className="flex items-center justify-between w-full max-w-4xl">
-            <div className="flex items-center gap-3">
-              <span className="text-[0.7rem] tracking-[0.32em] uppercase text-white/45">Colección Solution</span>
-
-              <div className="hidden sm:flex gap-2">
-                {slides.map((slide, index) => (
-                  <button
-                    key={slide.id}
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      goToIndex(index);
-                    }}
-                    className="relative h-[14px] w-[14px] rounded-full border border-white/20 bg-black/50 backdrop-blur-md overflow-hidden transition-transform duration-200 hover:scale-110"
-                  >
-                    <motion.span
-                      className="absolute inset-[3px] rounded-full"
-                      style={{ backgroundColor: slides[index].accent }}
-                      animate={{
-                        opacity: activeIndex === index ? 1 : 0,
-                        scale: activeIndex === index ? 1 : 0.4,
-                      }}
-                      transition={{ duration: 0.35, ease: EASE }}
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-
+        <div className="absolute inset-x-0 bottom-5 z-20 hidden lg:flex flex-col items-center gap-4 px-6">
+          <div className="flex items-center justify-end w-full max-w-4xl">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -637,12 +694,40 @@ export default function HeroSection() {
             </div>
           </div>
 
+          <div className="flex justify-center w-full max-w-4xl">
+            <div className="hidden sm:flex gap-2">
+              {slides.map((slide, index) => (
+                <button
+                  key={slide.id}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goToIndex(index);
+                  }}
+                  className="relative h-[14px] w-[14px] rounded-full border border-white/20 bg-black/50 backdrop-blur-md overflow-hidden transition-transform duration-200 hover:scale-110"
+                >
+                  <motion.span
+                    className="absolute inset-[3px] rounded-full"
+                    style={{ backgroundColor: slides[index].accent }}
+                    animate={{
+                      opacity: activeIndex === index ? 1 : 0,
+                      scale: activeIndex === index ? 1 : 0.4,
+                    }}
+                    transition={{ duration: 0.35, ease: EASE }}
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+
           {!reducedMotion && (
             <div className="w-full max-w-4xl h-[2px] bg-white/10 overflow-hidden rounded-full">
               <motion.div
                 key={cycleId}
                 className="h-full"
-                style={{ background: `linear-gradient(90deg, ${currentSlide.accent}, rgba(255,255,255,0.8))` }}
+                style={{
+                  background: `linear-gradient(90deg, ${currentSlide.accent}, rgba(255,255,255,0.8))`,
+                }}
                 initial={{ width: '0%' }}
                 animate={{ width: '100%' }}
                 transition={{ duration: AUTOPLAY_MS / 1000, ease: 'linear' }}

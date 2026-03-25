@@ -38,7 +38,7 @@ export default function ElResultadoSection() {
               transition={{ ...motionProps.transition, delay: 0 }}
             />
             <h3 className="text-3xl sm:text-5xl lg:text-6xl tracking-wider leading-tight font-heading">
-              El resultado
+              El resultado:
             </h3>
             <p
               className="text-3xl sm:text-4xl lg:text-5xl font-heading tracking-[0.22em] leading-tight"
@@ -64,7 +64,7 @@ export default function ElResultadoSection() {
                 className="rounded-3xl border border-white/10 bg-white/[0.02] px-4 py-4 sm:px-5 sm:py-5 backdrop-blur-md"
               >
                 <p
-                  className="text-lg sm:text-xl tracking-[0.12em] font-heading leading-snug"
+                  className="text-sm sm:text-xl tracking-[0.12em] font-heading leading-snug"
                   style={{ color: item.color }}
                 >
                   {item.text}

@@ -173,7 +173,7 @@ export default function CirculoCincoSection() {
               </div>
 
               {/* derecha */}
-              <div className="absolute top-1/2 right-[2%] sm:right-[4%] lg:right-[5%] -translate-y-1/2 text-center">
+              <div className="absolute top-1/2 right-[2%] sm:right-[4%] lg:right-[8%] -translate-y-1/2 text-center">
                 <p className="text-[0.78rem] sm:text-[0.95rem] lg:text-[1.05rem] leading-[1.45] tracking-[0.18em] sm:tracking-[0.22em] opacity-72 whitespace-nowrap text-white">
                   CINCO
                   <br />
@@ -182,14 +182,14 @@ export default function CirculoCincoSection() {
               </div>
 
               {/* abajo */}
-              <div className="absolute bottom-[2%] sm:bottom-[1%] left-1/2 -translate-x-1/2 text-center">
+              <div className="absolute bottom-[2%] sm:bottom-[8%] left-1/2 -translate-x-1/2 text-center">
                 <p className="text-[0.82rem] sm:text-[0.98rem] lg:text-[1.08rem] tracking-[0.18em] sm:tracking-[0.22em] opacity-72 whitespace-nowrap text-white">
                   CINCO AROMAS
                 </p>
               </div>
 
               {/* izquierda */}
-              <div className="absolute top-1/2 left-[2%] sm:left-[4%] lg:left-[5%] -translate-y-1/2 text-center">
+              <div className="absolute top-1/2 left-[2%] sm:left-[4%] lg:left-[8%] -translate-y-1/2 text-center">
                 <p className="text-[0.78rem] sm:text-[0.95rem] lg:text-[1.05rem] leading-[1.45] tracking-[0.18em] sm:tracking-[0.22em] opacity-72 whitespace-nowrap text-white">
                   CINCO
                   <br />

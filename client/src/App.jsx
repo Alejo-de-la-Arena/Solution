@@ -5,6 +5,7 @@ import { RoleRoute } from './guards/RoleRoute';
 import { WholesaleRoute } from './guards/WholesaleRoute';
 
 import Navbar from './components/layout/Navbar';
+import Footer from './components/layout/Footer';
 import Home from './pages/Home';
 import Acceso from './pages/Acceso';
 
@@ -55,6 +56,7 @@ function AppRoutes() {
         <Route path="/set-password" element={<SetPassword />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <Footer />
     </>
   );
 }
