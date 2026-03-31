@@ -84,8 +84,8 @@ export default function WholesaleAccess() {
       className="relative bg-black text-white py-12 md:py-16 px-4 border-t border-white/10 overflow-hidden"
     >
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[55vw] h-[35vh] rounded-full blur-[90px] bg-[rgb(0,255,255)] opacity-10" />
-        <div className="absolute -bottom-28 left-[-10%] w-[60vw] h-[35vh] rounded-full blur-[120px] bg-[rgb(255,0,255)] opacity-8" />
+        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[min(42vw,28rem)] max-w-xl h-[26vh] rounded-full blur-[72px] bg-[rgb(0,255,255)] opacity-[0.05]" />
+        <div className="absolute -bottom-24 left-[-6%] w-[min(46vw,26rem)] max-w-lg h-[24vh] rounded-full blur-[88px] bg-[rgb(255,0,255)] opacity-[0.045]" />
       </div>
 
       <div className="relative z-10 max-w-xl mx-auto text-center">

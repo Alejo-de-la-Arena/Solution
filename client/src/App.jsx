@@ -6,6 +6,7 @@ import { WholesaleRoute } from './guards/WholesaleRoute';
 
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
+import ScrollToTop from './components/layout/ScrollToTop';
 import Home from './pages/Home';
 import Acceso from './pages/Acceso';
 
@@ -31,6 +32,7 @@ function AppRoutes() {
 
   return (
     <>
+      <ScrollToTop />
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
