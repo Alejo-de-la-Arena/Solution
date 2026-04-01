@@ -1,10 +1,22 @@
-require('dotenv').config();
+const path = require('path');
+// Siempre cargar .env junto a este archivo (evita 0 variables cuando el cwd no es server/)
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+const naveEnv = (process.env.NAVE_ENV || 'testing').toLowerCase();
+const naveAuthIsProd = naveEnv === 'production' || naveEnv === 'prod';
+console.log('[boot] Nave M2M:', {
+  NAVE_ENV: naveEnv,
+  auth: naveAuthIsProd ? 'production' : 'homologacion',
+  hasClientId: Boolean((process.env.NAVE_CLIENT_ID || '').trim()),
+  hasClientSecret: Boolean((process.env.NAVE_CLIENT_SECRET || '').trim()),
+  hasAudience: Boolean((process.env.NAVE_AUDIENCE || '').trim()),
+});
 
 // Middleware
 app.use(morgan('dev'));
@@ -26,7 +38,7 @@ app.use('/api', naveRouter);
 app.use('/api/correo', correoRouter);
 
 app.get('/', (req, res) => {
-  res.send('Hello World!');
+  res.send('Hello World!!');
 });
 
 // Start server

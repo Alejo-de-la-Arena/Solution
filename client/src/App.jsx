@@ -18,6 +18,7 @@ import AdminLayout from './pages/admin/AdminLayout';
 import AdminOverview from './pages/admin/AdminOverview';
 import AdminMayoristas from './pages/admin/AdminMayoristas';
 import AdminUsuarios from './pages/admin/AdminUsuarios';
+import AdminPedidos from './pages/admin/AdminPedidos';
 
 import Tienda from './pages/Tienda';
 import Producto from './pages/Producto';
@@ -52,8 +53,9 @@ function AppRoutes() {
         />
         <Route path="/admin" element={<RoleRoute><AdminLayout /></RoleRoute>}>
           <Route index element={<AdminOverview />} />
-          <Route path="usuarios" element={<AdminUsuarios />} /> 
+          <Route path="usuarios" element={<AdminUsuarios />} />
           <Route path="mayoristas" element={<AdminMayoristas />} />
+          <Route path="pedidos" element={<AdminPedidos />} />
         </Route>
         <Route path="/set-password" element={<SetPassword />} />
         <Route path="*" element={<Navigate to="/" replace />} />

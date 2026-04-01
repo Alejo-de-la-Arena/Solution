@@ -2,95 +2,74 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 
-const GESTIONAR_API_URL = 'https://api.gestionarlogistica.com';
+const GESTIONAR_API_URL = 'https://api.gestionarlogistica.com'; // Assuming this is the base URL
 const API_KEY = process.env.GESTIONAR_API_KEY;
 
-// Middleware para agregar API key
-router.use((req, res, next) => {
+// Middleware for Gestionar-only endpoints
+function requireGestionarApiKey(req, res, next) {
   if (!API_KEY) {
     return res.status(500).json({ error: 'API key not configured' });
   }
   req.headers['secret-token-key'] = API_KEY;
   next();
-});
+}
 
-// GET /api/gestionar/sales/:platform_id
-router.get('/sales/:platform_id', async (req, res) => {
+// GET /api/external-client/sales/{platform_id}
+router.get('/sales/:platform_id', requireGestionarApiKey, async (req, res) => {
   try {
     const { platform_id } = req.params;
-    const { data } = await axios.get(
-      `${GESTIONAR_API_URL}/api/external-client/sales/${platform_id}`,
-      {
-        params: req.query,
-        headers: {
-          'secret-token-key': API_KEY,
-        },
+    const { data } = await axios.get(`${GESTIONAR_API_URL}/api/external-client/sales/${platform_id}`, {
+      params: req.query,
+      headers: {
+        'secret-token-key': API_KEY,
       }
-    );
+    });
     res.json(data);
   } catch (error) {
-    res.status(error.response?.status || 500).json({
-      error: error.response?.data || error.message,
-    });
+    res.status(error.response?.status || 500).json({ error: error.message });
   }
 });
 
-// GET /api/gestionar/packages
-router.get('/packages', async (req, res) => {
+// GET /api/external-client/packages
+router.get('/packages', requireGestionarApiKey, async (req, res) => {
   try {
-    const { data } = await axios.get(
-      `${GESTIONAR_API_URL}/api/external-client/packages`,
-      {
-        params: req.query,
-        headers: {
-          'secret-token-key': API_KEY,
-        },
+    const { data } = await axios.get(`${GESTIONAR_API_URL}/api/external-client/packages`, {
+      params: req.query,
+      headers: {
+        'secret-token-key': API_KEY,
       }
-    );
+    });
     res.json(data);
   } catch (error) {
-    res.status(error.response?.status || 500).json({
-      error: error.response?.data || error.message,
-    });
+    res.status(error.response?.status || 500).json({ error: error.message });
   }
 });
 
-// GET /api/gestionar/pickup-times
-router.get('/pickup-times', async (req, res) => {
+// GET /api/external-client/pickup-times
+router.get('/pickup-times', requireGestionarApiKey, async (req, res) => {
   try {
-    const { data } = await axios.get(
-      `${GESTIONAR_API_URL}/api/external-client/pickup-times`,
-      {
-        headers: {
-          'secret-token-key': API_KEY,
-        },
+    const { data } = await axios.get(`${GESTIONAR_API_URL}/api/external-client/pickup-times`, {
+      headers: {
+        'secret-token-key': API_KEY,
       }
-    );
+    });
     res.json(data);
   } catch (error) {
-    res.status(error.response?.status || 500).json({
-      error: error.response?.data || error.message,
-    });
+    res.status(error.response?.status || 500).json({ error: error.message });
   }
 });
 
-// POST /api/gestionar/pickup
-router.post('/pickup', async (req, res) => {
+// POST /api/external-client/pickup
+router.post('/pickup', requireGestionarApiKey, async (req, res) => {
   try {
-    const { data } = await axios.post(
-      `${GESTIONAR_API_URL}/api/external-client/pickup`,
-      req.body,
-      {
-        headers: {
-          'secret-token-key': API_KEY,
-        },
+    const { data } = await axios.post(`${GESTIONAR_API_URL}/api/external-client/pickup`, req.body, {
+      headers: {
+        'secret-token-key': API_KEY,
       }
-    );
+    });
     res.json(data);
   } catch (error) {
-    res.status(error.response?.status || 500).json({
-      error: error.response?.data || error.message,
-    });
+    res.status(error.response?.status || 500).json({ error: error.message });
   }
 });
 

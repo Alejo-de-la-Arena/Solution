@@ -1,5 +1,37 @@
 import { supabase } from '../lib/supabaseClient';
 
+const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+
+/**
+ * Lista pedidos (retail/mayorista) vía backend. Requiere JWT de admin.
+ * @param {{ channel?: string, status?: string, dateFrom?: string, dateTo?: string, q?: string }} filters
+ */
+export async function getAdminOrders(filters = {}) {
+  const { data: refreshData } = await supabase.auth.refreshSession();
+  const session = refreshData?.session ?? (await supabase.auth.getSession()).data?.session;
+  if (!session?.access_token) {
+    throw new Error('No session / missing access token');
+  }
+
+  const params = new URLSearchParams();
+  if (filters.channel) params.set('channel', filters.channel);
+  if (filters.status) params.set('status', filters.status);
+  if (filters.dateFrom) params.set('date_from', filters.dateFrom);
+  if (filters.dateTo) params.set('date_to', filters.dateTo);
+  if (filters.q) params.set('q', filters.q);
+  const qs = params.toString();
+  const url = `${API_URL}/api/admin/orders${qs ? `?${qs}` : ''}`;
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${session.access_token}` },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data?.error || `Error ${res.status}`);
+  }
+  return data.orders ?? [];
+}
+
 /**
  * Lista solicitudes mayoristas con filtro opcional por status.
  * Requiere sesión de admin (RLS).
