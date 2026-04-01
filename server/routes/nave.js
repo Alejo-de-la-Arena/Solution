@@ -34,6 +34,11 @@ function getCheckoutBaseUrl() {
 let cachedToken = null;
 let tokenExpiresAt = 0;
 
+function clearNaveTokenCache() {
+  cachedToken = null;
+  tokenExpiresAt = 0;
+}
+
 async function getNaveToken() {
   if (cachedToken && Date.now() < tokenExpiresAt) return cachedToken;
 
@@ -52,8 +57,32 @@ async function getNaveToken() {
   };
   if (audience) body.audience = audience;
 
-  const { data } = await axios.post(getAuthUrl(), body, {
-    headers: { 'Content-Type': 'application/json' },
+  let data;
+  try {
+    ({ data } = await axios.post(getAuthUrl(), body, {
+      headers: { 'Content-Type': 'application/json' },
+    }));
+  } catch (err) {
+    const st = err.response?.status;
+    const authErr = err.response?.data;
+    console.error('[Nave] Error obteniendo token M2M:', {
+      status: st,
+      authUrl: getAuthUrl(),
+      naveEnv: (process.env.NAVE_ENV || 'testing').toLowerCase(),
+      hasAudience: Boolean(audience),
+      detail: authErr || err.message,
+    });
+    throw err;
+  }
+
+  // Avoid logging full credentials/tokens
+  console.log('[Nave] Auth response:', {
+    token_type: data?.token_type,
+    expires_in: data?.expires_in,
+    scope: data?.scope,
+    access_token_preview: data?.access_token
+      ? `${String(data.access_token).slice(0, 12)}...`
+      : null,
   });
 
   cachedToken = data.access_token;
@@ -68,6 +97,24 @@ async function getNaveToken() {
 
 function toDecimalString(num) {
   return Number(num).toFixed(2);
+}
+
+/**
+ * `duration_time` en el alta de la intención de pago (Nave documenta segundos).
+ * Override: NAVE_PAYMENT_DURATION_SECS=número | omit (no enviar el campo).
+ */
+function getPaymentRequestDurationPayload() {
+  const raw = (process.env.NAVE_PAYMENT_DURATION_SECS || '').trim();
+  if (raw.toLowerCase() === 'omit') {
+    return {};
+  }
+  if (raw) {
+    const n = parseInt(raw, 10);
+    if (!Number.isNaN(n) && n > 0) {
+      return { duration_time: n };
+    }
+  }
+  return { duration_time: 600 }; // 10 minutos en segundos
 }
 
 // ── Routes ────────────────────────────────────────────────────────────────
@@ -235,20 +282,33 @@ router.post('/nave/create-payment', async (req, res) => {
           ? callback_url.replace('PLACEHOLDER', order.id)
           : undefined,
       },
-      duration_time: 3000,
+      ...getPaymentRequestDurationPayload(),
     };
 
     const apiBase = getApiBaseUrl();
-    const { data: navePayment } = await axios.post(
-      `${apiBase}/api/payment_request/ecommerce`,
-      naveBody,
-      {
+    console.log('[Nave] create-payment duration_time:', naveBody.duration_time ?? '(omitido)');
+
+    const postPaymentRequest = (bearer) =>
+      axios.post(`${apiBase}/api/payment_request/ecommerce`, naveBody, {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${bearer}`,
         },
-      },
-    );
+      });
+
+    let navePayment;
+    try {
+      ({ data: navePayment } = await postPaymentRequest(token));
+    } catch (firstErr) {
+      if (firstErr.response?.status === 401) {
+        console.warn('[Nave] create-payment 401, limpiando token en caché y reintentando una vez');
+        clearNaveTokenCache();
+        const fresh = await getNaveToken();
+        ({ data: navePayment } = await postPaymentRequest(fresh));
+      } else {
+        throw firstErr;
+      }
+    }
 
     console.log('[Nave] Payment request creado:', navePayment.id);
 

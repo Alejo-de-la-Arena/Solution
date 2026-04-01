@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { Link, useSearchParams } from 'react-router-dom';
 import { createNavePayment, getPaymentStatus } from '../services/checkout';
+import NaveEmbed from '../components/checkout/NaveEmbed';
 
 const inputClass =
   'w-full bg-zinc-900 border-white/10 border rounded-sm p-3 focus:ring-1 focus:ring-[rgb(0,255,255)] focus:border-[rgb(0,255,255)] transition-colors';
@@ -16,6 +17,9 @@ export default function Checkout() {
   const [paymentResult, setPaymentResult] = useState(null);
   const [resultOrderId, setResultOrderId] = useState(null);
   const [checking, setChecking] = useState(false);
+  const [showNaveModal, setShowNaveModal] = useState(false);
+  const [paymentRequestId, setPaymentRequestId] = useState(null);
+  const [lastNaveEvent, setLastNaveEvent] = useState(null);
 
   const [form, setForm] = useState({
     email: '',
@@ -111,11 +115,11 @@ export default function Checkout() {
 
       const data = await createNavePayment(payload);
 
-      // Save order id so we can check status when user returns
       localStorage.setItem(NAVE_ORDER_KEY, data.order_id);
-
-      // Redirect to Nave checkout page
-      window.location.href = data.checkout_url;
+      setResultOrderId(data.order_id);
+      setPaymentRequestId(data.payment_request_id);
+      setShowNaveModal(true);
+      setLoading(false);
     } catch (err) {
       setError(err.message || 'Error al procesar el pago.');
       setLoading(false);
@@ -305,7 +309,7 @@ export default function Checkout() {
                 disabled={loading || cart.length === 0}
                 className="w-full bg-white text-black py-4 text-sm tracking-[0.2em] uppercase font-bold hover:bg-[rgb(0,255,255)] transition-colors duration-300 rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Redirigiendo a Nave...' : `Pagar $${totalPrice.toLocaleString('es-AR')}`}
+                {loading ? 'Abriendo Nave...' : `Pagar $${totalPrice.toLocaleString('es-AR')}`}
               </button>
             </form>
           </div>
@@ -387,6 +391,72 @@ export default function Checkout() {
 
         </div>
       </div>
+
+      {showNaveModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto bg-zinc-950 border border-white/15 rounded-lg">
+            <div className="flex items-center justify-between p-4 border-b border-white/10">
+              <h2 className="text-sm sm:text-base tracking-widest font-heading">PAGO SEGURO CON NAVE</h2>
+              <button
+                type="button"
+                onClick={() => setShowNaveModal(false)}
+                className="text-white/70 hover:text-white text-sm"
+              >
+                Cerrar
+              </button>
+            </div>
+            <div className="p-4">
+              <div className="border border-white/10 rounded-lg bg-zinc-900/30 p-4">
+                <NaveEmbed
+                  key={paymentRequestId || 'nave'}
+                  paymentRequestId={paymentRequestId}
+                  onMessage={setLastNaveEvent}
+                />
+              </div>
+
+              <div className="mt-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!resultOrderId) return;
+                    setChecking(true);
+                    getPaymentStatus(resultOrderId)
+                      .then((data) => {
+                        const status = data.order_status || '';
+                        if (status === 'paid') {
+                          setPaymentResult('success');
+                          clearCart();
+                          setShowNaveModal(false);
+                        } else if (status === 'payment_failed') {
+                          setPaymentResult('rejected');
+                          setShowNaveModal(false);
+                        } else {
+                          setPaymentResult('pending');
+                          setShowNaveModal(false);
+                        }
+                      })
+                      .catch(() => {
+                        setPaymentResult('pending');
+                        setShowNaveModal(false);
+                      })
+                      .finally(() => setChecking(false));
+                  }}
+                  className="bg-white/10 hover:bg-white/15 border border-white/10 rounded-sm px-4 py-2 text-xs tracking-widest uppercase text-white"
+                >
+                  Ya pagué (verificar)
+                </button>
+                <p className="text-xs text-white/50">
+                  Si completaste el pago, podés verificar el estado desde acá.
+                </p>
+              </div>
+
+              <pre className="mt-4 text-[11px] leading-relaxed whitespace-pre-wrap break-words text-white/40">
+                {lastNaveEvent ? JSON.stringify(lastNaveEvent, null, 2) : '-'}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

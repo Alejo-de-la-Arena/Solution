@@ -5,17 +5,17 @@ const axios = require('axios');
 const GESTIONAR_API_URL = 'https://api.gestionarlogistica.com'; // Assuming this is the base URL
 const API_KEY = process.env.GESTIONAR_API_KEY;
 
-// Middleware to add the API key to the headers
-router.use((req, res, next) => {
+// Middleware for Gestionar-only endpoints
+function requireGestionarApiKey(req, res, next) {
   if (!API_KEY) {
     return res.status(500).json({ error: 'API key not configured' });
   }
   req.headers['secret-token-key'] = API_KEY;
   next();
-});
+}
 
 // GET /api/external-client/sales/{platform_id}
-router.get('/sales/:platform_id', async (req, res) => {
+router.get('/sales/:platform_id', requireGestionarApiKey, async (req, res) => {
   try {
     const { platform_id } = req.params;
     const { data } = await axios.get(`${GESTIONAR_API_URL}/api/external-client/sales/${platform_id}`, {
@@ -31,7 +31,7 @@ router.get('/sales/:platform_id', async (req, res) => {
 });
 
 // GET /api/external-client/packages
-router.get('/packages', async (req, res) => {
+router.get('/packages', requireGestionarApiKey, async (req, res) => {
   try {
     const { data } = await axios.get(`${GESTIONAR_API_URL}/api/external-client/packages`, {
       params: req.query,
@@ -46,7 +46,7 @@ router.get('/packages', async (req, res) => {
 });
 
 // GET /api/external-client/pickup-times
-router.get('/pickup-times', async (req, res) => {
+router.get('/pickup-times', requireGestionarApiKey, async (req, res) => {
   try {
     const { data } = await axios.get(`${GESTIONAR_API_URL}/api/external-client/pickup-times`, {
       headers: {
@@ -60,7 +60,7 @@ router.get('/pickup-times', async (req, res) => {
 });
 
 // POST /api/external-client/pickup
-router.post('/pickup', async (req, res) => {
+router.post('/pickup', requireGestionarApiKey, async (req, res) => {
   try {
     const { data } = await axios.post(`${GESTIONAR_API_URL}/api/external-client/pickup`, req.body, {
       headers: {
