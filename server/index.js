@@ -6,7 +6,8 @@ const morgan = require('morgan');
 const cors = require('cors');
 
 const app = express();
-const port = process.env.PORT || 3000;
+// Railway (y Docker) enrutan al contenedor por PORT; hay que escuchar en todas las interfaces.
+const port = Number(process.env.PORT) || 3000;
 
 const naveEnv = (process.env.NAVE_ENV || 'testing').toLowerCase();
 const naveAuthIsProd = naveEnv === 'production' || naveEnv === 'prod';
@@ -41,7 +42,7 @@ app.get('/', (req, res) => {
   res.send('Hello World!!');
 });
 
-// Start server
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
+// Start server (0.0.0.0: evita "connection refused" detrás del proxy de Railway)
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server listening on 0.0.0.0:${port}`);
 });
