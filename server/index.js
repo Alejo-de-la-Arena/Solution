@@ -35,7 +35,7 @@ app.use('/api/admin', adminRouter);
 app.use('/api', naveRouter);
 
 app.get('/', (req, res) => {
-  res.send('Hello World!');
+  res.send('Hello World!!');
 });
 
 // Start server
