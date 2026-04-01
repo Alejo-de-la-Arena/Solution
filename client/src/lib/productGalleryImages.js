@@ -2,35 +2,35 @@ const BASE_FOLDER = 'medium';
 
 const GALLERY_MAP = {
   'black-code': [
-    { path: 'black-code/medium/black-code.webp', type: 'packshot' },
-    { path: 'black-code/medium/bc-arriba.webp', type: 'detail' },
+    { path: 'black-code/black-code-individual.jpg', type: 'packshot' },
+    { path: 'black-code/black-code-combo.jpg', type: 'notes' },
+    { path: 'black-code/large/bc-arriba.webp', type: 'detail' },
     { path: 'modelo/black-code-modelo.webp', type: 'scene' },
-    { path: 'black-code/medium/bc-notas.webp', type: 'notes' },
   ],
   'deep-blue': [
-    { path: 'deep-blue/medium/deep-blue.webp', type: 'packshot' },
-    { path: 'deep-blue/medium/db-arriba.webp', type: 'detail' },
+    { path: 'deep-blue/deep-blue-individual.jpg', type: 'packshot' },
+    { path: 'deep-blue/deep-blue-combo.jpg', type: 'notes' },
+    { path: 'deep-blue/large/db-arriba.webp', type: 'detail' },
     { path: 'modelo/deep-blue-modelo.webp', type: 'scene' },
-    { path: 'deep-blue/medium/dp-notas.webp', type: 'notes' },
   ],
   'white-ice': [
-    { path: 'white-ice/medium/white-ice.webp', type: 'packshot' },
-    { path: 'white-ice/medium/wi-arriba.webp', type: 'detail' },
+    { path: 'white-ice/white-ice-individual.jpg', type: 'packshot' },
+    { path: 'white-ice/white-ice-combo.jpg', type: 'notes' },
+    { path: 'white-ice/large/wi-arriba.webp', type: 'detail' },
     { path: 'modelo/white-ice-modelo.webp', type: 'scene' },
-    { path: 'white-ice/medium/wi-notas.webp', type: 'notes' },
   ],
   'yellow-bloom': [
-    { path: 'yellow-bloom/medium/yellow-bloom.webp', type: 'packshot' },
+    { path: 'yellow-bloom/yellow-bloom-individual.jpg', type: 'packshot' },
+    { path: 'yellow-bloom/yellow-bloom-combo.jpg', type: 'notes' },
     { path: 'yellow-bloom/yellow-bloom-bw.webp', type: 'scene' },
     { path: 'modelo/modelo-yellow-bloom.webp', type: 'detail' },
-    { path: 'yellow-bloom/medium/yb-notas.webp', type: 'notes' },
   ],
   'red-desire': [
-    { path: 'red-desire/medium/red-desire.webp', type: 'packshot' },
-    { path: 'red-desire/medium/rd-arriba.webp', type: 'detail' },
+    { path: 'red-desire/red-desire-individual.jpg', type: 'packshot' },
+    { path: 'red-desire/red-desire-combo.jpg', type: 'notes' },
+    { path: 'red-desire/large/rd-arriba.webp', type: 'detail' },
     { path: 'modelo/red-desire-modelo.webp', type: 'scene' },
     { path: 'modelo/red-desire-atomizacion-2.webp', type: 'scene' },
-    { path: 'red-desire/medium/rd-notas.webp', type: 'notes' },
   ],
 };
 

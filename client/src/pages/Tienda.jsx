@@ -47,6 +47,7 @@ export default function Tienda() {
   const [loading, setLoading] = useState(true);
   const [selectedPerfume1, setSelectedPerfume1] = useState(null);
   const [selectedPerfume2, setSelectedPerfume2] = useState(null);
+  const [altView, setAltView] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,6 +76,14 @@ export default function Tienda() {
     if (perfumes.length > 1 && !selectedPerfume2) setSelectedPerfume2(perfumes[1].id);
   }, [perfumes, selectedPerfume1, selectedPerfume2]);
 
+  // Auto-cambio sincronizado de imagen (sin hover) para todo el listado
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setAltView((v) => !v);
+    }, 6500);
+    return () => window.clearInterval(id);
+  }, []);
+
   const perfume1 = perfumes.find((p) => p.id === selectedPerfume1);
   const perfume2 = perfumes.find((p) => p.id === selectedPerfume2);
   const comboPrice = perfume1 && perfume2 ? Math.round((perfume1.price + perfume2.price) * 0.85) : 0;
@@ -98,7 +107,7 @@ export default function Tienda() {
               <p className="text-center text-white/60 py-12">No hay productos disponibles.</p>
             ) : (
               perfumes.map((perfume, index) => (
-                <ProductBlock key={perfume.id} perfume={perfume} index={index} testimonials={testimonials} />
+                <ProductBlock key={perfume.id} perfume={perfume} index={index} testimonials={testimonials} altView={altView} />
               ))
             )}
           </div>
@@ -144,7 +153,7 @@ function TiendaHero() {
         <div className="space-y-8 pt-8">
           <div className="space-y-2">
             <p className="text-xs tracking-[0.4em] opacity-40 uppercase">Colección</p>
-            <h2 className="font-heading text-5xl sm:text-6xl lg:text-7xl tracking-wider">Origin</h2>
+            <h2 className="font-heading text-5xl sm:text-6xl lg:text-7xl tracking-wider">NEW ERA</h2>
           </div>
           <div className="flex justify-center pt-6">
             <ChevronDownIcon className="w-6 h-6 text-white opacity-30 animate-bounce" />
@@ -155,7 +164,7 @@ function TiendaHero() {
   );
 }
 
-function ProductBlock({ perfume, index, testimonials }) {
+function ProductBlock({ perfume, index, testimonials, altView }) {
   const { ref, motionProps } = useScrollMotion();
   const accentColor = perfume.accent_color || ACCENT_COLORS[index];
 
@@ -183,7 +192,7 @@ function ProductBlock({ perfume, index, testimonials }) {
         </div>
 
         <div className="lg:col-span-6 order-1 lg:order-2">
-          <PerfumeStoreImage perfume={perfume} accentColor={accentColor} />
+          <PerfumeStoreImage perfume={perfume} accentColor={accentColor} altView={altView} />
 
           <div className="text-center mt-10 space-y-5">
             <div>
@@ -251,15 +260,20 @@ function ProductBlock({ perfume, index, testimonials }) {
   );
 }
 
-function PerfumeStoreImage({ perfume, accentColor }) {
-  const [isHovered, setIsHovered] = useState(false);
+function PerfumeStoreImage({ perfume, accentColor, altView }) {
   const [defaultError, setDefaultError] = useState(false);
-  const [hoverError, setHoverError] = useState(false);
+  const [altError, setAltError] = useState(false);
 
   const productImages = getStoreProductImages(perfume.slug);
 
   const defaultSrc = productImages?.default ? mediaUrl(productImages.default) : null;
-  const hoverSrc = productImages?.hover ? mediaUrl(productImages.hover) : null;
+  const altSrc = productImages?.hover ? mediaUrl(productImages.hover) : null;
+  const hasAlt = Boolean(altSrc);
+  const showAlt = Boolean(altView && hasAlt && !altError);
+  const isBlackCode = (perfume.slug || '').trim().toLowerCase() === 'black-code';
+  const baseScale = isBlackCode ? 0.985 : 1;
+  const activeScale = showAlt ? (isBlackCode ? 1.01 : 1.015) : baseScale;
+  const inactiveScale = showAlt ? baseScale : (isBlackCode ? 1.01 : 1.04);
 
   if (!defaultSrc) {
     return (
@@ -273,10 +287,8 @@ function PerfumeStoreImage({ perfume, accentColor }) {
     <Link to={`/producto/${perfume.id}`} className="group block">
       <motion.div
         className="relative mx-auto w-full max-w-[420px]"
-        onHoverStart={() => setIsHovered(true)}
-        onHoverEnd={() => setIsHovered(false)}
         initial={false}
-        whileHover={{ y: -4 }}
+        animate={{ y: 0 }}
         transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
       >
         {/* Glow exterior */}
@@ -284,8 +296,8 @@ function PerfumeStoreImage({ perfume, accentColor }) {
           className="absolute inset-0 rounded-[28px] blur-[58px]"
           style={{ backgroundColor: accentColor }}
           animate={{
-            opacity: isHovered ? 0.28 : 0.16,
-            scale: isHovered ? 1.04 : 0.94,
+            opacity: showAlt ? 0.22 : 0.16,
+            scale: showAlt ? 1.0 : 0.94,
           }}
           transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
         />
@@ -294,11 +306,11 @@ function PerfumeStoreImage({ perfume, accentColor }) {
         <motion.div
           className="relative z-10 aspect-[4/5] overflow-hidden rounded-[28px] border border-white/10 bg-[#080808]"
           animate={{
-            borderColor: isHovered ? `${accentColor}55` : 'rgba(255,255,255,0.10)',
-            boxShadow: isHovered
-              ? `0 22px 70px rgba(0,0,0,0.52), 0 0 24px ${accentColor}18`
+            borderColor: showAlt ? `${accentColor}55` : 'rgba(255,255,255,0.10)',
+            boxShadow: showAlt
+              ? `0 22px 70px rgba(0,0,0,0.52), 0 0 24px ${accentColor}14`
               : '0 16px 48px rgba(0,0,0,0.38)',
-            scale: isHovered ? 1.008 : 1,
+            scale: 1,
           }}
           transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
         >
@@ -307,8 +319,8 @@ function PerfumeStoreImage({ perfume, accentColor }) {
             className="pointer-events-none absolute inset-x-[18%] bottom-[6%] h-[24%] rounded-full blur-[56px]"
             style={{ backgroundColor: accentColor }}
             animate={{
-              opacity: isHovered ? 0.26 : 0.14,
-              scale: isHovered ? 1.08 : 1,
+              opacity: showAlt ? 0.2 : 0.14,
+              scale: showAlt ? 1.04 : 1,
             }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
           />
@@ -321,49 +333,56 @@ function PerfumeStoreImage({ perfume, accentColor }) {
               className="absolute inset-0 h-full w-full object-cover object-center"
               loading="lazy"
               animate={{
-                opacity: isHovered && hoverSrc && !hoverError ? 0 : 1,
-                scale: isHovered ? 1.02 : 1,
-                filter: isHovered ? 'blur(2px)' : 'blur(0px)',
+                opacity: showAlt ? 0 : 1,
+                scale: showAlt ? inactiveScale : activeScale,
+                filter: showAlt ? 'blur(2px)' : 'blur(0px)',
               }}
-              transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
               onError={() => setDefaultError(true)}
             />
           )}
 
-          {/* Imagen hover */}
-          {hoverSrc && !hoverError && (
+          {/* Imagen alternativa (auto) */}
+          {altSrc && !altError && (
             <motion.img
-              src={hoverSrc}
+              src={altSrc}
               alt={`${perfume.name} combo`}
               className="absolute inset-0 h-full w-full object-cover object-center"
               loading="lazy"
               initial={false}
               animate={{
-                opacity: isHovered ? 1 : 0,
-                scale: isHovered ? 1.015 : 1.04,
-                filter: isHovered ? 'blur(0px)' : 'blur(2px)',
+                opacity: showAlt ? 1 : 0,
+                scale: showAlt ? activeScale : inactiveScale,
+                filter: showAlt ? 'blur(0px)' : 'blur(2px)',
               }}
-              transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-              onError={() => setHoverError(true)}
+              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+              onError={() => setAltError(true)}
             />
           )}
 
           {/* Overlay premium */}
           <motion.div
             className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.10)_0%,rgba(0,0,0,0.03)_38%,rgba(0,0,0,0.18)_100%)]"
-            animate={{ opacity: isHovered ? 0.82 : 1 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
           />
 
-          {/* Shine */}
-          <motion.div
-            className="pointer-events-none absolute inset-y-0 left-[-24%] w-[18%] rotate-12 bg-white/10 blur-xl"
-            animate={{
-              x: isHovered ? '420%' : '-10%',
-              opacity: isHovered ? 0.16 : 0,
-            }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          />
+          {/* Indicio premium de segunda vista */}
+          {hasAlt && (
+            <div className="pointer-events-none absolute bottom-4 right-4">
+              <div className="relative overflow-hidden rounded-[18px] border border-black bg-black/45 backdrop-blur-md shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
+                <div className="relative h-14 w-14">
+                  <img
+                    src={showAlt ? defaultSrc : altSrc}
+                    alt=""
+                    className="h-full w-full object-cover object-center opacity-90"
+                    draggable={false}
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.06)_0%,rgba(0,0,0,0.26)_100%)]" />
+                </div>
+              </div>
+            </div>
+          )}
         </motion.div>
       </motion.div>
     </Link>
@@ -372,8 +391,26 @@ function PerfumeStoreImage({ perfume, accentColor }) {
 
 
 function ComboCollectionShowcase() {
-  const mainImage = mediaUrl('all-products/thumb/perfumes.webp');
-  const packagingImage = mediaUrl('all-products/medium/packagin-all.webp');
+  const slides = [
+    {
+      src: mediaUrl('all-products/large/all-perfumes-vidrio.webp'),
+      alt: 'Colección completa Solution en vidrio',
+    },
+    {
+      src: mediaUrl('all-products/large/perfumes.webp'),
+      alt: 'Colección completa Solution',
+    },
+  ];
+
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % slides.length);
+    }, 5000);
+
+    return () => window.clearInterval(interval);
+  }, [slides.length]);
 
   return (
     <div className="relative mx-auto w-full max-w-[540px]">
@@ -397,42 +434,55 @@ function ComboCollectionShowcase() {
 
       <div className="relative z-10 overflow-hidden rounded-[30px] border border-white/10 bg-[#050505] shadow-[0_24px_70px_rgba(0,0,0,0.44)]">
         <div className="relative aspect-[4/5] sm:aspect-[5/6] overflow-hidden">
-          {/* fondo blur */}
-          <motion.img
-            src={mainImage}
-            alt=""
-            aria-hidden="true"
-            className="absolute inset-0 h-full w-full object-cover scale-[1.12] blur-[22px] opacity-28"
-            animate={{
-              scale: [1.12, 1.14, 1.12],
-            }}
-            transition={{
-              duration: 8,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-            draggable={false}
-          />
-
-          <div className="absolute inset-0 bg-black/28" />
-
-          {/* imagen principal completa */}
-          <div className="absolute inset-0 p-3 sm:p-4">
-            <motion.img
-              src={mainImage}
-              alt="Colección completa Solution"
-              className="h-full w-full object-contain object-center"
+          {slides.map((slide, index) => (
+            <motion.div
+              key={slide.src}
+              className="absolute inset-0"
+              initial={false}
               animate={{
-                scale: [1, 1.01, 1],
+                opacity: activeIndex === index ? 1 : 0,
               }}
               transition={{
-                duration: 8,
-                repeat: Infinity,
-                ease: 'easeInOut',
+                duration: 0.75,
+                ease: [0.22, 1, 0.36, 1],
               }}
-              draggable={false}
-            />
-          </div>
+            >
+              {/* fondo blur */}
+              <motion.img
+                src={slide.src}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 h-full w-full object-cover scale-[1.12] blur-[22px] opacity-28"
+                animate={{
+                  scale: activeIndex === index ? 1.12 : 1.14,
+                }}
+                transition={{
+                  duration: 1.1,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+                draggable={false}
+              />
+
+              <div className="absolute inset-0 bg-black/28" />
+
+              {/* imagen principal completa */}
+              <div className="absolute inset-0">
+                <motion.img
+                  src={slide.src}
+                  alt={slide.alt}
+                  className="h-full w-full object-contain object-center"
+                  animate={{
+                    scale: activeIndex === index ? 1.01 : 1.02,
+                  }}
+                  transition={{
+                    duration: 1.1,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  draggable={false}
+                />
+              </div>
+            </motion.div>
+          ))}
 
           {/* overlays premium */}
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_54%,rgba(0,0,0,0.18)_100%)]" />
@@ -445,42 +495,31 @@ function ComboCollectionShowcase() {
             </p>
           </div>
 
-          {/* packaging flotante */}
-          <motion.div
-            className="absolute bottom-4 right-4 w-[38%] overflow-hidden rounded-[20px] border border-white/10 bg-black/55 shadow-[0_18px_40px_rgba(0,0,0,0.38)] backdrop-blur-md"
-            animate={{ y: [0, -5, 0] }}
-            transition={{
-              duration: 4.2,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          >
-            <div className="relative aspect-[4/5] overflow-hidden">
-              <img
-                src={packagingImage}
-                alt="Packaging Solution"
-                className="h-full w-full object-cover object-center"
-                draggable={false}
+          {/* mini indicador visual sutil */}
+          <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-full border border-white/10 bg-black/35 px-3 py-2 backdrop-blur-md">
+            {slides.map((_, index) => (
+              <motion.span
+                key={index}
+                className="block h-[5px] rounded-full"
+                animate={{
+                  width: activeIndex === index ? 18 : 6,
+                  opacity: activeIndex === index ? 1 : 0.35,
+                  backgroundColor: activeIndex === index ? 'rgb(255,255,255)' : 'rgba(255,255,255,0.6)',
+                }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
               />
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.06)_0%,rgba(0,0,0,0.18)_100%)]" />
-            </div>
-
-            <div className="border-t border-white/10 px-3 py-2">
-              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.22em] text-white/70">
-                Packaging
-              </p>
-            </div>
-          </motion.div>
+            ))}
+          </div>
 
           {/* shine */}
           <motion.div
             className="pointer-events-none absolute inset-y-0 left-[-22%] w-[18%] rotate-12 bg-white/10 blur-xl"
-            animate={{ x: ['0%', '620%'] }}
+            animate={{ x: ['620%', '0%', '620%'] }}
             transition={{
-              duration: 4.2,
+              duration: 10,
               repeat: Infinity,
               ease: 'easeInOut',
-              repeatDelay: 1.2,
+              times: [0, 0.4, 1],
             }}
           />
         </div>
@@ -488,6 +527,7 @@ function ComboCollectionShowcase() {
     </div>
   );
 }
+
 function TiendaInfoSection() {
   const { ref, motionProps } = useScrollMotion();
 

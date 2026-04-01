@@ -1,3 +1,6 @@
+import { motion } from "motion/react";
+import { useScrollMotion } from "../../hooks/useScrollMotion";
+
 const BENEFITS = [
   {
     iconColor: "rgb(0, 255, 255)",
@@ -34,7 +37,7 @@ const BENEFITS = [
 function CheckIcon({ color }) {
   return (
     <span
-      className="benefit-icon shrink-0 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-400 ease-out"
+      className="benefit-icon shrink-0 w-10 h-10 rounded-full flex items-center justify-center border border-white/15 bg-black/30 backdrop-blur-md transition-all duration-300 ease-out"
       style={{ borderColor: color, color }}
     >
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -45,25 +48,48 @@ function CheckIcon({ color }) {
 }
 
 export default function WholesaleBenefitsGrid() {
+  const { ref, reducedMotion, premiumEasing } = useScrollMotion();
+
   return (
-    <section id="beneficios" className="section-beneficios-bg bg-black text-white py-16 md:py-24 px-4">
+    <section
+      ref={ref}
+      id="beneficios"
+      className="section-beneficios-bg bg-black text-white py-16 md:py-24 px-4"
+    >
       <div className="relative z-10 max-w-6xl mx-auto">
-        <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-semibold tracking-wider text-center mb-14 md:mb-20">
+        <motion.h2
+          initial={{ opacity: 0, y: 14 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.35 }}
+          transition={{ duration: 0.65, ease: premiumEasing }}
+          className="font-heading text-3xl md:text-4xl lg:text-5xl font-semibold tracking-wider text-center mb-14 md:mb-20"
+        >
           Beneficios del programa
-        </h2>
+        </motion.h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-12 md:gap-y-16">
-          {BENEFITS.map((item) => (
-            <div
+          {BENEFITS.map((item, i) => (
+            <motion.div
               key={item.title}
-              className="benefit-card flex gap-4 text-left rounded-lg p-3 -m-3 transition-all duration-400 ease-out border border-transparent hover:border-white/10"
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.35 }}
+              transition={{ duration: 0.6, ease: premiumEasing, delay: 0.08 + i * 0.05 }}
+              whileHover={
+                reducedMotion
+                  ? undefined
+                  : {
+                      y: -6,
+                    }
+              }
+              className="benefit-card relative flex gap-4 text-left rounded-[28px] p-5 md:p-6 transition-all duration-300 ease-out border border-white/10 bg-white/[0.02] hover:border-white/20"
             >
               <CheckIcon color={item.iconColor} />
               <div className="min-w-0">
-                <h3 className="font-heading text-lg md:text-xl font-bold text-white mb-2">{item.title}</h3>
+                <h3 className="font-heading text-base md:text-lg font-bold text-white mb-2 tracking-wide">{item.title}</h3>
                 <p className="text-white/70 text-sm md:text-base leading-relaxed">{item.description}</p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
