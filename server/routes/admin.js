@@ -1,6 +1,9 @@
 const express = require('express');
+const axios = require('axios');
 const router = express.Router();
 const { supabase, supabaseAuth } = require('../lib/supabase');
+const naveRouter = require('./nave');
+const { sendRefundInitiatedEmail } = require('../services/email');
 
 async function assertAdmin(req, res) {
   const authHeader = req.headers.authorization;
@@ -137,6 +140,83 @@ router.get('/orders', async (req, res) => {
   }));
 
   return res.json({ orders: ordersWithItems });
+});
+
+/**
+ * POST /api/admin/orders/:orderId/refund
+ * Inicia reembolso en Nave (DELETE /api/payments/{nave_payment_id}). Requiere admin.
+ * La orden queda en refund_pending hasta que el webhook confirme refunded/cancelled.
+ */
+router.post('/orders/:orderId/refund', async (req, res) => {
+  const user = await assertAdmin(req, res);
+  if (!user) return;
+
+  const { orderId } = req.params;
+  if (!orderId) {
+    return res.status(400).json({ error: 'orderId requerido' });
+  }
+
+  const { data: order, error: orderErr } = await supabase
+    .from('orders')
+    .select('*')
+    .eq('id', orderId)
+    .single();
+
+  if (orderErr || !order) {
+    return res.status(404).json({ error: 'Orden no encontrada' });
+  }
+
+  const pm = (order.payment_method || '').toLowerCase();
+  if (pm !== 'nave') {
+    return res.status(400).json({ error: 'Solo órdenes con pago Nave' });
+  }
+  if (!order.nave_payment_id) {
+    return res.status(400).json({ error: 'La orden no tiene nave_payment_id' });
+  }
+  if (order.status !== 'paid') {
+    return res.status(400).json({
+      error: 'Solo se puede reembolsar una orden en estado paid',
+      current_status: order.status,
+    });
+  }
+
+  try {
+    const token = await naveRouter.getNaveToken();
+    const apiBase = naveRouter.getNaveApiBaseUrl();
+    await axios.delete(`${apiBase}/api/payments/${order.nave_payment_id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  } catch (e) {
+    const st = e.response?.status || 502;
+    const detail = e.response?.data || e.message;
+    console.error('[admin refund] Nave DELETE error:', detail);
+    return res.status(st).json({
+      error: 'Error al solicitar reembolso en Nave',
+      detail: typeof detail === 'object' ? detail : String(detail),
+    });
+  }
+
+  const { error: upErr } = await supabase
+    .from('orders')
+    .update({ status: 'refund_pending' })
+    .eq('id', orderId);
+
+  if (upErr) {
+    console.error('[admin refund] Supabase update:', upErr);
+    return res.status(500).json({ error: 'Reembolso solicitado en Nave pero falló actualizar la orden' });
+  }
+
+  const email = (order.customer_email || '').trim();
+  if (email) {
+    sendRefundInitiatedEmail({ to: email, orderId }).catch((err) =>
+      console.error('[admin refund] email:', err?.message || err),
+    );
+  }
+
+  return res.json({ ok: true, status: 'refund_pending' });
 });
 
 module.exports = router;

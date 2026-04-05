@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const { supabase } = require('../lib/supabase');
+const { sendPaymentConfirmationEmail } = require('../services/email');
 
 const router = express.Router();
 
@@ -344,6 +345,34 @@ router.post('/nave/create-payment', async (req, res) => {
  * - POST /api/nave/webhook (alias útil)
  * - POST /webhooks/nave (URL típica configurada en el alta con Nave)
  */
+function buildNaveOrderUpdate(payment, paymentId, orderStatus) {
+  const pm = payment?.payment_method || {};
+  const inst = pm?.installment_plan || {};
+  const reason =
+    payment?.status?.reason_code || payment?.status?.reason_name || null;
+  const installments = inst?.installments;
+  const row = {
+    status: orderStatus,
+    nave_payment_id: paymentId,
+    nave_payment_code: payment?.payment_code ?? null,
+    nave_card_brand: pm.card_brand ?? null,
+    nave_card_type: pm.card_type ?? null,
+    nave_card_last4: pm.card_last4 ?? null,
+    nave_card_issuer: pm.issuer ?? null,
+    nave_installments:
+      installments != null && Number.isFinite(Number(installments))
+        ? Number(installments)
+        : null,
+    nave_installments_name: inst?.name ?? null,
+    nave_status_reason: reason,
+  };
+  if (orderStatus === 'paid') {
+    row.nave_paid_at =
+      payment?.updated_date || payment?.creation_date || new Date().toISOString();
+  }
+  return row;
+}
+
 async function handleNaveWebhook(req, res) {
   console.log('[Nave Webhook] Request recibido:', {
     path: req.originalUrl || req.path,
@@ -356,6 +385,11 @@ async function handleNaveWebhook(req, res) {
   const { payment_id, external_payment_id } = req.body || {};
   if (!payment_id || !external_payment_id) {
     console.warn('[Nave Webhook] Payload incompleto — campos esperados: payment_id, external_payment_id');
+    return;
+  }
+
+  if (!supabase) {
+    console.error('[Nave Webhook] Supabase no configurado');
     return;
   }
 
@@ -380,8 +414,10 @@ async function handleNaveWebhook(req, res) {
         orderStatus = 'payment_failed';
         break;
       case 'CANCELLED':
-      case 'REFUNDED':
         orderStatus = 'cancelled';
+        break;
+      case 'REFUNDED':
+        orderStatus = 'refunded';
         break;
       case 'CHARGED_BACK':
         orderStatus = 'chargeback';
@@ -390,15 +426,60 @@ async function handleNaveWebhook(req, res) {
         orderStatus = `nave_${(naveStatus || 'unknown').toLowerCase()}`;
     }
 
+    const { data: prevOrder, error: prevErr } = await supabase
+      .from('orders')
+      .select(
+        'id, status, customer_email, customer_name, total, currency',
+      )
+      .eq('id', external_payment_id)
+      .maybeSingle();
+
+    if (prevErr || !prevOrder) {
+      console.error('[Nave Webhook] Orden no encontrada:', external_payment_id, prevErr);
+      return;
+    }
+
+    const previousStatus = (prevOrder.status || '').toLowerCase();
+    const updatePayload = buildNaveOrderUpdate(payment, payment_id, orderStatus);
+
     const { error } = await supabase
       .from('orders')
-      .update({ status: orderStatus, nave_payment_id: payment_id })
+      .update(updatePayload)
       .eq('id', external_payment_id);
 
     if (error) {
       console.error('[Nave Webhook] Error actualizando orden:', error);
-    } else {
-      console.log(`[Nave Webhook] Orden ${external_payment_id} → ${orderStatus}`);
+      return;
+    }
+
+    console.log(`[Nave Webhook] Orden ${external_payment_id} → ${orderStatus}`);
+
+    if (orderStatus === 'paid' && previousStatus !== 'paid') {
+      const { data: rawItems } = await supabase
+        .from('order_items')
+        .select('product_id, quantity, unit_price')
+        .eq('order_id', external_payment_id);
+
+      let itemsForEmail = rawItems || [];
+      const pids = [...new Set(itemsForEmail.map((i) => i.product_id))];
+      if (pids.length > 0) {
+        const { data: products } = await supabase
+          .from('products')
+          .select('id, name')
+          .in('id', pids);
+        const nameById = Object.fromEntries((products || []).map((p) => [p.id, p.name]));
+        itemsForEmail = itemsForEmail.map((i) => ({
+          ...i,
+          product_name: nameById[i.product_id] || null,
+        }));
+      }
+
+      sendPaymentConfirmationEmail({
+        to: prevOrder.customer_email,
+        order: prevOrder,
+        items: itemsForEmail,
+        payment,
+      }).catch((e) => console.error('[Nave Webhook] Email confirmación:', e?.message || e));
     }
   } catch (err) {
     console.error('[Nave Webhook] Error procesando:', err.response?.data || err.message);
@@ -409,6 +490,8 @@ async function handleNaveWebhook(req, res) {
 router.post('/nave/webhook', handleNaveWebhook);
 
 router.handleNaveWebhook = handleNaveWebhook;
+router.getNaveToken = getNaveToken;
+router.getNaveApiBaseUrl = getApiBaseUrl;
 
 /**
  * GET /api/nave/payment-status/:orderId
