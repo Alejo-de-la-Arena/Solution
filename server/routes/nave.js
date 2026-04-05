@@ -248,8 +248,14 @@ router.post('/nave/create-payment', async (req, res) => {
     const token = await getNaveToken();
 
     // ── 3. Create payment request at Nave ──
+    const serverUrl = (process.env.SERVER_PUBLIC_URL || '').replace(/\/+$/, '');
+    const notificationUrl = serverUrl
+      ? `${serverUrl}/api/nave/webhook`
+      : undefined;
+
     const naveBody = {
       external_payment_id: order.id.slice(0, 36),
+      notification_url: notificationUrl,
       seller: { pos_id: posId },
       transactions: [
         {
@@ -281,12 +287,16 @@ router.post('/nave/create-payment', async (req, res) => {
         callback_url: callback_url
           ? callback_url.replace('PLACEHOLDER', order.id)
           : undefined,
+        notification_url: notificationUrl,
       },
       ...getPaymentRequestDurationPayload(),
     };
 
     const apiBase = getApiBaseUrl();
-    console.log('[Nave] create-payment duration_time:', naveBody.duration_time ?? '(omitido)');
+    console.log('[Nave] create-payment:', {
+      duration_time: naveBody.duration_time ?? '(omitido)',
+      notification_url: naveBody.notification_url ?? '⚠️  NO CONFIGURADA — definí SERVER_PUBLIC_URL',
+    });
 
     const postPaymentRequest = (bearer) =>
       axios.post(`${apiBase}/api/payment_request/ecommerce`, naveBody, {
@@ -342,15 +352,20 @@ router.post('/nave/create-payment', async (req, res) => {
  * Must respond 200 immediately; processing happens after.
  */
 router.post('/nave/webhook', async (req, res) => {
+  console.log('[Nave Webhook] Request recibido:', {
+    headers: { 'content-type': req.headers['content-type'], 'user-agent': req.headers['user-agent'] },
+    body: req.body,
+  });
+
   res.sendStatus(200);
 
   const { payment_id, external_payment_id } = req.body || {};
   if (!payment_id || !external_payment_id) {
-    console.warn('[Nave Webhook] Payload incompleto:', req.body);
+    console.warn('[Nave Webhook] Payload incompleto — campos esperados: payment_id, external_payment_id');
     return;
   }
 
-  console.log('[Nave Webhook] Notificación recibida:', { payment_id, external_payment_id });
+  console.log('[Nave Webhook] Procesando:', { payment_id, external_payment_id });
 
   try {
     const token = await getNaveToken();

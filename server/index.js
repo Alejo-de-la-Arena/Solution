@@ -11,12 +11,16 @@ const port = Number(process.env.PORT) || 3000;
 
 const naveEnv = (process.env.NAVE_ENV || 'testing').toLowerCase();
 const naveAuthIsProd = naveEnv === 'production' || naveEnv === 'prod';
+const serverPublicUrl = (process.env.SERVER_PUBLIC_URL || '').replace(/\/+$/, '');
 console.log('[boot] Nave M2M:', {
   NAVE_ENV: naveEnv,
   auth: naveAuthIsProd ? 'production' : 'homologacion',
   hasClientId: Boolean((process.env.NAVE_CLIENT_ID || '').trim()),
   hasClientSecret: Boolean((process.env.NAVE_CLIENT_SECRET || '').trim()),
   hasAudience: Boolean((process.env.NAVE_AUDIENCE || '').trim()),
+  webhookUrl: serverPublicUrl
+    ? `${serverPublicUrl}/api/nave/webhook`
+    : '⚠️  SERVER_PUBLIC_URL no definida — el webhook de Nave no funcionará',
 });
 
 // Middleware
