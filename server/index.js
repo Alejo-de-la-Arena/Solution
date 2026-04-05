@@ -11,16 +11,12 @@ const port = Number(process.env.PORT) || 3000;
 
 const naveEnv = (process.env.NAVE_ENV || 'testing').toLowerCase();
 const naveAuthIsProd = naveEnv === 'production' || naveEnv === 'prod';
-const serverPublicUrl = (process.env.SERVER_PUBLIC_URL || '').replace(/\/+$/, '');
 console.log('[boot] Nave M2M:', {
   NAVE_ENV: naveEnv,
   auth: naveAuthIsProd ? 'production' : 'homologacion',
   hasClientId: Boolean((process.env.NAVE_CLIENT_ID || '').trim()),
   hasClientSecret: Boolean((process.env.NAVE_CLIENT_SECRET || '').trim()),
   hasAudience: Boolean((process.env.NAVE_AUDIENCE || '').trim()),
-  webhookUrl: serverPublicUrl
-    ? `${serverPublicUrl}/api/nave/webhook`
-    : '⚠️  SERVER_PUBLIC_URL no definida — el webhook de Nave no funcionará',
 });
 
 // Middleware
@@ -44,6 +40,12 @@ app.use('/api/correo', correoRouter);
 
 app.get('/', (req, res) => {
   res.send('Hello World!!');
+});
+
+// Catch-all: log any unmatched request so we can see what path Nave is actually hitting
+app.use((req, res, _next) => {
+  console.warn('[404]', req.method, req.originalUrl, '— body:', JSON.stringify(req.body));
+  res.status(404).json({ error: 'Not found', path: req.originalUrl });
 });
 
 // Start server (0.0.0.0: evita "connection refused" detrás del proxy de Railway)

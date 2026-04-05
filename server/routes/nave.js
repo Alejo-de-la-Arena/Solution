@@ -248,14 +248,8 @@ router.post('/nave/create-payment', async (req, res) => {
     const token = await getNaveToken();
 
     // ── 3. Create payment request at Nave ──
-    const serverUrl = (process.env.SERVER_PUBLIC_URL || '').replace(/\/+$/, '');
-    const notificationUrl = serverUrl
-      ? `${serverUrl}/api/nave/webhook`
-      : undefined;
-
     const naveBody = {
       external_payment_id: order.id.slice(0, 36),
-      notification_url: notificationUrl,
       seller: { pos_id: posId },
       transactions: [
         {
@@ -287,16 +281,12 @@ router.post('/nave/create-payment', async (req, res) => {
         callback_url: callback_url
           ? callback_url.replace('PLACEHOLDER', order.id)
           : undefined,
-        notification_url: notificationUrl,
       },
       ...getPaymentRequestDurationPayload(),
     };
 
     const apiBase = getApiBaseUrl();
-    console.log('[Nave] create-payment:', {
-      duration_time: naveBody.duration_time ?? '(omitido)',
-      notification_url: naveBody.notification_url ?? '⚠️  NO CONFIGURADA — definí SERVER_PUBLIC_URL',
-    });
+    console.log('[Nave] create-payment duration_time:', naveBody.duration_time ?? '(omitido)');
 
     const postPaymentRequest = (bearer) =>
       axios.post(`${apiBase}/api/payment_request/ecommerce`, naveBody, {
