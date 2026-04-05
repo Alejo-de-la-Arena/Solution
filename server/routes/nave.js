@@ -337,12 +337,16 @@ router.post('/nave/create-payment', async (req, res) => {
 });
 
 /**
- * POST /api/nave/webhook
- * Receives async payment notifications from Nave.
- * Must respond 200 immediately; processing happens after.
+ * Handler compartido: notificaciones async de Nave (POST con JSON).
+ * Responde 200 al instante; el trabajo pesado corre después (requisito Nave).
+ *
+ * Rutas que lo usan:
+ * - POST /api/nave/webhook (alias útil)
+ * - POST /webhooks/nave (URL típica configurada en el alta con Nave)
  */
-router.post('/nave/webhook', async (req, res) => {
+async function handleNaveWebhook(req, res) {
   console.log('[Nave Webhook] Request recibido:', {
+    path: req.originalUrl || req.path,
     headers: { 'content-type': req.headers['content-type'], 'user-agent': req.headers['user-agent'] },
     body: req.body,
   });
@@ -399,7 +403,12 @@ router.post('/nave/webhook', async (req, res) => {
   } catch (err) {
     console.error('[Nave Webhook] Error procesando:', err.response?.data || err.message);
   }
-});
+}
+
+/** POST /api/nave/webhook */
+router.post('/nave/webhook', handleNaveWebhook);
+
+router.handleNaveWebhook = handleNaveWebhook;
 
 /**
  * GET /api/nave/payment-status/:orderId

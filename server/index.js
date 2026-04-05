@@ -38,6 +38,9 @@ app.use('/api/admin', adminRouter);
 app.use('/api', naveRouter);
 app.use('/api/correo', correoRouter);
 
+// Nave envía el webhook a la URL dada de alta (ej. …/webhooks/nave), no bajo /api
+app.post('/webhooks/nave', naveRouter.handleNaveWebhook);
+
 app.get('/', (req, res) => {
   res.send('Hello World!!');
 });
