@@ -2,10 +2,15 @@ const express = require('express');
 const router = express.Router();
 const { supabase } = require('../lib/supabase');
 const { sendOrderEmail } = require('../services/email');
+
 /**
  * POST /api/checkout
  * Crea una orden retail (channel: 'retail') y sus order_items.
- * Body: customer_name, customer_email, customer_phone?, shipping_*, items: [{ product_id, quantity, unit_price }]
+ *
+ * Campos de envío opcionales (cotizados en el checkout con Correo Argentino o Gestionar):
+ *   shipping_provider, shipping_mode, shipping_service_type, shipping_is_free,
+ *   shipping_agency_code, shipping_agency_name, shipping_customer_id,
+ *   shipping_quote_payload, shipping_quote_response
  */
 router.post('/', async (req, res) => {
   if (!supabase) {
@@ -26,6 +31,16 @@ router.post('/', async (req, res) => {
     shipping_method,
     shipping_cost,
     items,
+    // ── Campos de cotización de envío (nuevos) ──
+    shipping_provider,
+    shipping_mode,
+    shipping_service_type,
+    shipping_is_free,
+    shipping_agency_code,
+    shipping_agency_name,
+    shipping_customer_id,
+    shipping_quote_payload,
+    shipping_quote_response,
   } = req.body || {};
 
   const name = (customer_name || '').trim();
@@ -46,9 +61,9 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'El carrito está vacío' });
   }
 
-  const total = cleanItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
+  const subtotal = cleanItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
   const shipping = shipping_cost != null ? Number(shipping_cost) : 0;
-  const orderTotal = total + shipping;
+  const orderTotal = subtotal + shipping;
 
   const orderPayload = {
     user_id: null,
@@ -68,6 +83,16 @@ router.post('/', async (req, res) => {
     shipping_notes: (shipping_notes || '').trim() || null,
     shipping_method: (shipping_method || '').trim() || 'standard',
     shipping_cost: shipping,
+    // ── Proveedor de envío cotizado ──
+    shipping_provider: (shipping_provider || '').trim() || null,
+    shipping_mode: (shipping_mode || '').trim() || null,
+    shipping_service_type: (shipping_service_type || '').trim() || null,
+    shipping_is_free: shipping_is_free === true || shipping_is_free === 'true' || false,
+    shipping_agency_code: (shipping_agency_code || '').trim() || null,
+    shipping_agency_name: (shipping_agency_name || '').trim() || null,
+    shipping_customer_id: (shipping_customer_id || '').trim() || null,
+    shipping_quote_payload: shipping_quote_payload || null,
+    shipping_quote_response: shipping_quote_response || null,
   };
 
   const { data: order, error: orderErr } = await supabase
@@ -94,7 +119,7 @@ router.post('/', async (req, res) => {
     return res.status(500).json({ error: 'Error al guardar los ítems de la orden' });
   }
 
-  // Enriquecer ítems con metadata de producto para el email (nombre).
+  // Enriquecer ítems con nombre de producto para el email.
   let itemsWithMeta = cleanItems;
   try {
     const productIds = [...new Set(cleanItems.map((i) => i.product_id))];
@@ -105,9 +130,7 @@ router.post('/', async (req, res) => {
         .in('id', productIds);
 
       if (!prodErr && products) {
-        const nameById = Object.fromEntries(
-          products.map((p) => [p.id, p.name])
-        );
+        const nameById = Object.fromEntries(products.map((p) => [p.id, p.name]));
         itemsWithMeta = cleanItems.map((i) => ({
           ...i,
           product_name: nameById[i.product_id] || null,
@@ -118,7 +141,6 @@ router.post('/', async (req, res) => {
     console.warn('No se pudo enriquecer metadata de productos para el email:', e?.message || e);
   }
 
-  // Enviar email de confirmación al cliente (best-effort; no rompe la respuesta si falla).
   if (email) {
     sendOrderEmail(email, order, itemsWithMeta, name).catch((err) => {
       console.error('Order email send error:', err?.message || err);

@@ -95,6 +95,7 @@ async function getRates(payload) {
     try {
         return await requestWithBearer('post', '/rates', { data: payload });
     } catch (error) {
+        console.error('[getRates] error detalle:', JSON.stringify(error?.details || error?.cause?.response?.data || error, null, 2));
         if (error?.statusCode === 404) {
             throw new CorreoNoCoverageError('Correo no devolvió cobertura o tarifas para el destino solicitado.', {
                 details: error.details,

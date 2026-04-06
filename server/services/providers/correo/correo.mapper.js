@@ -55,26 +55,16 @@ function safeInt(value, fallback = 0) {
 
 function parseAddressLine1(line1 = '') {
     const raw = String(line1 || '').trim();
-    if (!raw) {
-        return {
-            street: '',
-            number: '',
-        };
-    }
-
+    if (!raw) return { street: '', number: '' };
     const match = raw.match(/^(.*?)(?:\s+(\d+[A-Za-z0-9\-\/]*))?$/);
-    const street = (match?.[1] || raw).trim();
-    const number = (match?.[2] || '').trim();
-
     return {
-        street,
-        number,
+        street: (match?.[1] || raw).trim(),
+        number: (match?.[2] || '').trim(),
     };
 }
 
 function buildAddressFromOrder(order) {
     const parsed = parseAddressLine1(order?.shipping_address_line1 || '');
-
     return {
         name: order?.shipping_recipient_name || order?.customer_name || 'Cliente',
         email: order?.shipping_recipient_email || order?.customer_email || '',
@@ -91,12 +81,12 @@ function buildAddressFromOrder(order) {
 }
 
 function getItemUnitDimensions(item) {
-    const weight = safeInt(item?.weight_grams, 450);
-    const width = safeInt(item?.width_cm, 12);
-    const height = safeInt(item?.height_cm, 8);
-    const length = safeInt(item?.length_cm, 18);
-
-    return { weight, width, height, length };
+    return {
+        weight: safeInt(item?.weight_grams, 130),
+        width: safeInt(item?.width_cm, 7),
+        height: safeInt(item?.height_cm, 14),
+        length: safeInt(item?.length_cm, 7),
+    };
 }
 
 function buildParcelFromItems(items = []) {
@@ -107,7 +97,6 @@ function buildParcelFromItems(items = []) {
     let totalWeight = 0;
     let declaredValue = 0;
     let totalQuantity = 0;
-
     let maxUnitWidth = 12;
     let maxUnitHeight = 8;
     let maxUnitLength = 18;
@@ -126,31 +115,17 @@ function buildParcelFromItems(items = []) {
         maxUnitLength = Math.max(maxUnitLength, dims.length);
     }
 
-    // Regla simple de packaging consolidado v1
     let width = maxUnitWidth;
     let height = maxUnitHeight;
     let length = maxUnitLength;
 
-    if (totalQuantity === 1) {
-        width = maxUnitWidth;
-        height = maxUnitHeight;
-        length = maxUnitLength;
-    } else if (totalQuantity === 2) {
-        width = maxUnitWidth + 6;
-        height = maxUnitHeight + 2;
-        length = maxUnitLength + 6;
-    } else if (totalQuantity <= 4) {
-        width = maxUnitWidth + 12;
-        height = maxUnitHeight + 6;
-        length = maxUnitLength + 12;
-    } else {
-        width = maxUnitWidth + 18;
-        height = maxUnitHeight + 10;
-        length = maxUnitLength + 18;
-    }
+    if (totalQuantity === 1) { /* keep unit dims */ }
+    else if (totalQuantity === 2) { width += 6; height += 2; length += 6; }
+    else if (totalQuantity <= 4) { width += 12; height += 6; length += 12; }
+    else { width += 18; height += 10; length += 18; }
 
     return {
-        weight: safeInt(totalWeight, 450),
+        weight: safeInt(totalWeight, 130),
         width: safeInt(width, 12),
         height: safeInt(height, 8),
         length: safeInt(length, 18),
@@ -159,12 +134,17 @@ function buildParcelFromItems(items = []) {
     };
 }
 
-function buildRatesPayload({
-    customerId,
-    postalCodeDestination,
-    parcel,
-    deliveredType,
-}) {
+/**
+ * Builds the payload for POST /rates
+ *
+ * Correct structure per MiCorreo API docs:
+ * {
+ *   customerId, postalCodeOrigin, postalCodeDestination,
+ *   deliveredType?,          ← omit to get both D+S in one call
+ *   dimensions: { weight, height, width, length }
+ * }
+ */
+function buildRatesPayload({ customerId, postalCodeDestination, parcel, deliveredType }) {
     const config = getCorreoConfig();
 
     if (!customerId) {
@@ -181,13 +161,15 @@ function buildRatesPayload({
         customerId,
         postalCodeOrigin: config.operational.originPostalCode,
         postalCodeDestination: String(postalCodeDestination).trim(),
-        productType: config.operational.productType || 'CP',
-        weight: safeInt(parcel.weight),
-        height: safeInt(parcel.height),
-        width: safeInt(parcel.width),
-        length: safeInt(parcel.length),
+        dimensions: {
+            weight: safeInt(parcel.weight),
+            height: safeInt(parcel.height),
+            width: safeInt(parcel.width),
+            length: safeInt(parcel.length),
+        },
     };
 
+    // Only include deliveredType when explicitly provided (omitting it returns both D+S)
     if (deliveredType) {
         payload.deliveredType = deliveredType;
     }
@@ -195,46 +177,24 @@ function buildRatesPayload({
     return payload;
 }
 
-function buildRecipientFromAddress(address = {}) {
-    if (!address.street) {
-        throw new CorreoValidationError('La calle es obligatoria.');
-    }
-    if (!address.number) {
-        throw new CorreoValidationError('La altura/número es obligatorio.');
-    }
-    if (!address.city) {
-        throw new CorreoValidationError('La ciudad/localidad es obligatoria.');
-    }
-    if (!address.province) {
-        throw new CorreoValidationError('La provincia es obligatoria.');
-    }
-    if (!address.postalCode) {
-        throw new CorreoValidationError('El código postal es obligatorio.');
-    }
-
-    return {
-        name: address.name || 'Cliente',
-        streetName: address.street,
-        streetNumber: String(address.number),
-        floor: address.floor || '',
-        apartment: address.apartment || '',
-        locality: address.city,
-        province: mapProvinceNameToCode(address.province),
-        postalCode: String(address.postalCode).trim(),
-        phone: address.phone || '',
-        email: address.email || '',
-    };
-}
-
-function buildImportPayload({
-    customerId,
-    order,
-    items,
-    address,
-    parcel,
-    agencyCode,
-    deliveryType,
-}) {
+/**
+ * Builds the payload for POST /shipping/import
+ *
+ * Correct structure per MiCorreo API docs:
+ * {
+ *   customerId, extOrderId, orderNumber?,
+ *   sender: { name, phone, cellPhone, email, originAddress: {...} },
+ *   recipient: { name, phone, cellPhone, email },
+ *   shipping: {
+ *     deliveryType,          "D" | "S"
+ *     productType,           "CP"
+ *     agency?,               required when deliveryType === "S"
+ *     address?: { streetName, streetNumber, floor, apartment, city, provinceCode, postalCode },
+ *     weight, declaredValue, height, length, width
+ *   }
+ * }
+ */
+function buildImportPayload({ customerId, order, items, address, parcel, agencyCode, deliveryType }) {
     const config = getCorreoConfig();
 
     if (!customerId) {
@@ -247,47 +207,62 @@ function buildImportPayload({
         throw new CorreoValidationError('deliveryType debe ser D o S.');
     }
     if (deliveryType === 'S' && !agencyCode) {
-        throw new CorreoValidationError('agencyCode es obligatorio cuando el envío es a sucursal.');
+        throw new CorreoValidationError('agencyCode es obligatorio cuando el envío es a sucursal (S).');
     }
 
-    const recipient = buildRecipientFromAddress(address);
+    const provinceCode = mapProvinceNameToCode(address.province);
 
     return {
         customerId,
         extOrderId: String(order.id),
         orderNumber: String(order.id),
-        productType: config.operational.productType || 'CP',
+
+        // Sender: use origin config; nulls are accepted by the API
         sender: {
-            agency: config.operational.originAgencyCode || '',
-            postalCode: config.operational.originPostalCode || '',
-            province: config.operational.originProvinceCode || 'B',
+            name: null,
+            phone: null,
+            cellPhone: null,
+            email: null,
+            originAddress: {
+                streetName: null,
+                streetNumber: null,
+                floor: null,
+                apartment: null,
+                city: null,
+                provinceCode: config.operational.originProvinceCode || null,
+                postalCode: config.operational.originPostalCode || null,
+            },
         },
-        recipient,
+
+        // Recipient: name + email required; address fields required for homeDelivery
+        recipient: {
+            name: address.name || 'Cliente',
+            phone: address.phone || '',
+            cellPhone: '',
+            email: address.email || '',
+        },
+
         shipping: {
             deliveryType,
-            agency: deliveryType === 'S' ? String(agencyCode) : undefined,
-            address: deliveryType === 'D'
-                ? {
-                    streetName: recipient.streetName,
-                    streetNumber: recipient.streetNumber,
-                    floor: recipient.floor,
-                    apartment: recipient.apartment,
-                    locality: recipient.locality,
-                    province: recipient.province,
-                    postalCode: recipient.postalCode,
-                }
-                : undefined,
-        },
-        parcel: {
+            productType: 'CP',
+            agency: deliveryType === 'S' ? String(agencyCode) : null,
+
+            // Address required for homeDelivery (D), can be null/omitted for branch (S)
+            address: {
+                streetName: address.street || '',
+                streetNumber: String(address.number || ''),
+                floor: address.floor || '',
+                apartment: address.apartment || '',
+                city: address.city || '',
+                provinceCode,
+                postalCode: String(address.postalCode || '').trim(),
+            },
+
             weight: safeInt(parcel.weight),
             declaredValue: safeInt(parcel.declaredValue),
             height: safeInt(parcel.height),
-            width: safeInt(parcel.width),
             length: safeInt(parcel.length),
-        },
-        meta: {
-            itemCount: Array.isArray(items) ? items.length : 0,
-            channel: order?.channel || null,
+            width: safeInt(parcel.width),
         },
     };
 }

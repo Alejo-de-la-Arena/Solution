@@ -31,12 +31,14 @@ const checkoutRouter = require('./routes/checkout');
 const adminRouter = require('./routes/admin');
 const naveRouter = require('./routes/nave');
 const correoRouter = require('./routes/correo');
+const shippingRouter = require('./routes/shipping'); 
 
 app.use('/api/gestionar', gestionarRouter);
 app.use('/api/checkout', checkoutRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api', naveRouter);
 app.use('/api/correo', correoRouter);
+app.use('/api/shipping', shippingRouter); 
 
 // Nave envía el webhook a la URL dada de alta (ej. …/webhooks/nave), no bajo /api
 app.post('/webhooks/nave', naveRouter.handleNaveWebhook);
