@@ -33,6 +33,60 @@ export async function getAdminOrders(filters = {}) {
 }
 
 /**
+ * Actualiza el estado de un pedido (admin).
+ * @param {string} orderId
+ * @param {string} status
+ */
+export async function updateAdminOrderStatus(orderId, status) {
+  const { data: refreshData } = await supabase.auth.refreshSession();
+  const session = refreshData?.session ?? (await supabase.auth.getSession()).data?.session;
+  if (!session?.access_token) {
+    throw new Error('No session / missing access token');
+  }
+
+  const url = `${API_URL}/api/admin/orders/${encodeURIComponent(orderId)}/status`;
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ status }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data?.error || data?.hint || `Error ${res.status}`);
+  }
+  return data;
+}
+
+/**
+ * Solicita reembolso Nave para una orden en estado paid (admin).
+ * @param {string} orderId - UUID de orders
+ */
+export async function refundNaveOrder(orderId) {
+  const { data: refreshData } = await supabase.auth.refreshSession();
+  const session = refreshData?.session ?? (await supabase.auth.getSession()).data?.session;
+  if (!session?.access_token) {
+    throw new Error('No session / missing access token');
+  }
+
+  const url = `${API_URL}/api/admin/orders/${encodeURIComponent(orderId)}/refund`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data?.error || data?.detail?.message || `Error ${res.status}`);
+  }
+  return data;
+}
+
+/**
  * Lista solicitudes mayoristas con filtro opcional por status.
  * Requiere sesión de admin (RLS).
  */

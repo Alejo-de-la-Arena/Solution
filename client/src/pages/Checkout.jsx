@@ -9,10 +9,24 @@ const inputClass =
 
 const NAVE_ORDER_KEY = 'nave_pending_order';
 
+function clearNavePendingStorage() {
+  try {
+    localStorage.removeItem(NAVE_ORDER_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Orden pagada en DB o aprobada en Nave aunque el webhook aún no actualice `orders.status`. */
 function isCheckoutPaid(data) {
   const orderStatus = (data?.order_status || '').toLowerCase();
-  if (orderStatus === 'payment_failed' || orderStatus === 'cancelled' || orderStatus === 'chargeback') {
+  if (
+    orderStatus === 'payment_failed'
+    || orderStatus === 'cancelled'
+    || orderStatus === 'chargeback'
+    || orderStatus === 'refunded'
+    || orderStatus === 'refund_pending'
+  ) {
     return false;
   }
   if (orderStatus === 'paid') return true;
@@ -45,13 +59,13 @@ export default function Checkout() {
 
   const orderIdFromUrl = searchParams.get('order_id');
 
-  // On mount / return from Nave: consultar estado y vaciar carrito si la compra quedó paga
+  // Solo cuando Nave redirige al callback_url (?order_id=...) — no usar localStorage:
+  // si el usuario abre Nave y vuelve sin pagar, no debe ver "pago pendiente" al reentrar a /checkout.
   useEffect(() => {
-    const savedOrder = localStorage.getItem(NAVE_ORDER_KEY);
-    const pendingOrderId = orderIdFromUrl || savedOrder;
+    const pendingOrderId = orderIdFromUrl?.trim();
     if (!pendingOrderId) return;
 
-    localStorage.removeItem(NAVE_ORDER_KEY);
+    clearNavePendingStorage();
     setChecking(true);
     setResultOrderId(pendingOrderId);
 
@@ -90,6 +104,11 @@ export default function Checkout() {
 
   const itemsWithProductId = cart.filter((item) => item.productId);
   const canSubmit = itemsWithProductId.length > 0 && itemsWithProductId.length === cart.length;
+
+  const closeNaveModal = () => {
+    clearNavePendingStorage();
+    setShowNaveModal(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -132,8 +151,18 @@ export default function Checkout() {
 
       const data = await createNavePayment(payload);
 
-      localStorage.setItem(NAVE_ORDER_KEY, data.order_id);
       setResultOrderId(data.order_id);
+
+      // Localhost: el SDK embebido falla por CORS y el checkout hosteado no permite iframe
+      // (X-Frame-Options: sameorigin). Redirigimos a checkout_url; Nave vuelve con callback_url.
+      const onLocalhost =
+        typeof window !== 'undefined'
+        && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+      if (onLocalhost && data.checkout_url) {
+        window.location.assign(data.checkout_url);
+        return;
+      }
+
       setPaymentRequestId(data.payment_request_id);
       setShowNaveModal(true);
       setLoading(false);
@@ -411,29 +440,29 @@ export default function Checkout() {
 
       {showNaveModal && (
         <div
-          className="fixed inset-0 z-50 flex items-stretch justify-center sm:items-center p-0 sm:p-6 bg-black/90 backdrop-blur-md"
+          className="fixed inset-0 z-[100] flex items-stretch justify-center sm:items-center p-0 sm:p-6 bg-black/90 backdrop-blur-md"
           role="dialog"
           aria-modal="true"
           aria-labelledby="nave-modal-title"
         >
-          <div className="w-full h-[100dvh] max-h-[100dvh] sm:h-auto sm:max-h-[min(92vh,100dvh)] flex flex-col rounded-none sm:rounded-xl border-0 sm:border border-white/[0.12] bg-zinc-950 shadow-none sm:shadow-[0_0_0_1px_rgba(0,255,255,0.08),0_24px_80px_rgba(0,0,0,0.65)] overflow-hidden max-w-full sm:max-w-[min(90rem,calc(100vw-3rem))]">
-            <div className="relative shrink-0 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-4 sm:px-8 sm:pt-6 sm:pb-5 border-b border-white/[0.08] bg-gradient-to-b from-white/[0.04] to-transparent">
+          <div className="w-full h-[100dvh] max-h-[100dvh] sm:h-[min(96dvh,920px)] sm:max-h-[min(96dvh,920px)] flex flex-col rounded-none sm:rounded-xl border-0 sm:border border-white/[0.12] bg-zinc-950 shadow-none sm:shadow-[0_0_0_1px_rgba(0,255,255,0.08),0_24px_80px_rgba(0,0,0,0.65)] overflow-hidden max-w-full sm:max-w-[calc(100vw-3rem)]">
+            <div className="relative shrink-0 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 sm:px-5 sm:pt-4 sm:pb-3 border-b border-white/[0.08] bg-gradient-to-b from-white/[0.04] to-transparent">
               <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[rgb(255,0,255)] via-[rgb(0,255,255)] to-[rgb(255,0,255)] opacity-90" />
               <div className="flex items-start justify-between gap-3 sm:gap-4">
-                <div className="space-y-1 min-w-0 sm:space-y-1.5">
-                  <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.3em] sm:tracking-[0.35em] text-[rgb(0,255,255)]/90">
+                <div className="space-y-0.5 min-w-0">
+                  <p className="text-[9px] uppercase tracking-[0.28em] text-[rgb(0,255,255)]/90">
                     Checkout seguro
                   </p>
-                  <h2 id="nave-modal-title" className="text-base sm:text-xl font-heading tracking-[0.15em] sm:tracking-[0.2em] text-white">
+                  <h2 id="nave-modal-title" className="text-base sm:text-lg font-heading tracking-[0.12em] sm:tracking-[0.15em] text-white">
                     Pago con Nave
                   </h2>
-                  <p className="text-[11px] sm:text-sm text-white/55 sm:max-w-md leading-snug sm:leading-relaxed">
+                  <p className="text-[11px] text-white/50 leading-snug line-clamp-2">
                     Completá el pago abajo. Al terminar, te llevamos al resultado de tu compra.
                   </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowNaveModal(false)}
+                  onClick={closeNaveModal}
                   className="shrink-0 flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 text-white/60 hover:text-white hover:border-[rgb(0,255,255)]/40 hover:bg-[rgb(0,255,255)]/5 transition-colors"
                   aria-label="Cerrar ventana de pago"
                 >
@@ -444,31 +473,26 @@ export default function Checkout() {
               </div>
             </div>
 
-            <div className="flex-1 min-h-0 flex flex-col overflow-y-auto overscroll-contain">
-              <div className="p-3 sm:p-6 flex flex-col min-h-0 flex-1">
-                <div className="rounded-md sm:rounded-lg overflow-hidden border border-black/10 shadow-inner flex flex-col flex-1 min-h-[min(52dvh,380px)] sm:min-h-[min(70dvh,560px)] bg-[#F4F4F4]">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+              <div className="p-2 sm:p-3">
+                <div className="rounded-md sm:rounded-lg overflow-hidden border border-black/10 shadow-inner bg-[#F4F4F4]">
                   <NaveEmbed key={paymentRequestId || 'nave'} paymentRequestId={paymentRequestId} />
                 </div>
               </div>
             </div>
 
-            <div className="shrink-0 px-4 sm:px-8 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:py-4 border-t border-white/[0.08] bg-black/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
-              <div className="flex items-center gap-3 text-white/45 text-xs">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-[rgb(0,255,255)]/80">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 00-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                  </svg>
-                </span>
-                <span className="leading-snug">
-                  Procesado por <span className="text-white/70">Nave / Naranja X</span>. No compartimos los datos de tu tarjeta con nuestro servidor.
-                </span>
-              </div>
+            <div className="shrink-0 px-3 sm:px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] border-t border-white/[0.06] bg-black/30 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <p className="flex-1 min-w-0 text-[10px] sm:text-[11px] text-white/40 leading-tight">
+                <span className="text-white/55">Nave / Naranja X</span>
+                <span className="text-white/35"> · </span>
+                <span className="text-white/40">tarjeta no pasa por nuestro servidor</span>
+              </p>
               <button
                 type="button"
-                onClick={() => setShowNaveModal(false)}
-                className="text-[11px] uppercase tracking-[0.2em] text-white/40 hover:text-white/80 transition-colors self-start sm:self-auto"
+                onClick={closeNaveModal}
+                className="shrink-0 text-[10px] uppercase tracking-[0.16em] text-white/45 hover:text-white/85 transition-colors"
               >
-                Volver al checkout
+                Volver
               </button>
             </div>
           </div>
