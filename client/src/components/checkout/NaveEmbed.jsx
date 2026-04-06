@@ -18,11 +18,13 @@ const NAVE_EMBED_SETTINGS = {
 /**
  * Checkout embebido Nave vía @ranty/ranty-sdk (<payfac-sdk />).
  * El elemento se crea de forma imperativa para que `settings` exista antes del firstUpdated de Lit.
+ *
+ * En localhost no se usa este componente: Checkout redirige a `checkout_url` (CORS del SDK +
+ * X-Frame-Options del checkout hosteado impiden iframe/SDK en dev local).
  */
 export default function NaveEmbed({ paymentRequestId }) {
   const hostRef = useRef(null);
   const publicKey = useMemo(() => env('VITE_NAVE_PUBLIC_KEY'), []);
-  // Default sandbox: alinea con api-sandbox.ranty.io (mismo clúster que create-payment con NAVE_ENV=testing). "staging" en el SDK usa e3-api y no encuentra el payment_request_id.
   const naveEnv = useMemo(() => env('VITE_NAVE_ENV', 'sandbox'), []);
 
   useLayoutEffect(() => {
@@ -45,7 +47,6 @@ export default function NaveEmbed({ paymentRequestId }) {
       el.settings = NAVE_EMBED_SETTINGS;
       el.style.display = 'block';
       el.style.width = '100%';
-      el.style.minHeight = 'min(58dvh, 480px)';
       host.appendChild(el);
     })();
 
@@ -68,7 +69,7 @@ export default function NaveEmbed({ paymentRequestId }) {
   return (
     <div
       ref={hostRef}
-      className="w-full flex-1 min-h-[min(58dvh,260px)] sm:min-h-[min(68dvh,560px)]"
+      className="w-full"
     />
   );
 }

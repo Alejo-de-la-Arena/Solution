@@ -48,6 +48,29 @@ async function assertAdmin(req, res) {
   return user;
 }
 
+/** Estados que el admin puede asignar manualmente (más prefijo nave_ para casos raros del webhook). */
+const ALLOWED_ORDER_STATUSES = new Set([
+  'pending',
+  'pending_payment',
+  'paid',
+  'payment_failed',
+  'refund_pending',
+  'refunded',
+  'chargeback',
+  'draft',
+  'cancelled',
+  'shipped',
+]);
+
+function isAllowedAdminOrderStatus(status) {
+  if (!status || typeof status !== 'string') return false;
+  const s = status.trim();
+  if (!s) return false;
+  if (ALLOWED_ORDER_STATUSES.has(s)) return true;
+  if (s.startsWith('nave_')) return true;
+  return false;
+}
+
 /**
  * GET /api/admin/orders
  * Lista órdenes con ítems y nombres de producto. Requiere Bearer JWT de admin.
@@ -140,6 +163,52 @@ router.get('/orders', async (req, res) => {
   }));
 
   return res.json({ orders: ordersWithItems });
+});
+
+/**
+ * PATCH /api/admin/orders/:orderId/status
+ * Body: { "status": "paid" | "shipped" | ... }
+ */
+router.patch('/orders/:orderId/status', async (req, res) => {
+  const user = await assertAdmin(req, res);
+  if (!user) return;
+
+  const { orderId } = req.params;
+  const nextStatus = (req.body?.status ?? '').trim();
+
+  if (!orderId) {
+    return res.status(400).json({ error: 'orderId requerido' });
+  }
+  if (!isAllowedAdminOrderStatus(nextStatus)) {
+    return res.status(400).json({
+      error: 'Estado no permitido',
+      hint: 'Usá un valor conocido (pending, paid, shipped, …) o nave_* si vino del webhook.',
+    });
+  }
+
+  const { data: existing, error: fetchErr } = await supabase
+    .from('orders')
+    .select('id, status')
+    .eq('id', orderId)
+    .maybeSingle();
+
+  if (fetchErr || !existing) {
+    return res.status(404).json({ error: 'Orden no encontrada' });
+  }
+
+  const { data: updated, error: upErr } = await supabase
+    .from('orders')
+    .update({ status: nextStatus })
+    .eq('id', orderId)
+    .select('*')
+    .single();
+
+  if (upErr) {
+    console.error('[admin] PATCH order status:', upErr);
+    return res.status(500).json({ error: 'No se pudo actualizar el estado' });
+  }
+
+  return res.json({ ok: true, order: updated });
 });
 
 /**

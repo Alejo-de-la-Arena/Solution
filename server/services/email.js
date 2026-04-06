@@ -19,7 +19,7 @@ async function postResendEmail({ to, subject, html }) {
     'https://api.resend.com/emails',
     {
       from: RESEND_FROM_EMAIL,
-      to: finalTo,
+      to: Array.isArray(finalTo) ? finalTo : [finalTo],
       subject: subjectFinal,
       html,
     },
@@ -165,33 +165,48 @@ function formatMoneyArs(amount, currency = 'ARS') {
   }).format(Number(amount) || 0);
 }
 
+function escapeHtml(s) {
+  if (s == null || s === '') return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 /**
  * Nave: pago aprobado — confirma compra con resumen y datos de tarjeta (enmascarados).
+ * @returns {Promise<boolean>} true si Resend aceptó el envío
  */
 async function sendPaymentConfirmationEmail({ to, order, items, payment }) {
-  try {
-    const safeTo = (to || '').trim();
-    if (!safeTo) return;
+  const safeTo = (to || '').trim();
+  if (!safeTo) {
+    console.warn('[email] sendPaymentConfirmationEmail: destinatario vacío');
+    return false;
+  }
 
+  try {
     const pm = payment?.payment_method || {};
     const inst = pm?.installment_plan || {};
     const cardLine = [pm.card_brand, pm.card_type, pm.card_last4 ? `···${pm.card_last4}` : null]
       .filter(Boolean)
+      .map((x) => escapeHtml(x))
       .join(' · ');
-    const issuerLine = pm.issuer ? `Emisor: ${pm.issuer}` : '';
+    const issuerLine = pm.issuer ? `Emisor: ${escapeHtml(pm.issuer)}` : '';
     const cuotasLine =
       inst.installments != null
-        ? `${inst.installments} cuota${Number(inst.installments) !== 1 ? 's' : ''}${inst.name ? ` (${inst.name})` : ''}`
+        ? `${escapeHtml(String(inst.installments))} cuota${Number(inst.installments) !== 1 ? 's' : ''}${inst.name ? ` (${escapeHtml(inst.name)})` : ''}`
         : '';
 
     const linesHtml = (items || [])
       .map((i) => {
         const itemTotal = i.quantity * i.unit_price;
+        const name = escapeHtml(i.product_name || 'Producto');
         return `
         <tr>
           <td style="padding: 16px 0; border-bottom: 1px solid #eaeaea;">
-            <p style="margin: 0; font-size: 15px; color: #111827; font-weight: 500;">${i.product_name || 'Producto'}</p>
-            <p style="margin: 4px 0 0 0; font-size: 13px; color: #6b7280;">Cant: ${i.quantity}</p>
+            <p style="margin: 0; font-size: 15px; color: #111827; font-weight: 500;">${name}</p>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: #6b7280;">Cant: ${Number(i.quantity)}</p>
           </td>
           <td style="padding: 16px 0; border-bottom: 1px solid #eaeaea; text-align: right; font-size: 15px; color: #111827; font-weight: 500;">
             ${formatMoneyArs(itemTotal, order.currency)}
@@ -200,7 +215,12 @@ async function sendPaymentConfirmationEmail({ to, order, items, payment }) {
       })
       .join('');
 
-    const paymentCode = payment?.payment_code ? `<p style="margin: 8px 0 0; font-size: 13px; color: #6b7280;">Código de operación: <strong>${payment.payment_code}</strong></p>` : '';
+    const paymentCode = payment?.payment_code
+      ? `<p style="margin: 8px 0 0; font-size: 13px; color: #6b7280;">Código de operación: <strong>${escapeHtml(payment.payment_code)}</strong></p>`
+      : '';
+
+    const greetingName = escapeHtml((order.customer_name || '').trim() || 'cliente');
+    const orderIdHtml = escapeHtml(String(order.id));
 
     const html = `
     <!DOCTYPE html>
@@ -214,10 +234,10 @@ async function sendPaymentConfirmationEmail({ to, order, items, payment }) {
           <tr><td style="padding:40px;">
             <h2 style="margin:0 0 16px;font-size:20px;color:#111827;">Pago confirmado</h2>
             <p style="margin:0 0 24px;font-size:16px;line-height:24px;color:#4b5563;">
-              Hola <strong>${(order.customer_name || '').trim() || 'cliente'}</strong>, tu pago con Nave se acreditó correctamente. Estamos preparando tu pedido.
+              Hola <strong>${greetingName}</strong>, tu pago con Nave se acreditó correctamente. Estamos preparando tu pedido.
             </p>
             <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:16px;margin-bottom:24px;">
-              <p style="margin:0;font-size:14px;color:#166534;">Orden <strong>#${order.id}</strong></p>
+              <p style="margin:0;font-size:14px;color:#166534;">Orden <strong>#${orderIdHtml}</strong></p>
               ${paymentCode}
               ${cardLine ? `<p style="margin:12px 0 0;font-size:14px;color:#374151;"><strong>Pago:</strong> ${cardLine}</p>` : ''}
               ${issuerLine ? `<p style="margin:4px 0 0;font-size:13px;color:#6b7280;">${issuerLine}</p>` : ''}
@@ -242,9 +262,19 @@ async function sendPaymentConfirmationEmail({ to, order, items, payment }) {
       </td></tr></table>
     </body></html>`;
 
-    await postResendEmail({ to: safeTo, subject: 'Pago confirmado — tu pedido en SOLUTION', html });
+    const out = await postResendEmail({
+      to: safeTo,
+      subject: 'Pago confirmado - tu pedido en SOLUTION',
+      html,
+    });
+    if (!out) {
+      console.warn('[email] sendPaymentConfirmationEmail: Resend no devolvió respuesta (revisá RESEND_* en .env)');
+      return false;
+    }
+    return true;
   } catch (e) {
     console.error('[email] sendPaymentConfirmationEmail:', e?.response?.data || e.message || e);
+    return false;
   }
 }
 

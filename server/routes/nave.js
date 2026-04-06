@@ -404,7 +404,7 @@ async function handleNaveWebhook(req, res) {
       { headers: { Authorization: `Bearer ${token}` } },
     );
 
-    const naveStatus = payment?.status?.name;
+    const naveStatus = (payment?.status?.name || '').toUpperCase();
     let orderStatus;
     switch (naveStatus) {
       case 'APPROVED':
@@ -429,7 +429,7 @@ async function handleNaveWebhook(req, res) {
     const { data: prevOrder, error: prevErr } = await supabase
       .from('orders')
       .select(
-        'id, status, customer_email, customer_name, total, currency',
+        'id, status, customer_email, customer_name, total, currency, payment_confirmation_email_sent_at',
       )
       .eq('id', external_payment_id)
       .maybeSingle();
@@ -439,7 +439,6 @@ async function handleNaveWebhook(req, res) {
       return;
     }
 
-    const previousStatus = (prevOrder.status || '').toLowerCase();
     const updatePayload = buildNaveOrderUpdate(payment, payment_id, orderStatus);
 
     const { error } = await supabase
@@ -454,32 +453,56 @@ async function handleNaveWebhook(req, res) {
 
     console.log(`[Nave Webhook] Orden ${external_payment_id} → ${orderStatus}`);
 
-    if (orderStatus === 'paid' && previousStatus !== 'paid') {
-      const { data: rawItems } = await supabase
-        .from('order_items')
-        .select('product_id, quantity, unit_price')
-        .eq('order_id', external_payment_id);
+    // Email de confirmación: no usar solo `previousStatus !== 'paid'` (si el primer envío a Resend
+    // fallaba, Nave no reintentaba el mail pero la orden ya quedaba `paid`). Idempotencia con
+    // `payment_confirmation_email_sent_at`. Destinatario: orden o buyer que devuelve Nave en el GET.
+    if (orderStatus === 'paid' && !prevOrder.payment_confirmation_email_sent_at) {
+      const to =
+        (prevOrder.customer_email || '').trim()
+        || (payment?.buyer?.user_email || '').trim();
+      if (!to) {
+        console.warn(
+          '[Nave Webhook] Pago aprobado sin email de cliente (ni orders.customer_email ni payment.buyer.user_email):',
+          external_payment_id,
+        );
+      } else {
+        const { data: rawItems } = await supabase
+          .from('order_items')
+          .select('product_id, quantity, unit_price')
+          .eq('order_id', external_payment_id);
 
-      let itemsForEmail = rawItems || [];
-      const pids = [...new Set(itemsForEmail.map((i) => i.product_id))];
-      if (pids.length > 0) {
-        const { data: products } = await supabase
-          .from('products')
-          .select('id, name')
-          .in('id', pids);
-        const nameById = Object.fromEntries((products || []).map((p) => [p.id, p.name]));
-        itemsForEmail = itemsForEmail.map((i) => ({
-          ...i,
-          product_name: nameById[i.product_id] || null,
-        }));
+        let itemsForEmail = rawItems || [];
+        const pids = [...new Set(itemsForEmail.map((i) => i.product_id))];
+        if (pids.length > 0) {
+          const { data: products } = await supabase
+            .from('products')
+            .select('id, name')
+            .in('id', pids);
+          const nameById = Object.fromEntries((products || []).map((p) => [p.id, p.name]));
+          itemsForEmail = itemsForEmail.map((i) => ({
+            ...i,
+            product_name: nameById[i.product_id] || null,
+          }));
+        }
+
+        const sent = await sendPaymentConfirmationEmail({
+          to,
+          order: prevOrder,
+          items: itemsForEmail,
+          payment,
+        });
+        if (sent) {
+          const { error: markErr } = await supabase
+            .from('orders')
+            .update({ payment_confirmation_email_sent_at: new Date().toISOString() })
+            .eq('id', external_payment_id);
+          if (markErr) {
+            console.error('[Nave Webhook] Email enviado pero falló marcar payment_confirmation_email_sent_at:', markErr);
+          } else {
+            console.log('[Nave Webhook] Email de pago confirmado enviado a:', to);
+          }
+        }
       }
-
-      sendPaymentConfirmationEmail({
-        to: prevOrder.customer_email,
-        order: prevOrder,
-        items: itemsForEmail,
-        payment,
-      }).catch((e) => console.error('[Nave Webhook] Email confirmación:', e?.message || e));
     }
   } catch (err) {
     console.error('[Nave Webhook] Error procesando:', err.response?.data || err.message);
