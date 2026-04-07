@@ -33,22 +33,44 @@ async function resolveCustomerId() {
 }
 
 /**
- * Normalizes the /rates response.
+ * Normaliza la respuesta de /rates aplicando las siguientes reglas de negocio:
  *
- * API response shape:
- * {
- *   customerId, validTo,
- *   rates: [
- *     { deliveredType, productType, productName, price, deliveryTimeMin, deliveryTimeMax }
- *   ]
- * }
+ * Opciones que se muestran:
+ *   - Clásico (CP) a domicilio    → gratis si freeShipping, sino precio real
+ *   - Clásico (CP) en sucursal    → gratis si freeShipping, sino precio real
+ *   - Expreso  (EP) a domicilio   → SIEMPRE precio real (no aplica envío gratis)
+ *   - Expreso  (EP) en sucursal   → DESCARTADO, no se ofrece
+ *
+ * Orden de presentación: Clásico domicilio → Clásico sucursal → Expreso domicilio
  */
 function normalizeRatesResult(raw, { freeShipping }) {
     const rates = Array.isArray(raw?.rates) ? raw.rates : [];
 
-    return rates.map((row, index) => {
-        const originalPrice = Number(row.price || 0) || 0;
+    // Descartar Expreso en sucursal (S/EP)
+    const filtered = rates.filter(
+        (row) => !(row.deliveredType === 'S' && row.productType === 'EP')
+    );
+
+    // Ordenar: CP primero (D luego S), luego EP (solo D)
+    const ORDER = { 'D-CP': 0, 'S-CP': 1, 'D-EP': 2 };
+    filtered.sort((a, b) => {
+        const keyA = `${a.deliveredType}-${a.productType}`;
+        const keyB = `${b.deliveredType}-${b.productType}`;
+        return (ORDER[keyA] ?? 9) - (ORDER[keyB] ?? 9);
+    });
+
+    return filtered.map((row, index) => {
+        const isClasico = row.productType === 'CP';
         const mode = row.deliveredType === 'S' ? 'branch' : 'home';
+        const originalPrice = Number(row.price || 0) || 0;
+
+        // Envío gratis SOLO para Clásico (CP)
+        const isFree = freeShipping && isClasico;
+
+        const baseLabel = row.productName || 'Correo Argentino';
+        const label = mode === 'branch'
+            ? `${baseLabel} — Retiro en sucursal`
+            : baseLabel;
 
         let eta = null;
         if (row.deliveryTimeMin && row.deliveryTimeMax) {
@@ -58,11 +80,11 @@ function normalizeRatesResult(raw, { freeShipping }) {
         }
 
         return {
-            id: `correo-${mode}-${index + 1}`,
-            label: row.productName || 'Correo Argentino',
+            id: `correo-${mode}-${(row.productType || 'x').toLowerCase()}-${index}`,
+            label,
             mode,
             serviceType: row.productType || null,
-            price: freeShipping ? 0 : originalPrice,
+            price: isFree ? 0 : originalPrice,
             originalPrice,
             currency: 'ARS',
             eta,
@@ -72,8 +94,8 @@ function normalizeRatesResult(raw, { freeShipping }) {
 }
 
 /**
- * Quotes shipping for given items + address.
- * Uses a single /rates call without deliveredType to get both D and S options.
+ * Cotiza envío para los items y la dirección dados.
+ * Hace una sola llamada a /rates sin deliveredType para recibir D y S en un request.
  */
 async function quote({ items, address }) {
     const normalizedAddress = normalizeAddress(address);
@@ -86,7 +108,7 @@ async function quote({ items, address }) {
             customerId,
             postalCodeDestination: normalizedAddress.postalCode,
             parcel,
-            // No deliveredType → API returns both D and S in one shot
+            // Sin deliveredType → API devuelve D y S juntos
         })
     );
 
@@ -109,7 +131,9 @@ async function listAgencies({ province }) {
 
     console.log('RAW AGENCIES RESPONSE:', JSON.stringify(raw, null, 2));
 
-    const agencies = Array.isArray(raw) ? raw : (Array.isArray(raw?.agencies) ? raw.agencies : []);
+    const agencies = Array.isArray(raw)
+        ? raw
+        : (Array.isArray(raw?.agencies) ? raw.agencies : []);
 
     return agencies.map((agency) => ({
         id: agency.code || null,
@@ -145,12 +169,7 @@ async function createShipment({ order, items, address, agencyCode, deliveryType 
 
     const raw = await importShipment(payload);
 
-    return {
-        customerId,
-        parcel,
-        payload,
-        raw,
-    };
+    return { customerId, parcel, payload, raw };
 }
 
 async function tracking({ shippingId }) {
