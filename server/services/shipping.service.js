@@ -1,9 +1,6 @@
 const correoProvider = require('./providers/correo/correo.provider');
 const { shouldUseCorreo, hasFreeShipping } = require('./shipping.rules');
-const {
-    getOrderBundle,
-    updateOrderShippingFields,
-} = require('./shipping.data');
+const { getOrderBundle, updateOrderShippingFields } = require('./shipping.data');
 const { buildAddressFromOrder } = require('./providers/correo/correo.mapper');
 
 async function quoteShipping({ items, address }) {
@@ -11,22 +8,25 @@ async function quoteShipping({ items, address }) {
         return correoProvider.quote({ items, address });
     }
 
-    return {
-        provider: 'gestionar',
-        freeShipping: hasFreeShipping(items),
-        options: [],
-        message: 'Cotización Gestionar todavía no integrada en shipping.service v1.',
-    };
+    // ── Gestionar (Buenos Aires / GBA) — DESHABILITADO TEMPORALMENTE ──────
+    // Cuando se reactive, descomentar este bloque y eliminar el return de arriba.
+    //
+    // return {
+    //     provider: 'gestionar',
+    //     freeShipping: hasFreeShipping(items),
+    //     options: [],
+    //     message: 'Cotización Gestionar todavía no integrada en shipping.service v1.',
+    // };
+    // ─────────────────────────────────────────────────────────────────────
+
+    // Fallback (nunca debería llegar acá mientras shouldUseCorreo === true)
+    return correoProvider.quote({ items, address });
 }
 
 async function quoteShippingFromOrder(orderId) {
     const bundle = await getOrderBundle(orderId);
     const address = buildAddressFromOrder(bundle.order);
-
-    return quoteShipping({
-        items: bundle.enrichedItems,
-        address,
-    });
+    return quoteShipping({ items: bundle.enrichedItems, address });
 }
 
 async function createCorreoShipmentFromOrderId({
@@ -38,7 +38,6 @@ async function createCorreoShipmentFromOrderId({
 }) {
     const bundle = await getOrderBundle(orderId);
     const { order, enrichedItems } = bundle;
-
     const address = buildAddressFromOrder(order);
 
     const result = await correoProvider.createShipment({
@@ -51,16 +50,9 @@ async function createCorreoShipmentFromOrderId({
 
     const raw = result.raw || {};
     const shippingExternalId =
-        raw.shippingId ||
-        raw.id ||
-        raw.shipmentId ||
-        null;
-
+        raw.shippingId || raw.id || raw.shipmentId || null;
     const trackingNumber =
-        raw.trackingNumber ||
-        raw.tracking_number ||
-        raw.code ||
-        null;
+        raw.trackingNumber || raw.tracking_number || raw.code || null;
 
     const updatedOrder = await updateOrderShippingFields(orderId, {
         shipping_provider: 'correo_argentino',
@@ -85,19 +77,10 @@ async function createCorreoShipmentFromOrderId({
         shipping_import_response: result.raw,
     });
 
-    return {
-        order: updatedOrder,
-        shipment: result,
-    };
+    return { order: updatedOrder, shipment: result };
 }
 
-async function saveQuoteOnOrder({
-    orderId,
-    quoteResult,
-    selectedOption,
-    agencyCode,
-    agencyName,
-}) {
+async function saveQuoteOnOrder({ orderId, quoteResult, selectedOption, agencyCode, agencyName }) {
     const bundle = await getOrderBundle(orderId);
     const address = buildAddressFromOrder(bundle.order);
 
