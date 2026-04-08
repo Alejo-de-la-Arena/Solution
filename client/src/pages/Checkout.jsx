@@ -252,10 +252,11 @@ export default function Checkout() {
       const data = await createNavePayment(payload);
       setResultOrderId(data.order_id);
 
-      // Localhost: el SDK falla por CORS → redirect a checkout_url
+      // Localhost: por defecto redirigimos a checkout_url. Se puede forzar embebido con VITE_NAVE_FORCE_EMBED_LOCAL=true.
       const onLocalhost = typeof window !== 'undefined'
         && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-      if (onLocalhost && data.checkout_url) {
+      const forceEmbedLocal = ((import.meta.env.VITE_NAVE_FORCE_EMBED_LOCAL || '') + '').toLowerCase() === 'true';
+      if (onLocalhost && !forceEmbedLocal && data.checkout_url) {
         window.location.assign(data.checkout_url);
         return;
       }
