@@ -8,42 +8,42 @@ const TESTIMONIALS = [
     city: 'Buenos Aires',
     initial: 'A',
     quote:
-      'Les compré cuando vendían equivalencias y ahora con los perfumes nuevos, probé el Red Desire y el Black, ambos muy buenos. ¡Recomiendo!',
+      'Les compre cuando vendían equivalencias y ahora con los perfumes nuevos, probé el Red Desire y el Black, ambos muy buenos, recomiendo!',
   },
   {
     name: 'Sebastian Carmona',
     city: 'Rosario',
     initial: 'S',
     quote:
-      'Si te gustan los perfumes dulces recomiendo el Yellow Bloom, tiene un parecido al Erba Pura. Excelente calidad.',
+      'Si te gustan los perfumes dulces recomiendo el Yellow Bloom, tiene un parecido al Erba pura',
   },
   {
     name: 'Franco Belligoi',
     city: 'Córdoba',
     initial: 'F',
     quote:
-      'Compré el White Ice y cumple con la descripción. Super versátil y fresco para usar durante el día.',
+      'Compre el White ice y cumple con la descripción, super versátil y fresco para usar durante el dia',
   },
   {
-    name: 'Martín Gonzalez',
+    name: 'Nicolás Méndez',
     city: 'Buenos Aires',
-    initial: 'M',
+    initial: 'N',
     quote:
-      'La calidad es excepcional. Se convirtió en mi fragancia de confianza para cada ocasión importante.',
+      'Buena atención, Buen producto',
   },
   {
-    name: 'Diego Ramírez',
+    name: 'Ezequiel Zotto',
     city: 'Mendoza',
-    initial: 'D',
+    initial: 'E',
     quote:
-      'Nunca imaginé encontrar esta relación precio-calidad. El Deep Blue es perfecto para el día a día en la oficina.',
+      'Elegí el Deep Blue y cumplió 100%, pero lo que me compro fue el envase, original y practico para llevar durante el día',
   },
   {
-    name: 'Lucas Peralta',
+    name: 'Patricia Montone',
     city: 'Mar del Plata',
-    initial: 'L',
+    initial: 'P',
     quote:
-      'SOLUTION cambió mi percepción sobre las fragancias premium. El Black Code es increíble para salidas nocturnas.',
+      'Compre el combo de 2 para regalarle a mi hijo, están barbaros, recomiendo!',
   },
 ];
 
