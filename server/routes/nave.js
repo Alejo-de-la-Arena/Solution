@@ -238,6 +238,14 @@ router.post('/nave/create-payment', async (req, res) => {
 
 // ── Webhook ───────────────────────────────────────────────────────────────
 
+/** Normaliza el body del POST (Nave doc: payment_id, external_payment_id; algunos envíos usan camelCase o wrapper). */
+function parseNaveWebhookPayload(body) {
+  const root = body && typeof body === 'object' ? (body.data && typeof body.data === 'object' ? body.data : body) : {};
+  const payment_id = root.payment_id || root.paymentId;
+  const external_payment_id = root.external_payment_id || root.externalPaymentId;
+  return { payment_id, external_payment_id };
+}
+
 function buildNaveOrderUpdate(payment, paymentId, orderStatus) {
   const pm = payment?.payment_method || {};
   const inst = pm?.installment_plan || {};
@@ -261,14 +269,16 @@ async function handleNaveWebhook(req, res) {
   console.log('[Nave Webhook] Request recibido:', {
     path: req.originalUrl || req.path,
     headers: { 'content-type': req.headers['content-type'], 'user-agent': req.headers['user-agent'] },
+    rawLength: req.naveWebhookRawLength,
+    jsonError: req.naveWebhookJsonError || null,
     body: req.body,
   });
 
   res.sendStatus(200);
 
-  const { payment_id, external_payment_id } = req.body || {};
+  const { payment_id, external_payment_id } = parseNaveWebhookPayload(req.body);
   if (!payment_id || !external_payment_id) {
-    console.warn('[Nave Webhook] Payload incompleto — campos esperados: payment_id, external_payment_id');
+    console.warn('[Nave Webhook] Payload incompleto — campos esperados: payment_id, external_payment_id (o paymentId / externalPaymentId). Revisá notification_url en Nave (prod vs sandbox) y que apunte a este servidor (ej. …/webhooks/nave o …/api/nave/webhook).');
     return;
   }
   if (!supabase) { console.error('[Nave Webhook] Supabase no configurado'); return; }
