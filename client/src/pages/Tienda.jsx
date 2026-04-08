@@ -8,20 +8,6 @@ import { getComboProfile, normalizeComboKey } from '../data/comboProfiles';
 import { mediaUrl } from '../lib/mediaUrl';
 import { getStoreProductImages } from '../lib/storeProductImages';
 
-const testimonials = [
-  { name: 'Martín G.', text: 'MIDNIGHT es increíble. Nunca pensé que iba a encontrar esta calidad a este precio en Argentina.', rating: 5 },
-  { name: 'Diego R.', text: 'CARBON se convirtió en mi fragancia diaria. Elegante, moderno y dura todo el día.', rating: 5 },
-  { name: 'Lucas P.', text: 'Compré ALPHA y la diferencia con otras marcas es notable. 100% recomendable.', rating: 5 },
-];
-
-function StarIcon({ className = 'w-4 h-4' }) {
-  return (
-    <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-    </svg>
-  );
-}
-
 function ChevronDownIcon({ className = 'w-6 h-6' }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -107,7 +93,7 @@ export default function Tienda() {
               <p className="text-center text-white/60 py-12">No hay productos disponibles.</p>
             ) : (
               perfumes.map((perfume, index) => (
-                <ProductBlock key={perfume.id} perfume={perfume} index={index} testimonials={testimonials} altView={altView} />
+                <ProductBlock key={perfume.id} perfume={perfume} index={index} altView={altView} />
               ))
             )}
           </div>
@@ -115,7 +101,6 @@ export default function Tienda() {
       </section>
 
       <TiendaInfoSection />
-      <TiendaFinalTestimonial testimonials={testimonials} />
 
       {perfumes.length >= 2 && (
         <TiendaComboSection
@@ -164,7 +149,7 @@ function TiendaHero() {
   );
 }
 
-function ProductBlock({ perfume, index, testimonials, altView }) {
+function ProductBlock({ perfume, index, altView }) {
   const { ref, motionProps } = useScrollMotion();
   const accentColor = perfume.accent_color || ACCENT_COLORS[index];
 
@@ -228,34 +213,6 @@ function ProductBlock({ perfume, index, testimonials, altView }) {
           </div>
         </div>
       </div>
-
-      {index === 1 && (
-        <div className="mt-24 max-w-xl mx-auto text-center">
-          <div className="border-t border-white/10 pt-12">
-            <div className="flex gap-1 mb-6 justify-center">
-              {[...Array(testimonials[0].rating)].map((_, i) => (
-                <StarIcon key={i} className="w-4 h-4 text-white" />
-              ))}
-            </div>
-            <p className="text-lg opacity-80 leading-relaxed mb-4">&quot;{testimonials[0].text}&quot;</p>
-            <p className="text-sm opacity-60 tracking-wider">— {testimonials[0].name}</p>
-          </div>
-        </div>
-      )}
-
-      {index === 3 && (
-        <div className="mt-24 max-w-xl mx-auto text-center">
-          <div className="border-t border-white/10 pt-12">
-            <div className="flex gap-1 mb-6 justify-center">
-              {[...Array(testimonials[1].rating)].map((_, i) => (
-                <StarIcon key={i} className="w-4 h-4 text-white" />
-              ))}
-            </div>
-            <p className="text-lg opacity-80 leading-relaxed mb-4">&quot;{testimonials[1].text}&quot;</p>
-            <p className="text-sm opacity-60 tracking-wider">— {testimonials[1].name}</p>
-          </div>
-        </div>
-      )}
     </motion.div>
   );
 }
@@ -537,7 +494,7 @@ function TiendaInfoSection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           <div className="text-center">
             <h3 className="font-heading text-xl tracking-widest mb-4">ENVÍOS A TODO EL PAÍS</h3>
-            <p className="text-sm opacity-70 leading-relaxed">Recibí tu fragancia en 3-5 días hábiles. Envío gratis en compras superiores a $30.000.</p>
+            <p className="text-sm opacity-70 leading-relaxed">Recibí tu fragancia en 2-5 días hábiles. Envío gratis llevando 2 o más perfumes!</p>
           </div>
           <div className="text-center">
             <h3 className="font-heading text-xl tracking-widest mb-4">GARANTÍA DE CALIDAD</h3>
