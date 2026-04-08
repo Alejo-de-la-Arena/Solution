@@ -30,7 +30,7 @@ export default function ElProcesoSection() {
     <section
       ref={ref}
       id="proceso-solution"
-      className="relative overflow-hidden border-t border-white/10 bg-black px-4 py-28 sm:py-32 lg:py-40 text-white"
+      className="relative overflow-hidden border-t border-white/10 bg-black py-20 sm:py-32 lg:py-40 text-white"
     >
       <div className="pointer-events-none absolute inset-0" aria-hidden>
         <motion.div

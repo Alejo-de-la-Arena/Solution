@@ -44,7 +44,7 @@ function WhatsAppIcon({ className = "h-5 w-5" }) {
 
 export default function Footer() {
   return (
-    <footer className="relative mt-32 border-t border-white/10 bg-black text-white overflow-hidden">
+    <footer className="relative border-t border-white/10 bg-black text-white overflow-hidden">
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[70vw] max-w-4xl h-[45vh] bg-[radial-gradient(circle_at_center,rgba(0,255,255,0.12)_0%,transparent_60%)] opacity-70" />
         <div className="absolute right-0 top-0 w-[35vw] max-w-[420px] h-[30vh] bg-[radial-gradient(circle_at_left,rgba(255,0,255,0.10)_0%,transparent_65%)] opacity-70" />

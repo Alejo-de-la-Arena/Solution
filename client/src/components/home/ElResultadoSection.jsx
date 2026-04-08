@@ -5,7 +5,7 @@ export default function ElResultadoSection() {
   const { ref, motionProps, reducedMotion, premiumEasing } = useScrollMotion();
 
   return (
-    <section ref={ref} className="relative py-32 px-4 bg-black text-white overflow-hidden border-t border-white/10">
+    <section ref={ref} className="relative py-20 sm:py-32 bg-black text-white overflow-hidden border-t border-white/10">
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
         <motion.div
           className="absolute inset-y-[-10%] left-1/2 w-[75vw] max-w-4xl -translate-x-1/2 blur-[90px]"

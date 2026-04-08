@@ -9,7 +9,7 @@ export default function CtaColeccionSection() {
   return (
     <section
       ref={ref}
-      className="relative pt-20 pb-32 px-4 bg-black text-white overflow-hidden -mt-10"
+      className="relative py-20 sm:py-32 bg-black text-white overflow-hidden -mt-10"
     >
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
         <motion.div

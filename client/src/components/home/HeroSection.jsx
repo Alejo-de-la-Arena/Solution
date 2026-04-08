@@ -348,8 +348,7 @@ export default function HeroSection() {
             )}
           </AnimatePresence>
         </div>
-
-        <div className="container mx-auto relative z-10 flex flex-col lg:flex-row items-stretch min-h-screen px-4 sm:px-8 lg:px-16 pt-24 pb-12 lg:py-0">
+        <div className="container mx-auto relative z-10 flex flex-col lg:flex-row items-stretch min-h-screen px-4 sm:px-8 lg:px-16 pt-28 pb-20 lg:py-0">
           <div className="flex-1 flex items-start lg:items-center py-0 lg:py-24 order-1">
             <div className="max-w-xl lg:max-w-2xl w-full">
               <AnimatePresence mode="wait" initial={false}>

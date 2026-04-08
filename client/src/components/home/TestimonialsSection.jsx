@@ -1,106 +1,151 @@
+
 import { motion } from 'motion/react';
 import { useScrollMotion } from '../../hooks/useScrollMotion';
 
 const TESTIMONIALS = [
   {
+    name: 'Andrés Ferrero',
+    city: 'Buenos Aires',
+    initial: 'A',
+    quote:
+      'Les compré cuando vendían equivalencias y ahora con los perfumes nuevos, probé el Red Desire y el Black, ambos muy buenos. ¡Recomiendo!',
+  },
+  {
+    name: 'Sebastian Carmona',
+    city: 'Rosario',
+    initial: 'S',
+    quote:
+      'Si te gustan los perfumes dulces recomiendo el Yellow Bloom, tiene un parecido al Erba Pura. Excelente calidad.',
+  },
+  {
+    name: 'Franco Belligoi',
+    city: 'Córdoba',
+    initial: 'F',
+    quote:
+      'Compré el White Ice y cumple con la descripción. Super versátil y fresco para usar durante el día.',
+  },
+  {
     name: 'Martín Gonzalez',
     city: 'Buenos Aires',
+    initial: 'M',
     quote:
-      'La calidad es excepcional. MIDNIGHT se convirtió en mi fragancia de confianza para cada ocasión importante.',
+      'La calidad es excepcional. Se convirtió en mi fragancia de confianza para cada ocasión importante.',
   },
   {
     name: 'Diego Ramírez',
-    city: 'Córdoba',
+    city: 'Mendoza',
+    initial: 'D',
     quote:
-      'Nunca imaginé encontrar esta relación precio-calidad. CARBON es perfecto para el día a día.',
+      'Nunca imaginé encontrar esta relación precio-calidad. El Deep Blue es perfecto para el día a día en la oficina.',
   },
   {
     name: 'Lucas Peralta',
-    city: 'Rosario',
-    quote: 'SOLUTION cambió mi percepción sobre las fragancias premium.',
+    city: 'Mar del Plata',
+    initial: 'L',
+    quote:
+      'SOLUTION cambió mi percepción sobre las fragancias premium. El Black Code es increíble para salidas nocturnas.',
   },
 ];
 
+// Duplicate for seamless infinite loop
+const ITEMS = [...TESTIMONIALS, ...TESTIMONIALS];
+
 export default function TestimonialsSection() {
-  const { ref, motionProps, reducedMotion, premiumEasing } = useScrollMotion();
+  const { ref, motionProps } = useScrollMotion();
 
   return (
-    <section ref={ref} className="relative py-28 px-4 border-t border-white/10 bg-black text-white overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none" aria-hidden>
-        <motion.div
-          className="absolute inset-y-[-20%] left-1/2 -translate-x-1/2 w-[80vw] max-w-5xl blur-[80px]"
+    <section
+      ref={ref}
+      className="relative py-24 border-t border-white/10 bg-black text-white overflow-hidden"
+    >
+      {/* Background glow */}
+      <div className="pointer-events-none absolute inset-0" aria-hidden>
+        <div
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[70vw] max-w-3xl h-48 blur-[90px] opacity-25"
           style={{
             background:
-              'radial-gradient(circle_at_0%_50%,rgba(0,255,255,0.16)_0%,transparent_55%),radial-gradient(circle_at_100%_50%,rgba(255,0,255,0.16)_0%,transparent_55%)',
+              'radial-gradient(ellipse at 20% 50%, rgba(0,255,255,0.3) 0%, transparent 55%), radial-gradient(ellipse at 80% 50%, rgba(255,0,255,0.2) 0%, transparent 55%)',
           }}
-          animate={
-            reducedMotion
-              ? { opacity: 0.4 }
-              : {
-                  opacity: [0.3, 0.55, 0.4],
-                  scale: [0.96, 1.04, 0.98],
-                }
-          }
-          transition={{ duration: 26, ease: 'easeInOut', repeat: Infinity }}
         />
       </div>
 
-      <div className="relative mx-auto max-w-6xl space-y-12">
+      <div className="relative">
+        {/* Header */}
         <motion.div
           {...motionProps}
-          transition={{ ...motionProps.transition, delay: 0.02 }}
-          className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-6"
+          className="text-center mb-14 space-y-3 px-4"
         >
-          <div className="space-y-4 max-w-xl">
-            <div className="text-xs tracking-[0.4em] opacity-30 mb-3">TESTIMONIOS</div>
-            <h2 className="text-2xl sm:text-3xl tracking-wider opacity-60 font-heading">
-              Lo que dicen nuestros clientes
-            </h2>
-          </div>
+          <p className="text-xs tracking-[0.4em] opacity-40 uppercase">Testimonios</p>
+          <h2 className="text-2xl sm:text-3xl font-heading tracking-wider opacity-70">
+            Lo que dicen nuestros clientes
+          </h2>
         </motion.div>
 
-        {/* carrusel horizontal premium */}
+        {/* Infinite scroll track */}
         <motion.div
           {...motionProps}
-          transition={{ ...motionProps.transition, delay: 0.08 }}
+          transition={{ ...motionProps.transition, delay: 0.1 }}
           className="relative"
         >
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-black via-black/80 to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-black via-black/80 to-transparent" />
+          {/* Edge fades */}
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-black to-transparent z-10" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-black to-transparent z-10" />
 
-          <div className="no-scrollbar flex gap-5 overflow-x-auto px-1 py-2 snap-x snap-mandatory">
-            {TESTIMONIALS.map((t, index) => (
-              <motion.article
-                key={t.name}
-                initial={{ opacity: 0, y: 18 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.5 }}
-                transition={{ duration: 0.5, delay: 0.1 + index * 0.04, ease: premiumEasing }}
-                className="relative w-[260px] sm:w-[320px] lg:w-[360px] snap-center shrink-0"
-              >
-                <div className="relative h-full rounded-3xl border border-white/12 bg-white/[0.03] px-5 py-6 sm:px-6 sm:py-7 backdrop-blur-lg shadow-[0_24px_70px_rgba(0,0,0,0.85)] overflow-hidden">
-                  <div className="absolute inset-0 opacity-70">
-                    <div className="absolute -top-10 right-[-40px] h-32 w-32 rotate-12 bg-white/6 blur-2xl" />
-                  </div>
-                  <div className="relative flex flex-col h-full gap-5">
-                    <p className="text-4xl leading-none text-white/25">“</p>
-                    <p className="text-sm sm:text-[0.95rem] text-white/80 leading-relaxed">{t.quote}</p>
-                    <div className="mt-auto pt-4 border-t border-white/10 flex items-center justify-between gap-4">
-                      <div>
-                        <p className="text-xs tracking-[0.18em] uppercase text-white/80">{t.name}</p>
-                        <p className="text-[0.7rem] text-white/55">{t.city}</p>
-                      </div>
-                      <div className="relative h-10 w-10 rounded-full border border-white/15 bg-white/5 overflow-hidden">
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_0%,rgba(255,255,255,0.6)_0%,transparent_55%)]" />
-                      </div>
-                    </div>
-                  </div>
+          {/* Scrolling container */}
+          <div className="overflow-hidden">
+            <motion.div
+              className="flex gap-5 w-max"
+              animate={{ x: ['0%', '-50%'] }}
+              transition={{
+                duration: 30,
+                ease: 'linear',
+                repeat: Infinity,
+              }}
+            >
+              {ITEMS.map((t, index) => (
+                <div
+                  key={`${t.name}-${index}`}
+                  className="w-[320px] sm:w-[340px] lg:w-[380px] shrink-0 py-2 px-1"
+                >
+                  <TestimonialCard t={t} />
                 </div>
-              </motion.article>
-            ))}
+              ))}
+            </motion.div>
           </div>
         </motion.div>
       </div>
     </section>
+  );
+}
+
+function TestimonialCard({ t }) {
+  return (
+    <div className="relative h-full rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm flex flex-col gap-4">
+      {/* Quote mark */}
+      <span className="text-5xl leading-none text-white/15 font-serif select-none">"</span>
+
+      {/* Quote text */}
+      <p className="text-sm text-white/75 leading-relaxed flex-1">
+        {t.quote}
+      </p>
+
+      {/* Author */}
+      <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+        <div className="w-9 h-9 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-xs font-semibold text-white/60 shrink-0">
+          {t.initial}
+        </div>
+        <div>
+          <p className="text-xs font-medium text-white/80 tracking-wide">{t.name}</p>
+          <p className="text-[10px] text-white/40">{t.city}</p>
+        </div>
+        <div className="ml-auto flex gap-0.5">
+          {[...Array(5)].map((_, i) => (
+            <svg key={i} className="w-3 h-3 text-[rgb(0,255,255)]" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
