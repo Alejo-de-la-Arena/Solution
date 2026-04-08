@@ -377,9 +377,6 @@ export default function HeroSection() {
                     className="space-y-4"
                   >
                     <div className="space-y-4">
-                      <h1 className="font-heading text-4xl sm:text-6xl lg:text-7xl tracking-[0.24em] uppercase">
-                        Solution
-                      </h1>
 
                       <div
                         className="inline-flex w-fit rounded-full border px-4 py-1.5 text-[0.7rem] tracking-[0.22em] uppercase text-white/80 backdrop-blur-md"
