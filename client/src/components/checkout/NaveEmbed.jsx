@@ -1,31 +1,42 @@
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
 function env(name, fallback = '') {
   return (import.meta.env[name] || fallback || '').toString().trim();
 }
 
-/** Sin título/subtítulo duplicados respecto al modal; redirect automático al terminar (SDK). */
 const NAVE_EMBED_SETTINGS = {
-  customerProperties: {
-    show_title: false,
-    show_subtitle: false,
-    show_order_detail: true,
-    enable_auto_redirect: true,
-    hide_footer: false,
-  },
+  show_title: false,
+  show_subtitle: false,
+  show_order_detail: true,
+  enable_auto_redirect: true,
 };
 
-/**
- * Checkout embebido Nave vía @ranty/ranty-sdk (<payfac-sdk />).
- * El elemento se crea de forma imperativa para que `settings` exista antes del firstUpdated de Lit.
- *
- * En localhost no se usa este componente: Checkout redirige a `checkout_url` (CORS del SDK +
- * X-Frame-Options del checkout hosteado impiden iframe/SDK en dev local).
- */
 export default function NaveEmbed({ paymentRequestId }) {
   const hostRef = useRef(null);
   const publicKey = useMemo(() => env('VITE_NAVE_PUBLIC_KEY'), []);
   const naveEnv = useMemo(() => env('VITE_NAVE_ENV', 'sandbox'), []);
+
+  // DEBUG: log config on mount so we can verify what the SDK receives
+  useEffect(() => {
+    console.log('[NaveEmbed] config:', {
+      publicKey,
+      naveEnv,
+      paymentRequestId,
+      origin: window.location.origin,
+      hostname: window.location.hostname,
+    });
+  }, [publicKey, naveEnv, paymentRequestId]);
+
+  // DEBUG: capture all SDK postMessage events
+  useEffect(() => {
+    function onMessage(e) {
+      if (e.data?.type) {
+        console.log('[NaveEmbed] postMessage:', e.data);
+      }
+    }
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
 
   useLayoutEffect(() => {
     if (!publicKey || !paymentRequestId) return undefined;
