@@ -348,8 +348,7 @@ export default function HeroSection() {
             )}
           </AnimatePresence>
         </div>
-
-        <div className="container mx-auto relative z-10 flex flex-col lg:flex-row items-stretch min-h-screen px-4 sm:px-8 lg:px-16 pt-24 pb-12 lg:py-0">
+        <div className="container mx-auto relative z-10 flex flex-col lg:flex-row items-stretch min-h-screen px-4 sm:px-8 lg:px-16 pt-28 pb-20 lg:py-0">
           <div className="flex-1 flex items-start lg:items-center py-0 lg:py-24 order-1">
             <div className="max-w-xl lg:max-w-2xl w-full">
               <AnimatePresence mode="wait" initial={false}>
@@ -377,9 +376,6 @@ export default function HeroSection() {
                     className="space-y-4"
                   >
                     <div className="space-y-4">
-                      <h1 className="font-heading text-4xl sm:text-6xl lg:text-7xl tracking-[0.24em] uppercase">
-                        Solution
-                      </h1>
 
                       <div
                         className="inline-flex w-fit rounded-full border px-4 py-1.5 text-[0.7rem] tracking-[0.22em] uppercase text-white/80 backdrop-blur-md"

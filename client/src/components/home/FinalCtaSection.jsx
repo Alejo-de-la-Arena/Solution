@@ -8,7 +8,7 @@ export default function FinalCtaSection() {
   return (
     <section
       ref={ref}
-      className="relative py-40 px-4 border-t border-white/10 bg-black text-white overflow-hidden"
+      className="relative py-20 sm:py-32 px-4 border-t border-white/10 bg-black text-white overflow-hidden"
     >
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
         <motion.div

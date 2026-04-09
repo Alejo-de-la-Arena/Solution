@@ -10,7 +10,7 @@ export default function DelReventaSection() {
   return (
     <section
       ref={ref}
-      className="relative py-28 px-4 bg-black text-white overflow-hidden border-t border-white/5"
+      className="relative py-20 px-4 bg-black text-white overflow-hidden border-t border-white/5"
     >
       {/* atmósfera de fondo */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden>

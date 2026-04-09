@@ -26,7 +26,7 @@ export default function WholesaleSection() {
   return (
     <section
       ref={ref}
-      className="relative overflow-hidden border-t border-white/10 bg-black px-4 py-32 text-white"
+      className="relative overflow-hidden border-t border-white/10 bg-black px-4 py-20 sm:py-32 text-white"
     >
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
         <motion.div
