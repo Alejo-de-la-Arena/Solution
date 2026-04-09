@@ -114,6 +114,110 @@ async function fetchMpOrder(orderId, accessToken) {
   return data;
 }
 
+function deriveOrderStatusFromPayment(pay) {
+  const st = (pay?.status || '').toLowerCase();
+  if (st === 'approved') return 'paid';
+  if (['rejected', 'cancelled', 'refunded'].includes(st)) return 'payment_failed';
+  return 'pending_payment';
+}
+
+function paymentToMpColumns(pay) {
+  const row = {
+    mp_order_id: null,
+    mp_payment_id: pay?.id != null ? String(pay.id) : null,
+    mp_status: pay?.status || null,
+    mp_status_detail: pay?.status_detail || null,
+    mp_card_brand: pay?.payment_method_id || null,
+    mp_card_last4: pay?.card?.last_four_digits || null,
+    mp_installments: pay?.installments != null && Number.isFinite(Number(pay.installments))
+      ? Number(pay.installments)
+      : null,
+  };
+  if ((pay?.status || '').toLowerCase() === 'approved') {
+    row.mp_paid_at = pay?.date_approved || new Date().toISOString();
+  }
+  return row;
+}
+
+function buildSyntheticPaymentFromRestPayment(pay) {
+  return {
+    payment_code: pay?.id != null ? String(pay.id) : null,
+    payment_method: {
+      card_brand: pay?.payment_method_id,
+      card_type: pay?.payment_type_id,
+      card_last4: pay?.card?.last_four_digits,
+      installment_plan: {
+        installments: pay?.installments,
+        name: null,
+      },
+    },
+  };
+}
+
+async function applyMpPaymentToDb(orderRowId, pay, { sendEmailIfPaid }) {
+  const mpCols = paymentToMpColumns(pay);
+  const nextStatus = deriveOrderStatusFromPayment(pay);
+  const update = { ...mpCols, status: nextStatus };
+
+  const { data: prevOrder, error: prevErr } = await supabase
+    .from('orders')
+    .select('id, status, customer_email, customer_name, total, currency, payment_confirmation_email_sent_at, payment_method')
+    .eq('id', orderRowId)
+    .maybeSingle();
+
+  if (prevErr || !prevOrder) {
+    console.error('[MP] applyMpPaymentToDb: orden no encontrada', orderRowId, prevErr);
+    return;
+  }
+
+  const { error } = await supabase.from('orders').update(update).eq('id', orderRowId);
+  if (error) {
+    console.error('[MP] applyMpPaymentToDb: error update', error);
+    return;
+  }
+
+  console.log(`[MP] Orden ${orderRowId} → ${nextStatus} (payment ${pay?.id})`);
+
+  if (sendEmailIfPaid && nextStatus === 'paid' && !prevOrder.payment_confirmation_email_sent_at) {
+    const to = (prevOrder.customer_email || '').trim();
+    if (!to) {
+      console.warn('[MP] Pago (API payments) sin email:', orderRowId);
+      return;
+    }
+
+    const { data: rawItems } = await supabase
+      .from('order_items')
+      .select('product_id, quantity, unit_price')
+      .eq('order_id', orderRowId);
+    let itemsForEmail = rawItems || [];
+    const pids = [...new Set(itemsForEmail.map((i) => i.product_id))];
+    if (pids.length > 0) {
+      const { data: products } = await supabase.from('products').select('id, name').in('id', pids);
+      const nameById = Object.fromEntries((products || []).map((p) => [p.id, p.name]));
+      itemsForEmail = itemsForEmail.map((i) => ({
+        ...i,
+        product_name: nameById[i.product_id] || null,
+      }));
+    }
+
+    const payment = buildSyntheticPaymentFromRestPayment(pay);
+    const sent = await sendPaymentConfirmationEmail({ to, order: prevOrder, items: itemsForEmail, payment });
+    if (sent) {
+      await supabase
+        .from('orders')
+        .update({ payment_confirmation_email_sent_at: new Date().toISOString() })
+        .eq('id', orderRowId);
+    }
+  }
+}
+
+async function fetchMpPayment(paymentId, accessToken) {
+  const { data } = await axios.get(`${MP_API}/v1/payments/${paymentId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  return data;
+}
+
 async function applyMpOrderToDb(orderRowId, mpOrder, { sendEmailIfPaid }) {
   const mpCols = mpOrderToMpColumns(mpOrder);
   const nextStatus = deriveOrderStatus(mpOrder);
@@ -174,9 +278,9 @@ async function applyMpOrderToDb(orderRowId, mpOrder, { sendEmailIfPaid }) {
   }
 }
 
-// ── POST /api/mercadopago/create-order ─────────────────────────────────────
+// ── POST /api/mercadopago/create-preference (Payment Brick: cuenta MP + tarjetas) ──
 
-router.post('/mercadopago/create-order', async (req, res) => {
+router.post('/mercadopago/create-preference', async (req, res) => {
   if (!supabase) return res.status(503).json({ error: 'Base de datos no configurada' });
 
   let accessToken;
@@ -195,13 +299,15 @@ router.post('/mercadopago/create-order', async (req, res) => {
     shipping_provider, shipping_mode, shipping_service_type,
     shipping_is_free, shipping_agency_code, shipping_agency_name,
     shipping_customer_id, shipping_quote_payload, shipping_quote_response,
-    mp_payment,
-    device_id,
+    return_url_base,
   } = req.body || {};
 
   const name = (customer_name || '').trim();
   const email = (customer_email || '').trim();
   if (!name || !email) return res.status(400).json({ error: 'Nombre y email son obligatorios' });
+
+  const baseUrl = String(return_url_base || '').trim().replace(/\/$/, '');
+  if (!baseUrl) return res.status(400).json({ error: 'return_url_base es requerido (origen del sitio, ej. https://tutienda.com)' });
 
   const shippingProvider = (shipping_provider || '').trim();
   const shippingMode = (shipping_mode || '').trim();
@@ -215,22 +321,6 @@ router.post('/mercadopago/create-order', async (req, res) => {
   }
   if (!Number.isFinite(shippingCostNum) || shippingCostNum < 0) {
     return res.status(400).json({ error: 'shipping_cost inválido' });
-  }
-
-  const mp = mp_payment && typeof mp_payment === 'object' ? mp_payment : {};
-  const token = (mp.token || '').trim();
-  const paymentMethodId = (mp.payment_method_id || mp.id || '').trim();
-  const paymentType = (mp.payment_type_id || mp.type || '').trim();
-  const installments = Number(mp.installments) || 1;
-  const payerEmail = (mp.payer?.email || email).trim();
-  const identification = mp.payer?.identification;
-
-  if (!token || !paymentMethodId || !paymentType) {
-    return res.status(400).json({ error: 'Faltan datos del Brick de Mercado Pago (token, medio de pago)' });
-  }
-  if (!payerEmail) return res.status(400).json({ error: 'Email del pagador requerido' });
-  if (!identification?.type || !identification?.number) {
-    return res.status(400).json({ error: 'Identificación del pagador requerida' });
   }
 
   const cleanItems = (Array.isArray(items) ? items : [])
@@ -247,7 +337,7 @@ router.post('/mercadopago/create-order', async (req, res) => {
   const subtotal = cleanItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
   const shipping = shippingCostNum;
   const orderTotal = subtotal + shipping;
-  const totalStr = toDecimalString(orderTotal);
+  const unitPricePref = Number(toDecimalString(orderTotal));
 
   const orderPayload = {
     user_id: null,
@@ -285,7 +375,7 @@ router.post('/mercadopago/create-order', async (req, res) => {
     .select('id, status, total, currency, created_at')
     .single();
   if (orderErr) {
-    console.error('[MP] Error creando orden:', orderErr);
+    console.error('[MP] create-preference: error creando orden:', orderErr);
     return res.status(500).json({ error: 'Error al crear la orden' });
   }
 
@@ -296,7 +386,204 @@ router.post('/mercadopago/create-order', async (req, res) => {
     unit_price: i.unit_price,
   }));
   const { error: itemsErr } = await supabase.from('order_items').insert(rows);
-  if (itemsErr) console.error('[MP] Error guardando items:', itemsErr);
+  if (itemsErr) console.error('[MP] create-preference: error items:', itemsErr);
+
+  const notifUrl = (process.env.MP_NOTIFICATION_URL || '').trim();
+  const isHttps = baseUrl.startsWith('https://');
+  const backUrl = `${baseUrl}/checkout?order_id=${order.id}`;
+  const preferenceBody = {
+    items: [{
+      title: 'Compra SOLUTION',
+      description: `Pedido ${order.id}`,
+      quantity: 1,
+      currency_id: 'ARS',
+      unit_price: unitPricePref,
+    }],
+    external_reference: order.id,
+    payer: { email },
+    back_urls: {
+      success: backUrl,
+      failure: backUrl,
+      pending: backUrl,
+    },
+    ...(isHttps ? { auto_return: 'approved' } : {}),
+    ...(notifUrl ? { notification_url: notifUrl } : {}),
+  };
+
+  let preference;
+  try {
+    ({ data: preference } = await axios.post(`${MP_API}/checkout/preferences`, preferenceBody, {
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    }));
+  } catch (err) {
+    console.error('[MP] create-preference API error:', err.response?.data || err.message);
+    return res.status(err.response?.status || 502).json({
+      error: err.response?.data?.message || err.message || 'Error al crear la preferencia de pago',
+      order_id: order.id,
+    });
+  }
+
+  return res.status(201).json({
+    order_id: order.id,
+    preference_id: preference?.id,
+  });
+});
+
+// ── POST /api/mercadopago/create-order ─────────────────────────────────────
+
+router.post('/mercadopago/create-order', async (req, res) => {
+  if (!supabase) return res.status(503).json({ error: 'Base de datos no configurada' });
+
+  let accessToken;
+  try {
+    accessToken = getAccessToken();
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+
+  const {
+    order_id: existingOrderIdRaw,
+    customer_name, customer_email, customer_phone,
+    shipping_address_line1, shipping_address_line2,
+    shipping_city, shipping_state, shipping_postal_code,
+    shipping_country, shipping_notes, shipping_method, shipping_cost,
+    items,
+    shipping_provider, shipping_mode, shipping_service_type,
+    shipping_is_free, shipping_agency_code, shipping_agency_name,
+    shipping_customer_id, shipping_quote_payload, shipping_quote_response,
+    mp_payment,
+    device_id,
+  } = req.body || {};
+
+  const existingOrderId = (existingOrderIdRaw || '').trim();
+  const name = (customer_name || '').trim();
+  const email = (customer_email || '').trim();
+  if (!email) return res.status(400).json({ error: 'Email es obligatorio' });
+  if (!existingOrderId && !name) return res.status(400).json({ error: 'Nombre y email son obligatorios' });
+
+  const mp = mp_payment && typeof mp_payment === 'object' ? mp_payment : {};
+  const token = (mp.token || '').trim();
+  const paymentMethodId = (mp.payment_method_id || mp.id || '').trim();
+  const paymentType = (mp.payment_type_id || mp.type || '').trim();
+  const installments = Number(mp.installments) || 1;
+  const payerEmail = (mp.payer?.email || email).trim();
+  const identification = mp.payer?.identification;
+
+  if (!token || !paymentMethodId || !paymentType) {
+    return res.status(400).json({ error: 'Faltan datos del Brick de Mercado Pago (token, medio de pago)' });
+  }
+  if (!payerEmail) return res.status(400).json({ error: 'Email del pagador requerido' });
+  if (!identification?.type || !identification?.number) {
+    return res.status(400).json({ error: 'Identificación del pagador requerida' });
+  }
+
+  let order;
+  let totalStr;
+
+  if (existingOrderId) {
+    const { data: row, error: fetchErr } = await supabase
+      .from('orders')
+      .select('id, status, total, customer_email, payment_method, currency')
+      .eq('id', existingOrderId)
+      .single();
+    if (fetchErr || !row) return res.status(404).json({ error: 'Orden no encontrada' });
+    if ((row.payment_method || '') !== 'mercadopago') {
+      return res.status(400).json({ error: 'Orden inválida para este pago' });
+    }
+    if ((row.status || '') !== 'pending_payment') {
+      return res.status(400).json({ error: 'La orden ya no está pendiente de pago' });
+    }
+    if ((row.customer_email || '').trim() !== email) {
+      return res.status(403).json({ error: 'El email no coincide con la orden' });
+    }
+    const orderTotal = Number(row.total);
+    const ta = Number(mp.transaction_amount);
+    if (Number.isFinite(ta) && Math.abs(ta - orderTotal) > 0.02) {
+      return res.status(400).json({ error: 'El monto no coincide con la orden' });
+    }
+    order = row;
+    totalStr = toDecimalString(orderTotal);
+  } else {
+    const shippingProvider = (shipping_provider || '').trim();
+    const shippingMode = (shipping_mode || '').trim();
+    const shippingServiceType = (shipping_service_type || '').trim();
+    const hasShippingPayload = Boolean(shipping_quote_payload && typeof shipping_quote_payload === 'object');
+    const hasShippingResponse = Boolean(shipping_quote_response && typeof shipping_quote_response === 'object');
+    const shippingCostNum = Number(shipping_cost);
+
+    if (!shippingProvider || !shippingMode || !shippingServiceType || !hasShippingPayload || !hasShippingResponse) {
+      return res.status(400).json({ error: 'Faltan datos de envío obligatorios para crear el pago' });
+    }
+    if (!Number.isFinite(shippingCostNum) || shippingCostNum < 0) {
+      return res.status(400).json({ error: 'shipping_cost inválido' });
+    }
+
+    const cleanItems = (Array.isArray(items) ? items : [])
+      .filter((i) => i && i.product_id && Number(i.quantity) > 0)
+      .map((i) => ({
+        product_id: i.product_id,
+        quantity: Math.max(1, Math.floor(Number(i.quantity))),
+        unit_price: Number(i.unit_price) || 0,
+        name: i.name || 'Producto',
+        description: i.description || '',
+      }));
+    if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
+
+    const subtotal = cleanItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
+    const shipping = shippingCostNum;
+    const orderTotal = subtotal + shipping;
+    totalStr = toDecimalString(orderTotal);
+
+    const orderPayload = {
+      user_id: null,
+      status: 'pending_payment',
+      currency: 'ARS',
+      total: orderTotal,
+      channel: 'retail',
+      customer_name: name,
+      customer_email: email,
+      customer_phone: (customer_phone || '').trim() || null,
+      shipping_address_line1: (shipping_address_line1 || '').trim() || null,
+      shipping_address_line2: (shipping_address_line2 || '').trim() || null,
+      shipping_city: (shipping_city || '').trim() || null,
+      shipping_state: (shipping_state || '').trim() || null,
+      shipping_postal_code: (shipping_postal_code || '').trim() || null,
+      shipping_country: (shipping_country || '').trim() || 'AR',
+      shipping_notes: (shipping_notes || '').trim() || null,
+      shipping_method: (shipping_method || '').trim() || 'standard',
+      shipping_cost: shipping,
+      payment_method: 'mercadopago',
+      shipping_provider: shippingProvider || null,
+      shipping_mode: shippingMode || null,
+      shipping_service_type: shippingServiceType || null,
+      shipping_is_free: shipping_is_free === true || shipping_is_free === 'true' || false,
+      shipping_agency_code: (shipping_agency_code || '').trim() || null,
+      shipping_agency_name: (shipping_agency_name || '').trim() || null,
+      shipping_customer_id: (shipping_customer_id || '').trim() || null,
+      shipping_quote_payload: shipping_quote_payload || null,
+      shipping_quote_response: shipping_quote_response || null,
+    };
+
+    const { data: inserted, error: orderErr } = await supabase
+      .from('orders')
+      .insert(orderPayload)
+      .select('id, status, total, currency, created_at')
+      .single();
+    if (orderErr) {
+      console.error('[MP] Error creando orden:', orderErr);
+      return res.status(500).json({ error: 'Error al crear la orden' });
+    }
+
+    const rows = cleanItems.map((i) => ({
+      order_id: inserted.id,
+      product_id: i.product_id,
+      quantity: i.quantity,
+      unit_price: i.unit_price,
+    }));
+    const { error: itemsErr } = await supabase.from('order_items').insert(rows);
+    if (itemsErr) console.error('[MP] Error guardando items:', itemsErr);
+    order = inserted;
+  }
 
   const idempotencyKey = crypto.randomUUID();
   const mpBody = {
@@ -488,16 +775,48 @@ async function handleMercadoPagoWebhookCore(req, res) {
     return;
   }
 
+  const notifType = String(body.type || body.topic || '').toLowerCase();
+  const action = String(body.action || '').toLowerCase();
+  const isPaymentNotif = notifType === 'payment' || action.startsWith('payment.');
+  const isOrderNotif = notifType === 'order' || action.includes('order');
+
   try {
-    const mpOrder = await fetchMpOrder(dataId, accessToken);
-    const extRef = (mpOrder?.external_reference || '').trim();
-    if (!extRef) {
-      console.warn('[MP Webhook] Orden MP sin external_reference', dataId);
+    if (isPaymentNotif) {
+      const pay = await fetchMpPayment(dataId, accessToken);
+      const extRef = (pay?.external_reference || '').trim();
+      if (!extRef) {
+        console.warn('[MP Webhook] Pago sin external_reference', dataId);
+        return;
+      }
+      await applyMpPaymentToDb(extRef, pay, { sendEmailIfPaid: true });
       return;
     }
 
-    await applyMpOrderToDb(extRef, mpOrder, { sendEmailIfPaid: true });
+    if (isOrderNotif || !notifType) {
+      const mpOrder = await fetchMpOrder(dataId, accessToken);
+      const extRef = (mpOrder?.external_reference || '').trim();
+      if (!extRef) {
+        console.warn('[MP Webhook] Orden MP sin external_reference', dataId);
+        return;
+      }
+      await applyMpOrderToDb(extRef, mpOrder, { sendEmailIfPaid: true });
+      return;
+    }
+
+    console.warn('[MP Webhook] Tipo de notificación no manejado:', notifType || action || '(vacío)');
   } catch (err) {
+    if (err.response?.status === 404 && !isPaymentNotif) {
+      try {
+        const pay = await fetchMpPayment(dataId, accessToken);
+        const extRef = (pay?.external_reference || '').trim();
+        if (extRef) {
+          await applyMpPaymentToDb(extRef, pay, { sendEmailIfPaid: true });
+          return;
+        }
+      } catch (e2) {
+        console.error('[MP Webhook] Fallback payment:', e2.response?.data || e2.message);
+      }
+    }
     console.error('[MP Webhook] Error:', err.response?.data || err.message);
   }
 }

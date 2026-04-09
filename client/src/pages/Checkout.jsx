@@ -611,6 +611,7 @@ export default function Checkout() {
                       . Completá los datos de la tarjeta abajo.
                     </p>
                     <MercadoPagoBrick
+                      key={`mp-${grandTotal}-${selectedShipping?.id || 'none'}`}
                       amount={grandTotal}
                       disabled={isSubmitDisabled}
                       getCheckoutPayload={getCheckoutPayload}

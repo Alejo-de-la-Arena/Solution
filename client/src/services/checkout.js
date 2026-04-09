@@ -85,6 +85,27 @@ export function getCheckoutPaymentProvider() {
  * Mercado Pago: crea orden + POST /v1/orders en el servidor.
  * @param {Object} payload - Igual que createNavePayment + mp_payment + device_id opcional
  */
+/**
+ * Crea orden en DB + preferencia MP (Payment Brick: cuenta MP, tarjetas, etc.).
+ * @param {Object} payload - Igual que createNavePayment + return_url_base (origen del sitio, sin barra final)
+ */
+export async function createMPPreference(payload) {
+  const url = `${API_URL}/api/mercadopago/create-preference`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.error || 'Error al preparar el pago');
+    err.status = res.status;
+    err.payload = data;
+    throw err;
+  }
+  return data;
+}
+
 export async function createMPOrder(payload) {
   const url = `${API_URL}/api/mercadopago/create-order`;
   const res = await fetch(url, {

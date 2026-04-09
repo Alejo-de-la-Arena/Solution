@@ -1,9 +1,9 @@
 import { useEffect, useRef, useId, useCallback } from 'react';
 import { loadMercadoPago } from '@mercadopago/sdk-js';
-import { createMPOrder, setCheckoutPaymentProvider } from '../../services/checkout';
+import { createMPOrder, createMPPreference, setCheckoutPaymentProvider } from '../../services/checkout';
 
 /**
- * Card Payment Brick — el monto debe coincidir con el total del checkout (productos + envío).
+ * Payment Brick: tarjetas + dinero en cuenta Mercado Pago (requiere preferencia en backend).
  */
 export default function MercadoPagoBrick({
   amount,
@@ -14,27 +14,33 @@ export default function MercadoPagoBrick({
   onBrickReady,
 }) {
   const reactId = useId().replace(/:/g, '');
-  const containerId = `cardPaymentBrick_${reactId}`;
+  const containerId = `paymentBrick_${reactId}`;
   const controllerRef = useRef(null);
+  const orderIdRef = useRef(null);
   const publicKey = (import.meta.env.VITE_MP_PUBLIC_KEY || '').trim();
 
-  const runSubmit = useCallback(
-    async (formData, additionalData) => {
+  const submitCardPayment = useCallback(
+    async (fd, additionalData) => {
       const base = typeof getCheckoutPayload === 'function' ? getCheckoutPayload() : null;
-      if (!base) {
+      if (!base?.customer_email) {
         onError?.('Faltan datos del checkout.');
-        throw new Error('Missing checkout payload');
+        throw new Error('Missing checkout');
+      }
+      const oid = orderIdRef.current;
+      if (!oid) {
+        onError?.('Sesión de pago no lista. Recargá la página.');
+        throw new Error('no order id');
       }
 
       setCheckoutPaymentProvider('mercadopago');
 
       const mp_payment = {
-        token: formData.token,
-        payment_method_id: formData.payment_method_id,
-        payment_type_id: additionalData?.paymentTypeId || formData.payment_type_id,
-        installments: formData.installments ?? 1,
-        payer: formData.payer,
-        transaction_amount: formData.transaction_amount,
+        token: fd.token,
+        payment_method_id: fd.payment_method_id,
+        payment_type_id: additionalData?.paymentTypeId || fd.payment_type_id,
+        installments: fd.installments ?? 1,
+        payer: fd.payer,
+        transaction_amount: fd.transaction_amount,
       };
 
       let device_id;
@@ -47,13 +53,12 @@ export default function MercadoPagoBrick({
         device_id = undefined;
       }
 
-      const payload = {
-        ...base,
+      const data = await createMPOrder({
+        order_id: oid,
+        customer_email: base.customer_email,
         mp_payment,
         ...(device_id ? { device_id } : {}),
-      };
-
-      const data = await createMPOrder(payload);
+      });
       const st = (data.order_status || '').toLowerCase();
       if (st === 'paid') {
         onSuccess?.(data);
@@ -83,6 +88,29 @@ export default function MercadoPagoBrick({
       }
       if (cancelled) return;
 
+      const base = typeof getCheckoutPayload === 'function' ? getCheckoutPayload() : null;
+      if (!base?.customer_email) {
+        onError?.('Completá email y datos de envío.');
+        return;
+      }
+
+      let preferenceId;
+      try {
+        const origin = typeof window !== 'undefined' ? window.location.origin : '';
+        const pref = await createMPPreference({
+          ...base,
+          return_url_base: origin,
+        });
+        preferenceId = pref.preference_id;
+        orderIdRef.current = pref.order_id;
+        setCheckoutPaymentProvider('mercadopago');
+      } catch (e) {
+        console.error('[MP Brick] create-preference:', e);
+        onError?.(e.message || 'No se pudo iniciar el pago.');
+        return;
+      }
+      if (cancelled || !preferenceId) return;
+
       const mp = new window.MercadoPago(publicKey, { locale: 'es-AR' });
       const bricksBuilder = mp.bricks();
 
@@ -96,12 +124,22 @@ export default function MercadoPagoBrick({
       const settings = {
         initialization: {
           amount: Number(amount) > 0 ? Number(amount) : 0,
+          preferenceId,
+          payer: {
+            email: base.customer_email,
+          },
         },
         customization: {
           visual: {
             style: {
               theme: 'dark',
             },
+          },
+          paymentMethods: {
+            creditCard: 'all',
+            debitCard: 'all',
+            prepaidCard: 'all',
+            mercadoPago: 'all',
           },
         },
         callbacks: {
@@ -110,25 +148,44 @@ export default function MercadoPagoBrick({
             console.error('[MP Brick] onError:', error);
             onError?.(error?.message || 'Error en el formulario de pago');
           },
-          onSubmit: (cardFormData, additionalData) =>
+          onSubmit: (paymentData, additionalData) =>
             new Promise((resolve, reject) => {
-              runSubmit(cardFormData, additionalData || {})
-                .then(() => resolve())
-                .catch(() => reject());
+              const selected = paymentData?.selectedPaymentMethod || paymentData?.paymentMethod;
+              const fd = paymentData?.formData;
+
+              if (selected === 'wallet_purchase') {
+                resolve();
+                return;
+              }
+
+              if (selected === 'credit_card' || selected === 'debit_card' || selected === 'prepaid_card') {
+                if (!fd) {
+                  onError?.('Datos de tarjeta incompletos.');
+                  reject(new Error('no formData'));
+                  return;
+                }
+                submitCardPayment(fd, additionalData || {})
+                  .then(() => resolve())
+                  .catch(() => reject());
+                return;
+              }
+
+              onError?.('Elegí tarjeta o Dinero en cuenta Mercado Pago.');
+              reject(new Error('unsupported_payment'));
             }),
         },
       };
 
       try {
-        const ctrl = await bricksBuilder.create('cardPayment', containerId, settings);
+        const ctrl = await bricksBuilder.create('payment', containerId, settings);
         if (cancelled) {
           ctrl?.unmount?.();
           return;
         }
         controllerRef.current = ctrl;
       } catch (e) {
-        console.error('[MP Brick] create:', e);
-        onError?.('No se pudo iniciar el checkout de Mercado Pago.');
+        console.error('[MP Brick] create payment:', e);
+        onError?.('No se pudo mostrar el checkout de Mercado Pago.');
       }
     })();
 
@@ -140,8 +197,9 @@ export default function MercadoPagoBrick({
         /* ignore */
       }
       controllerRef.current = null;
+      orderIdRef.current = null;
     };
-  }, [publicKey, disabled, amount, containerId, runSubmit, onError, onBrickReady]);
+  }, [publicKey, disabled, amount, containerId, getCheckoutPayload, onError, onBrickReady, submitCardPayment]);
 
   if (!publicKey) {
     return (
@@ -162,9 +220,9 @@ export default function MercadoPagoBrick({
 
   return (
     <div className="rounded-md overflow-hidden border border-white/10 bg-[#1a1a1a] p-2 sm:p-3">
-      <div id={containerId} className="min-h-[280px]" />
+      <div id={containerId} className="min-h-[320px]" />
       <p className="mt-2 text-[10px] text-white/35 text-center tracking-wide">
-        Pagás de forma segura con Mercado Pago — los datos de tarjeta no pasan por nuestro servidor.
+        Podés pagar con tarjeta o con dinero en tu cuenta Mercado Pago. Los datos sensibles los procesa Mercado Pago.
       </p>
     </div>
   );
