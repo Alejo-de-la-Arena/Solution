@@ -8,6 +8,8 @@ import { getComboProfile, normalizeComboKey } from '../data/comboProfiles';
 import { mediaUrl } from '../lib/mediaUrl';
 import { getStoreProductImages } from '../lib/storeProductImages';
 
+import { useCart } from '../contexts/CartContext';
+
 function ChevronDownIcon({ className = 'w-6 h-6' }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -72,7 +74,6 @@ export default function Tienda() {
 
   const perfume1 = perfumes.find((p) => p.id === selectedPerfume1);
   const perfume2 = perfumes.find((p) => p.id === selectedPerfume2);
-  const comboPrice = perfume1 && perfume2 ? Math.round((perfume1.price + perfume2.price) * 0.85) : 0;
 
   if (loading) {
     return (
@@ -111,7 +112,6 @@ export default function Tienda() {
           setSelectedPerfume2={setSelectedPerfume2}
           perfume1={perfume1}
           perfume2={perfume2}
-          comboPrice={comboPrice}
         />
       )}
     </div>
@@ -510,25 +510,6 @@ function TiendaInfoSection() {
   );
 }
 
-function TiendaFinalTestimonial({ testimonials }) {
-  const { ref, motionProps } = useScrollMotion();
-  const t = testimonials[2];
-
-  return (
-    <motion.section ref={ref} {...motionProps} className="py-20 px-4">
-      <div className="mx-auto max-w-3xl text-center">
-        <div className="flex justify-center gap-1 mb-6">
-          {[...Array(t.rating)].map((_, i) => (
-            <StarIcon key={i} className="w-5 h-5 text-white" />
-          ))}
-        </div>
-        <p className="text-xl opacity-80 leading-relaxed mb-6">&quot;{t.text}&quot;</p>
-        <p className="text-sm opacity-60 tracking-wider">— {t.name}</p>
-      </div>
-    </motion.section>
-  );
-}
-
 function TiendaComboSection({
   perfumes,
   selectedPerfume1,
@@ -537,9 +518,15 @@ function TiendaComboSection({
   setSelectedPerfume2,
   perfume1,
   perfume2,
-  comboPrice,
 }) {
   const { ref, motionProps } = useScrollMotion();
+  const { addToCart } = useCart();
+
+  const handleAddCombo = () => {
+    if (perfume1) addToCart(perfume1);
+    if (perfume2) addToCart(perfume2);
+  };
+
   const comboProfile = getComboProfile(selectedPerfume1, selectedPerfume2);
   const comboProfileKey = comboProfile
     ? normalizeComboKey(selectedPerfume1, selectedPerfume2)
@@ -737,20 +724,20 @@ function TiendaComboSection({
 
               <div className="pt-4">
                 <div className="flex items-baseline justify-center gap-3 mb-6 flex-wrap">
-                  <span className="text-5xl tracking-tight">${comboPrice.toLocaleString('es-AR')}</span>
+                  <span className="text-5xl tracking-tight">
+                    ${perfume1 && perfume2 ? (perfume1.price + perfume2.price).toLocaleString('es-AR') : '—'}
+                  </span>
                   <span className="text-sm opacity-60">ARS</span>
-                  {perfume1 && perfume2 && (
-                    <span className="text-sm line-through opacity-40 ml-2">
-                      ${(perfume1.price + perfume2.price).toLocaleString('es-AR')}
-                    </span>
-                  )}
                 </div>
 
                 <button
                   type="button"
-                  className="border border-[rgb(255,0,255)] text-white px-12 py-4 text-sm tracking-widest transition-all duration-300 hover:bg-[rgb(255,0,255)] hover:text-black"
+                  onClick={handleAddCombo}
+                  disabled={!perfume1 || !perfume2}
+                  className="group relative overflow-hidden border border-[rgb(255,0,255)] text-white px-12 py-4 text-sm tracking-widest transition-all duration-300 hover:text-black disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  AGREGAR COMBO AL CARRITO
+                  <span className="relative z-10">AGREGAR COMBO AL CARRITO</span>
+                  <div className="absolute inset-0 bg-[rgb(255,0,255)] transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
                 </button>
               </div>
             </div>
