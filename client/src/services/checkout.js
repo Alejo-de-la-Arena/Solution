@@ -82,8 +82,49 @@ export function getCheckoutPaymentProvider() {
 }
 
 /**
- * Mercado Pago: crea orden + POST /v1/orders en el servidor.
- * @param {Object} payload - Igual que createNavePayment + mp_payment + device_id opcional
+ * Mercado Pago: crea orden DB + preferencia MP (para Payment Brick con wallet).
+ * @param {Object} payload - Checkout payload + callback_url
+ * @returns {Promise<{ order_id: string, preference_id: string|null }>}
+ */
+export async function createMPPreference(payload) {
+  const url = `${API_URL}/api/mercadopago/create-preference`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.error || 'Error al crear preferencia de pago');
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
+/**
+ * Mercado Pago: procesa pago con tarjeta para una orden existente (via Orders API).
+ * @param {Object} payload - { order_id, mp_payment, device_id? }
+ */
+export async function processMPCardPayment(payload) {
+  const url = `${API_URL}/api/mercadopago/process-card-payment`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.error || 'Error al procesar el pago');
+    err.status = res.status;
+    err.payload = data;
+    throw err;
+  }
+  return data;
+}
+
+/**
+ * @deprecated Usar createMPPreference + processMPCardPayment
  */
 export async function createMPOrder(payload) {
   const url = `${API_URL}/api/mercadopago/create-order`;
@@ -105,9 +146,11 @@ export async function createMPOrder(payload) {
 /**
  * Estado de orden pagada con Mercado Pago (polling).
  * @param {string} orderId
+ * @param {string} [paymentId] - Payment ID from wallet redirect (to verify on first check)
  */
-export async function getMPOrderStatus(orderId) {
-  const url = `${API_URL}/api/mercadopago/order-status/${orderId}`;
+export async function getMPOrderStatus(orderId, paymentId) {
+  let url = `${API_URL}/api/mercadopago/order-status/${orderId}`;
+  if (paymentId) url += `?payment_id=${encodeURIComponent(paymentId)}`;
   const res = await fetch(url);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {

@@ -30,9 +30,9 @@ function isCheckoutPaid(data) {
   return (data?.nave_status || '').toUpperCase() === 'APPROVED';
 }
 
-async function fetchOrderPaymentStatus(orderId) {
+async function fetchOrderPaymentStatus(orderId, paymentId) {
   const provider = getCheckoutPaymentProvider();
-  if (provider === 'mercadopago') return getMPOrderStatus(orderId);
+  if (provider === 'mercadopago') return getMPOrderStatus(orderId, paymentId);
   return getPaymentStatus(orderId);
 }
 
@@ -126,6 +126,7 @@ export default function Checkout() {
   });
 
   const orderIdFromUrl = searchParams.get('order_id');
+  const walletPaymentIdFromUrl = searchParams.get('payment_id') || searchParams.get('collection_id');
 
   // ── Auto-select first home option when quote loads ────────────────────
   useEffect(() => {
@@ -184,7 +185,9 @@ export default function Checkout() {
     setChecking(true);
     setResultOrderId(pendingOrderId);
 
-    fetchOrderPaymentStatus(pendingOrderId)
+    if (walletPaymentIdFromUrl) setCheckoutPaymentProvider('mercadopago');
+
+    fetchOrderPaymentStatus(pendingOrderId, walletPaymentIdFromUrl || undefined)
       .then((data) => {
         if (isCheckoutPaid(data)) { setPaymentResult('success'); clearCart(); }
         else if (data.order_status === 'payment_failed') setPaymentResult('rejected');
@@ -192,7 +195,7 @@ export default function Checkout() {
       })
       .catch(() => setPaymentResult('pending'))
       .finally(() => setChecking(false));
-  }, [orderIdFromUrl, clearCart]);
+  }, [orderIdFromUrl, walletPaymentIdFromUrl, clearCart]);
 
   useEffect(() => {
     if (paymentResult === 'success') clearCart();
@@ -590,7 +593,7 @@ export default function Checkout() {
                   <PaymentMethodCard
                     id="mercadopago"
                     title="Mercado Pago"
-                    subtitle="Tarjeta, cuotas y medios disponibles (Brick seguro)"
+                    subtitle="Tarjeta, débito, cuotas o dinero en cuenta"
                     selected={paymentMethod}
                     onSelect={setPaymentMethod}
                   />
@@ -608,7 +611,7 @@ export default function Checkout() {
                     <p className="text-xs text-white/50">
                       Total a pagar:{' '}
                       <span className="text-[rgb(0,255,255)] font-medium">${grandTotal.toLocaleString('es-AR')}</span>
-                      . Completá los datos de la tarjeta abajo.
+                      . Elegí tu medio de pago abajo.
                     </p>
                     <MercadoPagoBrick
                       amount={grandTotal}

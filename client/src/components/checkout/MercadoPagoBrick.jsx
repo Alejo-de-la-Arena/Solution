@@ -1,9 +1,10 @@
-import { useEffect, useRef, useId, useCallback } from 'react';
+import { useEffect, useRef, useId, useState } from 'react';
 import { loadMercadoPago } from '@mercadopago/sdk-js';
-import { createMPOrder, setCheckoutPaymentProvider } from '../../services/checkout';
+import { createMPPreference, processMPCardPayment, setCheckoutPaymentProvider } from '../../services/checkout';
 
 /**
- * Card Payment Brick — el monto debe coincidir con el total del checkout (productos + envío).
+ * Payment Brick — soporta tarjeta de crédito/débito + dinero en cuenta (wallet).
+ * Crea una preferencia MP (+ orden DB) al activarse, luego renderiza el brick.
  */
 export default function MercadoPagoBrick({
   amount,
@@ -14,62 +15,64 @@ export default function MercadoPagoBrick({
   onBrickReady,
 }) {
   const reactId = useId().replace(/:/g, '');
-  const containerId = `cardPaymentBrick_${reactId}`;
+  const containerId = `paymentBrick_${reactId}`;
   const controllerRef = useRef(null);
   const publicKey = (import.meta.env.VITE_MP_PUBLIC_KEY || '').trim();
 
-  const runSubmit = useCallback(
-    async (formData, additionalData) => {
-      const base = typeof getCheckoutPayload === 'function' ? getCheckoutPayload() : null;
-      if (!base) {
-        onError?.('Faltan datos del checkout.');
-        throw new Error('Missing checkout payload');
-      }
+  const [prefData, setPrefData] = useState(null);
+  const [prefLoading, setPrefLoading] = useState(false);
 
-      setCheckoutPaymentProvider('mercadopago');
-
-      const mp_payment = {
-        token: formData.token,
-        payment_method_id: formData.payment_method_id,
-        payment_type_id: additionalData?.paymentTypeId || formData.payment_type_id,
-        installments: formData.installments ?? 1,
-        payer: formData.payer,
-        transaction_amount: formData.transaction_amount,
-      };
-
-      let device_id;
-      try {
-        device_id =
-          typeof window !== 'undefined' && window.MP_DEVICE_SESSION_ID
-            ? String(window.MP_DEVICE_SESSION_ID)
-            : undefined;
-      } catch {
-        device_id = undefined;
-      }
-
-      const payload = {
-        ...base,
-        mp_payment,
-        ...(device_id ? { device_id } : {}),
-      };
-
-      const data = await createMPOrder(payload);
-      const st = (data.order_status || '').toLowerCase();
-      if (st === 'paid') {
-        onSuccess?.(data);
-        return;
-      }
-      if (st === 'payment_failed') {
-        onError?.('El pago fue rechazado. Probá con otro medio o datos.');
-        throw new Error('payment_failed');
-      }
-      onSuccess?.(data);
-    },
-    [getCheckoutPayload, onSuccess, onError],
-  );
+  const getCheckoutPayloadRef = useRef(getCheckoutPayload);
+  getCheckoutPayloadRef.current = getCheckoutPayload;
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+  const onSuccessRef = useRef(onSuccess);
+  onSuccessRef.current = onSuccess;
+  const onBrickReadyRef = useRef(onBrickReady);
+  onBrickReadyRef.current = onBrickReady;
+  const prefDataRef = useRef(prefData);
+  prefDataRef.current = prefData;
 
   useEffect(() => {
-    if (!publicKey || disabled) return undefined;
+    if (disabled || !publicKey || !(Number(amount) > 0)) {
+      setPrefData(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const base = typeof getCheckoutPayloadRef.current === 'function'
+      ? getCheckoutPayloadRef.current()
+      : null;
+    if (!base?.customer_name || !base?.customer_email) {
+      setPrefData(null);
+      return;
+    }
+
+    setPrefLoading(true);
+
+    createMPPreference({
+      ...base,
+      callback_url: `${window.location.origin}/checkout`,
+    })
+      .then((data) => {
+        if (!cancelled) {
+          setPrefData(data);
+          setCheckoutPaymentProvider('mercadopago');
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) onErrorRef.current?.(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setPrefLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [disabled, publicKey, amount]);
+
+  useEffect(() => {
+    if (!publicKey || disabled || !prefData) return undefined;
 
     let cancelled = false;
 
@@ -78,7 +81,7 @@ export default function MercadoPagoBrick({
         await loadMercadoPago();
       } catch (e) {
         console.error('[MP Brick] loadMercadoPago:', e);
-        onError?.('No se pudo cargar Mercado Pago.');
+        onErrorRef.current?.('No se pudo cargar Mercado Pago.');
         return;
       }
       if (cancelled) return;
@@ -89,38 +92,99 @@ export default function MercadoPagoBrick({
       try {
         controllerRef.current?.unmount?.();
         controllerRef.current = null;
-      } catch {
-        /* ignore */
-      }
+      } catch { /* ignore */ }
 
       const settings = {
         initialization: {
           amount: Number(amount) > 0 ? Number(amount) : 0,
+          preferenceId: prefData.preference_id || undefined,
         },
         customization: {
+          paymentMethods: {
+            creditCard: 'all',
+            debitCard: 'all',
+            ...(prefData.preference_id ? { mercadoPago: 'all' } : {}),
+          },
           visual: {
-            style: {
-              theme: 'dark',
-            },
+            style: { theme: 'dark' },
           },
         },
         callbacks: {
-          onReady: () => onBrickReady?.(),
+          onReady: () => onBrickReadyRef.current?.(),
+
           onError: (error) => {
+            if (error?.type === 'non_critical') {
+              console.warn('[MP Brick] non-critical:', error.message);
+              return;
+            }
             console.error('[MP Brick] onError:', error);
-            onError?.(error?.message || 'Error en el formulario de pago');
+            onErrorRef.current?.(error?.message || 'Error en el formulario de pago');
           },
-          onSubmit: (cardFormData, additionalData) =>
-            new Promise((resolve, reject) => {
-              runSubmit(cardFormData, additionalData || {})
-                .then(() => resolve())
-                .catch(() => reject());
-            }),
+
+          onSubmit: async (submittedData) => {
+            const formData = submittedData?.formData || submittedData;
+            const selectedPaymentMethod =
+              submittedData?.selectedPaymentMethod
+              || formData?.payment_type_id
+              || '';
+
+            if (selectedPaymentMethod === 'wallet_purchase') return;
+
+            const currentPref = prefDataRef.current;
+            if (!currentPref?.order_id) {
+              onErrorRef.current?.('Error interno: orden no encontrada.');
+              throw new Error('missing_order_id');
+            }
+
+            try {
+              const mp_payment = {
+                token: formData.token,
+                payment_method_id: formData.payment_method_id,
+                // Payment Brick puede enviar selectedPaymentMethod con valores de UI
+                // (ej: "new_card") que NO son válidos para Orders API.
+                payment_type_id: formData.payment_type_id || formData.paymentTypeId,
+                installments: formData.installments ?? 1,
+                payer: formData.payer,
+                transaction_amount: formData.transaction_amount,
+              };
+
+              let device_id;
+              try {
+                device_id = typeof window !== 'undefined' && window.MP_DEVICE_SESSION_ID
+                  ? String(window.MP_DEVICE_SESSION_ID)
+                  : undefined;
+              } catch { device_id = undefined; }
+
+              const data = await processMPCardPayment({
+                order_id: currentPref.order_id,
+                mp_payment,
+                mp_public_key: publicKey,
+                ...(device_id ? { device_id } : {}),
+              });
+
+              const st = (data.order_status || '').toLowerCase();
+              if (st === 'paid') {
+                onSuccessRef.current?.(data);
+                return;
+              }
+              if (st === 'payment_failed') {
+                onErrorRef.current?.('El pago fue rechazado. Probá con otro medio o datos.');
+                throw new Error('payment_failed');
+              }
+              onSuccessRef.current?.(data);
+            } catch (err) {
+              const msg = err.message || 'Error al procesar el pago.';
+              if (msg !== 'payment_failed') {
+                onErrorRef.current?.(msg);
+              }
+              throw err;
+            }
+          },
         },
       };
 
       try {
-        const ctrl = await bricksBuilder.create('cardPayment', containerId, settings);
+        const ctrl = await bricksBuilder.create('payment', containerId, settings);
         if (cancelled) {
           ctrl?.unmount?.();
           return;
@@ -128,20 +192,16 @@ export default function MercadoPagoBrick({
         controllerRef.current = ctrl;
       } catch (e) {
         console.error('[MP Brick] create:', e);
-        onError?.('No se pudo iniciar el checkout de Mercado Pago.');
+        onErrorRef.current?.('No se pudo iniciar el checkout de Mercado Pago.');
       }
     })();
 
     return () => {
       cancelled = true;
-      try {
-        controllerRef.current?.unmount?.();
-      } catch {
-        /* ignore */
-      }
+      try { controllerRef.current?.unmount?.(); } catch { /* ignore */ }
       controllerRef.current = null;
     };
-  }, [publicKey, disabled, amount, containerId, runSubmit, onError, onBrickReady]);
+  }, [publicKey, disabled, amount, prefData, containerId]);
 
   if (!publicKey) {
     return (
@@ -160,11 +220,20 @@ export default function MercadoPagoBrick({
     );
   }
 
+  if (prefLoading) {
+    return (
+      <div className="rounded-md overflow-hidden border border-white/10 bg-[#1a1a1a] p-6 flex flex-col items-center gap-3">
+        <div className="w-6 h-6 border-2 border-[rgb(0,255,255)] border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-white/40 tracking-wide">Preparando medios de pago...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-md overflow-hidden border border-white/10 bg-[#1a1a1a] p-2 sm:p-3">
-      <div id={containerId} className="min-h-[280px]" />
+      <div id={containerId} className="min-h-[340px]" />
       <p className="mt-2 text-[10px] text-white/35 text-center tracking-wide">
-        Pagás de forma segura con Mercado Pago — los datos de tarjeta no pasan por nuestro servidor.
+        Pagás de forma segura con Mercado Pago — tarjeta, débito o dinero en cuenta.
       </p>
     </div>
   );
