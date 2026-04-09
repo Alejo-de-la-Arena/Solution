@@ -58,3 +58,62 @@ export async function getPaymentStatus(orderId) {
   }
   return data;
 }
+
+const CHECKOUT_PROVIDER_KEY = 'solution_checkout_provider';
+
+/** @param {'nave' | 'mercadopago'} provider */
+export function setCheckoutPaymentProvider(provider) {
+  try {
+    sessionStorage.setItem(CHECKOUT_PROVIDER_KEY, provider);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** @returns {'nave' | 'mercadopago' | null} */
+export function getCheckoutPaymentProvider() {
+  try {
+    const v = sessionStorage.getItem(CHECKOUT_PROVIDER_KEY);
+    if (v === 'mercadopago' || v === 'nave') return v;
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+/**
+ * Mercado Pago: crea orden + POST /v1/orders en el servidor.
+ * @param {Object} payload - Igual que createNavePayment + mp_payment + device_id opcional
+ */
+export async function createMPOrder(payload) {
+  const url = `${API_URL}/api/mercadopago/create-order`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.error || 'Error al procesar el pago');
+    err.status = res.status;
+    err.payload = data;
+    throw err;
+  }
+  return data;
+}
+
+/**
+ * Estado de orden pagada con Mercado Pago (polling).
+ * @param {string} orderId
+ */
+export async function getMPOrderStatus(orderId) {
+  const url = `${API_URL}/api/mercadopago/order-status/${orderId}`;
+  const res = await fetch(url);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.error || 'Error al consultar estado');
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}

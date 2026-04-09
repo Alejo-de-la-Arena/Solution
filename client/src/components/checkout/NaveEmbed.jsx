@@ -4,6 +4,12 @@ function env(name, fallback = '') {
   return (import.meta.env[name] || fallback || '').toString().trim();
 }
 
+function normalizeNaveSdkEnv(raw) {
+  const value = (raw || '').toString().trim().toLowerCase();
+  if (value === 'production' || value === 'prod') return 'production';
+  return 'staging';
+}
+
 const NAVE_EMBED_SETTINGS = {
   show_title: false,
   show_subtitle: false,
@@ -14,7 +20,7 @@ const NAVE_EMBED_SETTINGS = {
 export default function NaveEmbed({ paymentRequestId }) {
   const hostRef = useRef(null);
   const publicKey = useMemo(() => env('VITE_NAVE_PUBLIC_KEY'), []);
-  const naveEnv = useMemo(() => env('VITE_NAVE_ENV', 'sandbox'), []);
+  const naveEnv = useMemo(() => normalizeNaveSdkEnv(env('VITE_NAVE_ENV', 'staging')), []);
 
   // DEBUG: log config on mount so we can verify what the SDK receives
   useEffect(() => {

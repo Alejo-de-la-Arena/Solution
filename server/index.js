@@ -22,26 +22,71 @@ console.log('[boot] Nave M2M:', {
 // Middleware
 app.use(morgan('dev'));
 app.use(cors({ origin: true }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Routes
+// Routes (naveRouter antes de express.json: el webhook debe leer el body aunque el Content-Type no sea application/json)
 const gestionarRouter = require('./routes/gestionar');
 const checkoutRouter = require('./routes/checkout');
 const adminRouter = require('./routes/admin');
 const naveRouter = require('./routes/nave');
+const mercadopagoRouter = require('./routes/mercadopago');
 const correoRouter = require('./routes/correo');
-const shippingRouter = require('./routes/shipping'); 
+const shippingRouter = require('./routes/shipping');
+
+/**
+ * Nave POSTea el webhook; si el Content-Type no es exactamente JSON, express.json() deja req.body vacío.
+ * Parseamos texto crudo antes del JSON global para no perder payment_id / external_payment_id.
+ */
+const NAVE_WEBHOOK_LIMIT = '512kb';
+app.post(
+  '/webhooks/nave',
+  express.raw({ type: () => true, limit: NAVE_WEBHOOK_LIMIT }),
+  (req, res, next) => {
+    try {
+      const raw = req.body instanceof Buffer ? req.body.toString('utf8') : String(req.body || '');
+      req.naveWebhookRawLength = raw.length;
+      req.body = raw.trim() ? JSON.parse(raw) : {};
+    } catch (e) {
+      req.body = {};
+      req.naveWebhookJsonError = e.message;
+    }
+    naveRouter.handleNaveWebhook(req, res, next);
+  },
+);
+// Health check: verificar en Nave / DNS que esta URL pública llega al backend (no al front estático)
+app.get('/webhooks/nave', (_req, res) => {
+  res.status(200).type('text/plain').send('nave webhook ok');
+});
+
+const MP_WEBHOOK_LIMIT = '512kb';
+app.post(
+  '/webhooks/mercadopago',
+  express.raw({ type: () => true, limit: MP_WEBHOOK_LIMIT }),
+  (req, res, next) => {
+    try {
+      const raw = req.body instanceof Buffer ? req.body.toString('utf8') : String(req.body || '');
+      req.mpWebhookRawLength = raw.length;
+      req.body = raw.trim() ? JSON.parse(raw) : {};
+    } catch (e) {
+      req.body = {};
+      req.mpWebhookJsonError = e.message;
+    }
+    mercadopagoRouter.handleMercadoPagoWebhook(req, res, next);
+  },
+);
+app.get('/webhooks/mercadopago', (_req, res) => {
+  res.status(200).type('text/plain').send('mercadopago webhook ok');
+});
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/gestionar', gestionarRouter);
 app.use('/api/checkout', checkoutRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api', naveRouter);
+app.use('/api', mercadopagoRouter);
 app.use('/api/correo', correoRouter);
-app.use('/api/shipping', shippingRouter); 
-
-// Nave envía el webhook a la URL dada de alta (ej. …/webhooks/nave), no bajo /api
-app.post('/webhooks/nave', naveRouter.handleNaveWebhook);
+app.use('/api/shipping', shippingRouter);
 
 app.get('/', (req, res) => {
   res.send('Hello World!!');

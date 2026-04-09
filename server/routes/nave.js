@@ -113,6 +113,20 @@ router.post('/nave/create-payment', async (req, res) => {
   const email = (customer_email || '').trim();
   if (!name || !email) return res.status(400).json({ error: 'Nombre y email son obligatorios' });
 
+  const shippingProvider = (shipping_provider || '').trim();
+  const shippingMode = (shipping_mode || '').trim();
+  const shippingServiceType = (shipping_service_type || '').trim();
+  const hasShippingPayload = Boolean(shipping_quote_payload && typeof shipping_quote_payload === 'object');
+  const hasShippingResponse = Boolean(shipping_quote_response && typeof shipping_quote_response === 'object');
+  const shippingCostNum = Number(shipping_cost);
+
+  if (!shippingProvider || !shippingMode || !shippingServiceType || !hasShippingPayload || !hasShippingResponse) {
+    return res.status(400).json({ error: 'Faltan datos de envío obligatorios para crear el pago en Nave' });
+  }
+  if (!Number.isFinite(shippingCostNum) || shippingCostNum < 0) {
+    return res.status(400).json({ error: 'shipping_cost inválido' });
+  }
+
   const cleanItems = (Array.isArray(items) ? items : [])
     .filter((i) => i && i.product_id && Number(i.quantity) > 0)
     .map((i) => ({
@@ -125,7 +139,7 @@ router.post('/nave/create-payment', async (req, res) => {
   if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
 
   const subtotal = cleanItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
-  const shipping = shipping_cost != null ? Number(shipping_cost) : 0;
+  const shipping = shippingCostNum;
   const orderTotal = subtotal + shipping;
 
   try {
@@ -238,6 +252,14 @@ router.post('/nave/create-payment', async (req, res) => {
 
 // ── Webhook ───────────────────────────────────────────────────────────────
 
+/** Normaliza el body del POST (Nave doc: payment_id, external_payment_id; algunos envíos usan camelCase o wrapper). */
+function parseNaveWebhookPayload(body) {
+  const root = body && typeof body === 'object' ? (body.data && typeof body.data === 'object' ? body.data : body) : {};
+  const payment_id = root.payment_id || root.paymentId;
+  const external_payment_id = root.external_payment_id || root.externalPaymentId;
+  return { payment_id, external_payment_id };
+}
+
 function buildNaveOrderUpdate(payment, paymentId, orderStatus) {
   const pm = payment?.payment_method || {};
   const inst = pm?.installment_plan || {};
@@ -261,14 +283,16 @@ async function handleNaveWebhook(req, res) {
   console.log('[Nave Webhook] Request recibido:', {
     path: req.originalUrl || req.path,
     headers: { 'content-type': req.headers['content-type'], 'user-agent': req.headers['user-agent'] },
+    rawLength: req.naveWebhookRawLength,
+    jsonError: req.naveWebhookJsonError || null,
     body: req.body,
   });
 
   res.sendStatus(200);
 
-  const { payment_id, external_payment_id } = req.body || {};
+  const { payment_id, external_payment_id } = parseNaveWebhookPayload(req.body);
   if (!payment_id || !external_payment_id) {
-    console.warn('[Nave Webhook] Payload incompleto — campos esperados: payment_id, external_payment_id');
+    console.warn('[Nave Webhook] Payload incompleto — campos esperados: payment_id, external_payment_id (o paymentId / externalPaymentId). Revisá notification_url en Nave (prod vs sandbox) y que apunte a este servidor (ej. …/webhooks/nave o …/api/nave/webhook).');
     return;
   }
   if (!supabase) { console.error('[Nave Webhook] Supabase no configurado'); return; }

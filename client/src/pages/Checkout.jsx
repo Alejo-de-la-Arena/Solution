@@ -1,10 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { Link, useSearchParams } from 'react-router-dom';
-import { createNavePayment, getPaymentStatus } from '../services/checkout';
+import {
+  createNavePayment,
+  getPaymentStatus,
+  getMPOrderStatus,
+  getCheckoutPaymentProvider,
+  setCheckoutPaymentProvider,
+} from '../services/checkout';
 import { quoteShipping } from '../services/shipping';
-// Embebido Nave desactivado: siempre redirigimos a checkout_url. Reactivar import + modal abajo si volvés al embed.
-// import NaveEmbed from '../components/checkout/NaveEmbed';
+import NaveEmbed from '../components/checkout/NaveEmbed';
+import MercadoPagoBrick from '../components/checkout/MercadoPagoBrick';
 
 const inputClass =
   'w-full bg-zinc-900 border-white/10 border rounded-sm p-3 focus:ring-1 focus:ring-[rgb(0,255,255)] focus:border-[rgb(0,255,255)] transition-colors';
@@ -18,7 +24,16 @@ function isCheckoutPaid(data) {
   const orderStatus = (data?.order_status || '').toLowerCase();
   if (['payment_failed', 'cancelled', 'chargeback', 'refunded', 'refund_pending'].includes(orderStatus)) return false;
   if (orderStatus === 'paid') return true;
+  const mpS = (data?.mp_status || '').toLowerCase();
+  const mpD = (data?.mp_status_detail || '').toLowerCase();
+  if (mpS === 'processed' && mpD === 'accredited') return true;
   return (data?.nave_status || '').toUpperCase() === 'APPROVED';
+}
+
+async function fetchOrderPaymentStatus(orderId) {
+  const provider = getCheckoutPaymentProvider();
+  if (provider === 'mercadopago') return getMPOrderStatus(orderId);
+  return getPaymentStatus(orderId);
 }
 
 // ── Shipping option card ──────────────────────────────────────────────────
@@ -50,6 +65,27 @@ function ShippingOptionCard({ option, selected, onSelect }) {
   );
 }
 
+function PaymentMethodCard({ id, title, subtitle, selected, onSelect }) {
+  const isSelected = selected === id;
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(id)}
+      className={`w-full flex items-center justify-between p-4 bg-zinc-900 rounded-sm border transition-colors text-left ${isSelected ? 'border-[rgb(0,255,255)] bg-cyan-900/10' : 'border-white/10 hover:border-white/30'
+        }`}
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 transition-colors ${isSelected ? 'border-[rgb(0,255,255)] bg-[rgb(0,255,255)]' : 'border-white/30'
+          }`} />
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-white">{title}</p>
+          {subtitle && <p className="text-xs text-white/50 mt-0.5">{subtitle}</p>}
+        </div>
+      </div>
+    </button>
+  );
+}
+
 // ── Loading overlay (full screen) ─────────────────────────────────────────
 function LoadingOverlay({ visible }) {
   if (!visible) return null;
@@ -72,9 +108,9 @@ export default function Checkout() {
   const [paymentResult, setPaymentResult] = useState(null);
   const [resultOrderId, setResultOrderId] = useState(null);
   const [checking, setChecking] = useState(false);
-  // Embebido (modal + SDK): desactivado — ver handleSubmit y bloque JSX comentado
-  // const [showNaveModal, setShowNaveModal] = useState(false);
-  // const [paymentRequestId, setPaymentRequestId] = useState(null);
+  const [showNaveModal, setShowNaveModal] = useState(false);
+  const [paymentRequestId, setPaymentRequestId] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState('mercadopago');
 
   // Shipping quote state
   const [shippingQuote, setShippingQuote] = useState(null);
@@ -148,7 +184,7 @@ export default function Checkout() {
     setChecking(true);
     setResultOrderId(pendingOrderId);
 
-    getPaymentStatus(pendingOrderId)
+    fetchOrderPaymentStatus(pendingOrderId)
       .then((data) => {
         if (isCheckoutPaid(data)) { setPaymentResult('success'); clearCart(); }
         else if (data.order_status === 'payment_failed') setPaymentResult('rejected');
@@ -177,7 +213,7 @@ export default function Checkout() {
         return;
       }
       try {
-        const data = await getPaymentStatus(resultOrderId);
+        const data = await fetchOrderPaymentStatus(resultOrderId);
         if (isCheckoutPaid(data)) {
           clearInterval(interval);
           setPaymentResult('success');
@@ -194,6 +230,14 @@ export default function Checkout() {
     return () => clearInterval(interval);
   }, [paymentResult, resultOrderId, clearCart]);
 
+  useEffect(() => {
+    if (paymentMethod === 'mercadopago') {
+      clearNavePendingStorage();
+      setShowNaveModal(false);
+      setPaymentRequestId(null);
+    }
+  }, [paymentMethod]);
+
   // ── Handlers ──────────────────────────────────────────────────────────
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -202,19 +246,92 @@ export default function Checkout() {
   };
 
   const canSubmit = itemsWithProductId.length > 0 && itemsWithProductId.length === cart.length;
-  // const closeNaveModal = () => { clearNavePendingStorage(); setShowNaveModal(false); };
+  const closeNaveModal = () => {
+    clearNavePendingStorage();
+    setShowNaveModal(false);
+    setPaymentRequestId(null);
+  };
 
   const shippingCost = selectedShipping?.price ?? 0;
   const grandTotal = totalPrice + shippingCost;
+  const hasShippingInputs = form.zip.trim().length >= 4 && form.state.trim().length >= 3;
+  const waitingForShippingQuote = hasShippingInputs && (shippingLoading || (!shippingError && !shippingQuote));
+  const hasShippingSelection = Boolean(shippingQuote?.provider) && Boolean(selectedShipping?.mode);
+  const isSubmitDisabled =
+    loading
+    || cart.length === 0
+    || !canSubmit
+    || !hasShippingInputs
+    || waitingForShippingQuote
+    || !hasShippingSelection;
+
+  const getCheckoutPayload = useCallback(() => {
+    const lineItems = cart.filter((item) => item.productId);
+    const name = (form.name || '').trim();
+    const email = (form.email || '').trim();
+    return {
+      customer_name: name,
+      customer_email: email,
+      customer_phone: (form.phone || '').trim() || undefined,
+      shipping_address_line1: (form.address || '').trim() || undefined,
+      shipping_address_line2: (form.address2 || '').trim() || undefined,
+      shipping_city: (form.city || '').trim() || undefined,
+      shipping_state: (form.state || '').trim() || undefined,
+      shipping_postal_code: (form.zip || '').trim() || undefined,
+      shipping_country: 'AR',
+      shipping_notes: (form.notes || '').trim() || undefined,
+      shipping_method: 'standard',
+      shipping_cost: shippingCost,
+      items: lineItems.map((item) => ({
+        product_id: item.productId,
+        quantity: item.quantity,
+        unit_price: item.price,
+        name: item.name || 'Producto',
+      })),
+      shipping_provider: shippingQuote?.provider || undefined,
+      shipping_mode: selectedShipping?.mode || undefined,
+      shipping_service_type: selectedShipping?.serviceType || undefined,
+      shipping_is_free: shippingQuote?.freeShipping || shippingCost === 0,
+      shipping_agency_code: selectedShipping?.agencyCode || undefined,
+      shipping_agency_name: selectedShipping?.agencyName || undefined,
+      shipping_customer_id: shippingQuote?.customerId || undefined,
+      shipping_quote_payload: shippingQuote
+        ? { parcel: shippingQuote.parcel, selectedOption: selectedShipping }
+        : undefined,
+      shipping_quote_response: shippingQuote || undefined,
+    };
+  }, [cart, form, shippingCost, shippingQuote, selectedShipping]);
+
+  const handleMPBrickSuccess = (data) => {
+    setError('');
+    setResultOrderId(data.order_id);
+    const st = (data.order_status || '').toLowerCase();
+    if (st === 'paid') {
+      setPaymentResult('success');
+      clearCart();
+    } else if (st === 'payment_failed') {
+      setPaymentResult('rejected');
+    } else {
+      setPaymentResult('pending');
+    }
+  };
+
+  const handleMPBrickError = (msg) => {
+    setError(typeof msg === 'string' ? msg : 'Error al procesar el pago.');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    if (paymentMethod === 'mercadopago') return;
 
     const name = (form.name || '').trim();
     const email = (form.email || '').trim();
     if (!name || !email) { setError('Completá nombre y email.'); return; }
     if (!canSubmit) { setError('Algunos productos no están disponibles. Volvé a la tienda y agregalos de nuevo.'); return; }
+    if (!hasShippingInputs) { setError('Completá provincia y código postal para calcular el envío.'); return; }
+    if (waitingForShippingQuote) { setError('Esperá a que carguen las opciones de envío antes de pagar.'); return; }
+    if (!hasShippingSelection) { setError('Seleccioná una opción de envío para continuar con el pago.'); return; }
 
     setLoading(true);
     try {
@@ -249,32 +366,28 @@ export default function Checkout() {
         shipping_quote_payload: shippingQuote
           ? { parcel: shippingQuote.parcel, selectedOption: selectedShipping }
           : undefined,
+        shipping_quote_response: shippingQuote || undefined,
       };
 
+      setCheckoutPaymentProvider('nave');
       const data = await createNavePayment(payload);
       setResultOrderId(data.order_id);
+      const hasSdkConfig = Boolean((import.meta.env.VITE_NAVE_PUBLIC_KEY || '').toString().trim());
+      const canUseEmbed = Boolean(data.payment_request_id) && hasSdkConfig;
 
-      // Siempre checkout hosted en Nave (redirección). El flujo embebido (modal + payfac-sdk) queda comentado abajo.
+      if (canUseEmbed) {
+        setPaymentRequestId(data.payment_request_id);
+        setShowNaveModal(true);
+        setLoading(false);
+        return;
+      }
+      // Fallback robusto: si falta SDK config o payment_request_id, redirigimos al hosted checkout.
       if (data.checkout_url) {
         window.location.assign(data.checkout_url);
         return;
       }
       setError('No se recibió la URL de pago. Intentá de nuevo.');
       setLoading(false);
-
-      /*
-      // ── Embebido (antes: solo en no-localhost o con VITE_NAVE_FORCE_EMBED_LOCAL en localhost) ──
-      // const onLocalhost = typeof window !== 'undefined'
-      //   && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-      // const forceEmbedLocal = ((import.meta.env.VITE_NAVE_FORCE_EMBED_LOCAL || '') + '').toLowerCase() === 'true';
-      // if (onLocalhost && !forceEmbedLocal && data.checkout_url) {
-      //   window.location.assign(data.checkout_url);
-      //   return;
-      // }
-      // setPaymentRequestId(data.payment_request_id);
-      // setShowNaveModal(true);
-      // setLoading(false);
-      */
     } catch (err) {
       setError(err.message || 'Error al procesar el pago.');
       setLoading(false);
@@ -473,30 +586,52 @@ export default function Checkout() {
               {/* MÉTODO DE PAGO */}
               <div>
                 <h2 className="text-lg font-heading tracking-widest border-b border-white/10 pb-4 mb-6">MÉTODO DE PAGO</h2>
-                <div className="flex items-center p-4 bg-zinc-900 rounded-sm border border-[rgb(0,255,255)] bg-cyan-900/10">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded bg-white flex items-center justify-center">
-                      <svg className="w-5 h-5 text-zinc-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-white">Nave</p>
-                      <p className="text-xs text-white/50">Tarjeta de crédito o débito</p>
-                    </div>
-                  </div>
+                <div className="space-y-2 mb-6">
+                  <PaymentMethodCard
+                    id="mercadopago"
+                    title="Mercado Pago"
+                    subtitle="Tarjeta, cuotas y medios disponibles (Brick seguro)"
+                    selected={paymentMethod}
+                    onSelect={setPaymentMethod}
+                  />
+                  <PaymentMethodCard
+                    id="nave"
+                    title="Nave / Naranja X"
+                    subtitle="Checkout embebido o redirección"
+                    selected={paymentMethod}
+                    onSelect={setPaymentMethod}
+                  />
                 </div>
+
+                {paymentMethod === 'mercadopago' && (
+                  <div className="space-y-3">
+                    <p className="text-xs text-white/50">
+                      Total a pagar:{' '}
+                      <span className="text-[rgb(0,255,255)] font-medium">${grandTotal.toLocaleString('es-AR')}</span>
+                      . Completá los datos de la tarjeta abajo.
+                    </p>
+                    <MercadoPagoBrick
+                      amount={grandTotal}
+                      disabled={isSubmitDisabled}
+                      getCheckoutPayload={getCheckoutPayload}
+                      onSuccess={handleMPBrickSuccess}
+                      onError={handleMPBrickError}
+                    />
+                  </div>
+                )}
               </div>
 
               {error && <p className="text-red-400 text-sm">{error}</p>}
 
-              <button
-                type="submit"
-                disabled={loading || cart.length === 0}
-                className="w-full bg-white text-black py-4 text-sm tracking-[0.2em] uppercase font-bold hover:bg-[rgb(0,255,255)] transition-colors duration-300 rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Procesando...' : `Pagar $${grandTotal.toLocaleString('es-AR')}`}
-              </button>
+              {paymentMethod === 'nave' && (
+                <button
+                  type="submit"
+                  disabled={isSubmitDisabled}
+                  className="w-full bg-white text-black py-4 text-sm tracking-[0.2em] uppercase font-bold hover:bg-[rgb(0,255,255)] transition-colors duration-300 rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Procesando...' : `Pagar $${grandTotal.toLocaleString('es-AR')}`}
+                </button>
+              )}
             </form>
           </div>
 
@@ -568,8 +703,6 @@ export default function Checkout() {
         </div>
       </div>
 
-      {/*
-      Nave Modal (embebido payfac-sdk) — desactivado: descomentar junto con import NaveEmbed, state showNaveModal/paymentRequestId y closeNaveModal
       {showNaveModal && (
         <div
           className="fixed inset-0 z-[100] flex items-stretch justify-center sm:items-center p-0 sm:p-6 bg-black/90 backdrop-blur-md"
@@ -622,7 +755,6 @@ export default function Checkout() {
           </div>
         </div>
       )}
-      */}
     </div>
   );
 }
