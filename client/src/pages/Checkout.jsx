@@ -3,8 +3,7 @@ import { useCart } from '../contexts/CartContext';
 import { Link, useSearchParams } from 'react-router-dom';
 import { createNavePayment, getPaymentStatus } from '../services/checkout';
 import { quoteShipping } from '../services/shipping';
-// Embebido Nave desactivado: siempre redirigimos a checkout_url. Reactivar import + modal abajo si volvés al embed.
-// import NaveEmbed from '../components/checkout/NaveEmbed';
+import NaveEmbed from '../components/checkout/NaveEmbed';
 
 const inputClass =
   'w-full bg-zinc-900 border-white/10 border rounded-sm p-3 focus:ring-1 focus:ring-[rgb(0,255,255)] focus:border-[rgb(0,255,255)] transition-colors';
@@ -72,9 +71,8 @@ export default function Checkout() {
   const [paymentResult, setPaymentResult] = useState(null);
   const [resultOrderId, setResultOrderId] = useState(null);
   const [checking, setChecking] = useState(false);
-  // Embebido (modal + SDK): desactivado — ver handleSubmit y bloque JSX comentado
-  // const [showNaveModal, setShowNaveModal] = useState(false);
-  // const [paymentRequestId, setPaymentRequestId] = useState(null);
+  const [showNaveModal, setShowNaveModal] = useState(false);
+  const [paymentRequestId, setPaymentRequestId] = useState(null);
 
   // Shipping quote state
   const [shippingQuote, setShippingQuote] = useState(null);
@@ -202,7 +200,11 @@ export default function Checkout() {
   };
 
   const canSubmit = itemsWithProductId.length > 0 && itemsWithProductId.length === cart.length;
-  // const closeNaveModal = () => { clearNavePendingStorage(); setShowNaveModal(false); };
+  const closeNaveModal = () => {
+    clearNavePendingStorage();
+    setShowNaveModal(false);
+    setPaymentRequestId(null);
+  };
 
   const shippingCost = selectedShipping?.price ?? 0;
   const grandTotal = totalPrice + shippingCost;
@@ -253,28 +255,22 @@ export default function Checkout() {
 
       const data = await createNavePayment(payload);
       setResultOrderId(data.order_id);
+      const hasSdkConfig = Boolean((import.meta.env.VITE_NAVE_PUBLIC_KEY || '').toString().trim());
+      const canUseEmbed = Boolean(data.payment_request_id) && hasSdkConfig;
 
-      // Siempre checkout hosted en Nave (redirección). El flujo embebido (modal + payfac-sdk) queda comentado abajo.
+      if (canUseEmbed) {
+        setPaymentRequestId(data.payment_request_id);
+        setShowNaveModal(true);
+        setLoading(false);
+        return;
+      }
+      // Fallback robusto: si falta SDK config o payment_request_id, redirigimos al hosted checkout.
       if (data.checkout_url) {
         window.location.assign(data.checkout_url);
         return;
       }
       setError('No se recibió la URL de pago. Intentá de nuevo.');
       setLoading(false);
-
-      /*
-      // ── Embebido (antes: solo en no-localhost o con VITE_NAVE_FORCE_EMBED_LOCAL en localhost) ──
-      // const onLocalhost = typeof window !== 'undefined'
-      //   && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-      // const forceEmbedLocal = ((import.meta.env.VITE_NAVE_FORCE_EMBED_LOCAL || '') + '').toLowerCase() === 'true';
-      // if (onLocalhost && !forceEmbedLocal && data.checkout_url) {
-      //   window.location.assign(data.checkout_url);
-      //   return;
-      // }
-      // setPaymentRequestId(data.payment_request_id);
-      // setShowNaveModal(true);
-      // setLoading(false);
-      */
     } catch (err) {
       setError(err.message || 'Error al procesar el pago.');
       setLoading(false);
@@ -568,8 +564,6 @@ export default function Checkout() {
         </div>
       </div>
 
-      {/*
-      Nave Modal (embebido payfac-sdk) — desactivado: descomentar junto con import NaveEmbed, state showNaveModal/paymentRequestId y closeNaveModal
       {showNaveModal && (
         <div
           className="fixed inset-0 z-[100] flex items-stretch justify-center sm:items-center p-0 sm:p-6 bg-black/90 backdrop-blur-md"
@@ -622,7 +616,6 @@ export default function Checkout() {
           </div>
         </div>
       )}
-      */}
     </div>
   );
 }
