@@ -113,6 +113,20 @@ router.post('/nave/create-payment', async (req, res) => {
   const email = (customer_email || '').trim();
   if (!name || !email) return res.status(400).json({ error: 'Nombre y email son obligatorios' });
 
+  const shippingProvider = (shipping_provider || '').trim();
+  const shippingMode = (shipping_mode || '').trim();
+  const shippingServiceType = (shipping_service_type || '').trim();
+  const hasShippingPayload = Boolean(shipping_quote_payload && typeof shipping_quote_payload === 'object');
+  const hasShippingResponse = Boolean(shipping_quote_response && typeof shipping_quote_response === 'object');
+  const shippingCostNum = Number(shipping_cost);
+
+  if (!shippingProvider || !shippingMode || !shippingServiceType || !hasShippingPayload || !hasShippingResponse) {
+    return res.status(400).json({ error: 'Faltan datos de envío obligatorios para crear el pago en Nave' });
+  }
+  if (!Number.isFinite(shippingCostNum) || shippingCostNum < 0) {
+    return res.status(400).json({ error: 'shipping_cost inválido' });
+  }
+
   const cleanItems = (Array.isArray(items) ? items : [])
     .filter((i) => i && i.product_id && Number(i.quantity) > 0)
     .map((i) => ({
@@ -125,7 +139,7 @@ router.post('/nave/create-payment', async (req, res) => {
   if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
 
   const subtotal = cleanItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
-  const shipping = shipping_cost != null ? Number(shipping_cost) : 0;
+  const shipping = shippingCostNum;
   const orderTotal = subtotal + shipping;
 
   try {

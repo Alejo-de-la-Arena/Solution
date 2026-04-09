@@ -28,6 +28,7 @@ const gestionarRouter = require('./routes/gestionar');
 const checkoutRouter = require('./routes/checkout');
 const adminRouter = require('./routes/admin');
 const naveRouter = require('./routes/nave');
+const mercadopagoRouter = require('./routes/mercadopago');
 const correoRouter = require('./routes/correo');
 const shippingRouter = require('./routes/shipping');
 
@@ -56,6 +57,26 @@ app.get('/webhooks/nave', (_req, res) => {
   res.status(200).type('text/plain').send('nave webhook ok');
 });
 
+const MP_WEBHOOK_LIMIT = '512kb';
+app.post(
+  '/webhooks/mercadopago',
+  express.raw({ type: () => true, limit: MP_WEBHOOK_LIMIT }),
+  (req, res, next) => {
+    try {
+      const raw = req.body instanceof Buffer ? req.body.toString('utf8') : String(req.body || '');
+      req.mpWebhookRawLength = raw.length;
+      req.body = raw.trim() ? JSON.parse(raw) : {};
+    } catch (e) {
+      req.body = {};
+      req.mpWebhookJsonError = e.message;
+    }
+    mercadopagoRouter.handleMercadoPagoWebhook(req, res, next);
+  },
+);
+app.get('/webhooks/mercadopago', (_req, res) => {
+  res.status(200).type('text/plain').send('mercadopago webhook ok');
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -63,6 +84,7 @@ app.use('/api/gestionar', gestionarRouter);
 app.use('/api/checkout', checkoutRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api', naveRouter);
+app.use('/api', mercadopagoRouter);
 app.use('/api/correo', correoRouter);
 app.use('/api/shipping', shippingRouter);
 
