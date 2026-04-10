@@ -656,7 +656,7 @@ export default function Checkout() {
                             ${(item.price * item.quantity).toLocaleString('es-AR')}
                           </p>
                         </div>
-                        <p className="text-xs text-white/50 mt-1">100ml • Eau de Parfum</p>
+                        <p className="text-xs text-white/50 mt-1">60ml • Eau de Parfum</p>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center border border-white/20 rounded-sm">

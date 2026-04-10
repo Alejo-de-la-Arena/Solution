@@ -185,7 +185,7 @@ function ProductBlock({ perfume, index, altView }) {
                 <span className="text-4xl tracking-tight">${perfume.price.toLocaleString('es-AR')}</span>
                 <span className="text-sm opacity-60">ARS</span>
               </div>
-              <p className="text-xs opacity-50">100ml • Eau de Parfum</p>
+              <p className="text-xs opacity-50">60ml • Eau de Parfum</p>
             </div>
             <div className="w-24 h-px mx-auto" style={{ backgroundColor: accentColor, opacity: 0.5 }} />
             <Link

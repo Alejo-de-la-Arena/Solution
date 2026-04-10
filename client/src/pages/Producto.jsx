@@ -430,7 +430,7 @@ export default function Producto() {
                     <span className="text-4xl tracking-tight font-light">${perfume.price.toLocaleString('es-AR')}</span>
                     <span className="text-sm text-white/40 tracking-widest">ARS</span>
                   </div>
-                  <p className="text-white/40 text-xs tracking-widest">100ML • EAU DE PARFUM</p>
+                  <p className="text-white/40 text-xs tracking-widest">60ML • EAU DE PARFUM</p>
                 </div>
 
                 <button
