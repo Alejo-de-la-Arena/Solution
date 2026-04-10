@@ -117,8 +117,6 @@ export default function MercadoPagoBrick({
             creditCard: 'all',
             debitCard: 'all',
             mercadoPago: 'all',
-            ticket: 'all',
-            bankTransfer: 'all',
           },
           visual: {
             style: { theme: 'dark' },
