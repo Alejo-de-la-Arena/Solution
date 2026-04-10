@@ -92,7 +92,9 @@ export default function Footer() {
           <div className="flex flex-col items-start sm:items-end md:items-start">
             <div className="inline-flex items-center gap-2.5">
               <a
-                href="#"
+                href="https://www.instagram.com/solution.ar?igsh=OWJzajEweHBmY2hn&utm_source=qr"
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={(e) => e.preventDefault()}
                 aria-label="Instagram"
                 className="group inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-white/70 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset] transition-all duration-300 hover:border-white/25 hover:bg-white/[0.06] hover:text-white hover:shadow-[0_8px_28px_rgba(0,0,0,0.45)]"
