@@ -49,6 +49,7 @@ async function createCorreoShipmentFromOrderId({
     });
 
     const raw = result.raw || {};
+    console.log('[CORREO] importShipment raw response:', JSON.stringify(raw, null, 2));
     const shippingExternalId =
         raw.shippingId || raw.id || raw.shipmentId || null;
     const trackingNumber =
