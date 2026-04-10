@@ -58,24 +58,28 @@ app.get('/webhooks/nave', (_req, res) => {
 });
 
 const MP_WEBHOOK_LIMIT = '512kb';
-app.post(
-  '/webhooks/mercadopago',
-  express.raw({ type: () => true, limit: MP_WEBHOOK_LIMIT }),
-  (req, res, next) => {
-    try {
-      const raw = req.body instanceof Buffer ? req.body.toString('utf8') : String(req.body || '');
-      req.mpWebhookRawLength = raw.length;
-      req.body = raw.trim() ? JSON.parse(raw) : {};
-    } catch (e) {
-      req.body = {};
-      req.mpWebhookJsonError = e.message;
-    }
-    mercadopagoRouter.handleMercadoPagoWebhook(req, res, next);
-  },
-);
-app.get('/webhooks/mercadopago', (_req, res) => {
-  res.status(200).type('text/plain').send('mercadopago webhook ok');
-});
+/** Misma lógica en ambas rutas: producción suele usar /api/webhook-mp en el panel de MP. */
+const mercadoPagoWebhookMiddleware = (req, res, next) => {
+  try {
+    const raw = req.body instanceof Buffer ? req.body.toString('utf8') : String(req.body || '');
+    req.mpWebhookRawLength = raw.length;
+    req.body = raw.trim() ? JSON.parse(raw) : {};
+  } catch (e) {
+    req.body = {};
+    req.mpWebhookJsonError = e.message;
+  }
+  mercadopagoRouter.handleMercadoPagoWebhook(req, res, next);
+};
+for (const mpWebhookPath of ['/api/webhook-mp', '/webhooks/mercadopago']) {
+  app.post(
+    mpWebhookPath,
+    express.raw({ type: () => true, limit: MP_WEBHOOK_LIMIT }),
+    mercadoPagoWebhookMiddleware,
+  );
+  app.get(mpWebhookPath, (_req, res) => {
+    res.status(200).type('text/plain').send('mercadopago webhook ok');
+  });
+}
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
