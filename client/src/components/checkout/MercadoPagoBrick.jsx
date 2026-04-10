@@ -116,7 +116,7 @@ export default function MercadoPagoBrick({
           paymentMethods: {
             creditCard: 'all',
             debitCard: 'all',
-            mercadoPago: 'all',
+            ...(prefData.preference_id ? { mercadoPago: 'all' } : {}),
           },
           visual: {
             style: { theme: 'dark' },
