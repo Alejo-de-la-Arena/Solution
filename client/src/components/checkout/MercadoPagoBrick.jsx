@@ -110,7 +110,7 @@ export default function MercadoPagoBrick({
       const settings = {
         initialization: {
           amount: Number(amount) > 0 ? Number(amount) : 0,
-          preferenceId: prefData.preference_id || undefined,
+          // preferenceId: prefData.preference_id || undefined,
         },
         customization: {
           visual: {
