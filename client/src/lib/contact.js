@@ -6,3 +6,8 @@ export const WHATSAPP_NUMBER = digits(import.meta.env.VITE_WHATSAPP_NUMBER) || '
 
 export const CONTACT_EMAIL =
   (import.meta.env.VITE_CONTACT_EMAIL || 'solution.perfumes@gmail.com').trim() || 'solution.perfumes@gmail.com';
+
+/** Perfil oficial; la URL con ?igsh=… del QR también abre el mismo perfil (parámetros opcionales). */
+export const INSTAGRAM_URL = (
+  import.meta.env.VITE_INSTAGRAM_URL || 'https://www.instagram.com/solution.ar/'
+).trim();

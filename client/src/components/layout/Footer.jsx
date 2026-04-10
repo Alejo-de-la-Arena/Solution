@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { CONTACT_EMAIL, WHATSAPP_NUMBER } from "../../lib/contact";
+import { CONTACT_EMAIL, WHATSAPP_NUMBER, INSTAGRAM_URL } from "../../lib/contact";
 
 const NAV_LINKS = [
   { label: "Inicio", to: "/" },
@@ -46,11 +46,7 @@ function WhatsAppIcon({ className = "h-5 w-5" }) {
 export default function Footer() {
   return (
     <footer className="relative border-t border-white/10 bg-black text-white overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none" aria-hidden>
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[70vw] max-w-4xl h-[45vh] bg-[radial-gradient(circle_at_center,rgba(0,255,255,0.12)_0%,transparent_60%)] opacity-70" />
-        <div className="absolute right-0 top-0 w-[35vw] max-w-[420px] h-[30vh] bg-[radial-gradient(circle_at_left,rgba(255,0,255,0.10)_0%,transparent_65%)] opacity-70" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:28px_28px] opacity-40" />
-      </div>
+
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
@@ -92,11 +88,10 @@ export default function Footer() {
           <div className="flex flex-col items-start sm:items-end md:items-start">
             <div className="inline-flex items-center gap-2.5">
               <a
-                href="https://www.instagram.com/solution.ar/"
+                href={INSTAGRAM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => e.preventDefault()}
-                aria-label="Instagram"
+                aria-label="Instagram — SOLUTION en Instagram"
                 className="group inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-white/70 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset] transition-all duration-300 hover:border-white/25 hover:bg-white/[0.06] hover:text-white hover:shadow-[0_8px_28px_rgba(0,0,0,0.45)]"
               >
                 <InstagramIcon className="h-[18px] w-[18px] transition-transform duration-300 group-hover:scale-[1.06]" />
