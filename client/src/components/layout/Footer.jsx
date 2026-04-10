@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { CONTACT_EMAIL, WHATSAPP_NUMBER } from "../../lib/contact";
 
 const NAV_LINKS = [
   { label: "Inicio", to: "/" },
@@ -65,10 +66,10 @@ export default function Footer() {
             <h4 className="text-xs uppercase tracking-[0.28em] opacity-60 mb-4">Contacto</h4>
             <p className="text-sm opacity-70">
               <a
-                href="mailto:contacto@solution.com.ar"
+                href={`mailto:${CONTACT_EMAIL}`}
                 className="inline-flex items-center gap-2 hover:text-white transition-colors duration-200"
               >
-                contacto@solution.com.ar
+                {CONTACT_EMAIL}
                 <span className="text-white/30" aria-hidden>
                   →
                 </span>
@@ -99,8 +100,9 @@ export default function Footer() {
                 <InstagramIcon className="h-[18px] w-[18px] transition-transform duration-300 group-hover:scale-[1.06]" />
               </a>
               <a
-                href="#"
-                onClick={(e) => e.preventDefault()}
+                href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label="WhatsApp"
                 className="group inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-white/70 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset] transition-all duration-300 hover:border-white/25 hover:bg-white/[0.06] hover:text-white hover:shadow-[0_8px_28px_rgba(0,0,0,0.45)]"
               >

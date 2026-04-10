@@ -10,7 +10,7 @@ import {
 } from "../services/wholesaleOrders";
 import { normalizePlan, planLabel, WHOLESALE_PLANS_LANDING } from "../data/wholesalePlans";
 
-const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || "5491112345678";
+import { WHATSAPP_NUMBER } from "../lib/contact";
 
 function formatPrice(n) {
   return new Intl.NumberFormat("es-AR", {

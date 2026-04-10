@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { getPublicProducts } from '../services/products';
 
 const CartContext = createContext();
 
@@ -12,6 +13,34 @@ export function CartProvider({ children }) {
     }
   });
   const [isOpen, setIsOpen] = useState(false);
+
+  /** Precios del carrito persisten en localStorage; al cambiar precios en Supabase hay que alinearlos. */
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await getPublicProducts();
+        if (cancelled || !rows?.length) return;
+        const bySlug = new Map(rows.map((r) => [r.slug, Number(r.price_retail) || 0]));
+        setCart((prev) => {
+          let changed = false;
+          const next = prev.map((item) => {
+            const fresh = bySlug.get(item.id);
+            if (fresh === undefined) return item;
+            if (Number(item.price) === fresh) return item;
+            changed = true;
+            return { ...item, price: fresh };
+          });
+          return changed ? next : prev;
+        });
+      } catch {
+        /* offline o error de red: se mantiene el carrito guardado */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
