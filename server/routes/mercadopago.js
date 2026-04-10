@@ -706,7 +706,11 @@ router.post('/mercadopago/create-preference', async (req, res) => {
   }
 
   console.log(`[MP] Preferencia creada: ${preference.id} → orden ${order.id}`);
-  return res.status(201).json({ order_id: order.id, preference_id: preference.id });
+  return res.status(201).json({
+    order_id: order.id,
+    preference_id: preference.id,
+    init_point: preference.init_point || null,
+  });
 });
 
 // ── POST /api/mercadopago/process-card-payment ─────────────────────────────
