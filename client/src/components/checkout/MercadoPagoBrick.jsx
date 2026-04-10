@@ -56,6 +56,19 @@ export default function MercadoPagoBrick({
       callback_url: `${window.location.origin}/checkout`,
     })
       .then((data) => {
+        if (cancelled) return;
+        if (!data?.preference_id) {
+          console.error('[MP Brick] Preferencia sin ID:', data);
+          onErrorRef.current?.('No se pudo preparar el pago con Mercado Pago. Intentá de nuevo.');
+          return;
+        }
+        setPrefData(data);
+        setCheckoutPaymentProvider('mercadopago');
+      })
+      .catch((err) => {
+        if (!cancelled) onErrorRef.current?.(err.message);
+      })
+      .then((data) => {
         if (!cancelled) {
           setPrefData(data);
           setCheckoutPaymentProvider('mercadopago');
@@ -103,7 +116,9 @@ export default function MercadoPagoBrick({
           paymentMethods: {
             creditCard: 'all',
             debitCard: 'all',
-            ...(prefData.preference_id ? { mercadoPago: 'all' } : {}),
+            mercadoPago: 'all',
+            ticket: 'all',
+            bankTransfer: 'all',
           },
           visual: {
             style: { theme: 'dark' },

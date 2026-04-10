@@ -696,8 +696,13 @@ router.post('/mercadopago/create-preference', async (req, res) => {
     preference = resp.data;
   } catch (err) {
     const detail = err.response?.data || err.message;
-    console.error('[MP] Error creando preferencia:', detail);
-    return res.status(201).json({ order_id: order.id, preference_id: null });
+    console.error('[MP] Error creando preferencia:', JSON.stringify(detail, null, 2));
+    return res.status(502).json({
+      error: 'No se pudo crear la preferencia de Mercado Pago. Revisá las credenciales.',
+      order_id: order.id,
+      preference_id: null,
+      mp_detail: typeof detail === 'object' ? detail : { message: String(detail) },
+    });
   }
 
   console.log(`[MP] Preferencia creada: ${preference.id} → orden ${order.id}`);
