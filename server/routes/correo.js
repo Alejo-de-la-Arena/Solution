@@ -159,4 +159,56 @@ router.get('/tracking/:shippingId', async (req, res) => {
     }
 });
 
+/**
+ * POST /api/correo/save-tracking
+ * Admin carga tracking number manualmente y se envía email al cliente.
+ */
+router.post('/save-tracking', async (req, res) => {
+    const { supabase } = require('../lib/supabase');
+    const { sendTrackingEmail } = require('../services/email');
+
+    try {
+        const { orderId, trackingNumber } = req.body || {};
+
+        if (!orderId) return res.status(400).json({ error: 'orderId es obligatorio', code: 'MISSING_ORDER_ID' });
+        if (!trackingNumber || !trackingNumber.trim()) {
+            return res.status(400).json({ error: 'trackingNumber es obligatorio', code: 'MISSING_TRACKING' });
+        }
+
+        const tracking = trackingNumber.trim();
+
+        // Actualizar tracking en la orden
+        const { data: order, error: updateErr } = await supabase
+            .from('orders')
+            .update({ shipping_tracking_number: tracking })
+            .eq('id', orderId)
+            .select('id, customer_name, customer_email, shipping_address_line1, shipping_city, shipping_state, shipping_mode, shipping_agency_name, total, currency')
+            .single();
+
+        if (updateErr || !order) {
+            console.error('[correo] save-tracking update error:', updateErr);
+            return res.status(404).json({ error: 'Orden no encontrada' });
+        }
+
+        // Enviar email de seguimiento
+        const to = (order.customer_email || '').trim();
+        if (to) {
+            const deliveryType = order.shipping_mode === 'branch' ? 'S' : 'D';
+            sendTrackingEmail({
+                to,
+                order,
+                trackingNumber: tracking,
+                deliveryType,
+                agencyName: order.shipping_agency_name || null,
+            }).catch((err) => {
+                console.error('[correo] sendTrackingEmail error:', err?.message || err);
+            });
+        }
+
+        return res.json({ ok: true, tracking, emailSent: !!to });
+    } catch (error) {
+        return handleError(res, error);
+    }
+});
+
 module.exports = router;

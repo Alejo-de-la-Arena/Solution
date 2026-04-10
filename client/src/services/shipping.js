@@ -44,3 +44,21 @@ export async function fetchCorreoAgencies(province) {
     if (!res.ok) throw new Error(data.error || 'Error al obtener sucursales');
     return data.agencies || [];
 }
+
+/**
+ * Admin: guardar tracking number y enviar email de seguimiento al cliente.
+ */
+export async function saveTrackingNumber({ orderId, trackingNumber }) {
+    const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+    const url = `${API_URL}/api/correo/save-tracking`;
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, trackingNumber }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        throw new Error(data.error || 'Error al guardar tracking');
+    }
+    return data;
+}

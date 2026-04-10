@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getAdminOrders, refundNaveOrder, updateAdminOrderStatus } from '../../services/admin';
-import { dispatchWithCorreo, fetchCorreoAgencies } from '../../services/shipping';
+import { dispatchWithCorreo, fetchCorreoAgencies, saveTrackingNumber } from '../../services/shipping';
 import { AdminDatePicker, toYMDLocal } from '../../components/admin/AdminDatePicker';
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -215,8 +215,8 @@ function AgencySelector({ province, onSelect, selectedCode }) {
                 type="button"
                 onClick={() => onSelect(agency)}
                 className={`w-full text-left px-3 py-2.5 transition-colors ${isSelected
-                    ? 'bg-[rgb(0,255,255)]/15 border-l-2 border-[rgb(0,255,255)]'
-                    : 'hover:bg-white/[0.04]'
+                  ? 'bg-[rgb(0,255,255)]/15 border-l-2 border-[rgb(0,255,255)]'
+                  : 'hover:bg-white/[0.04]'
                   }`}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -317,8 +317,8 @@ function DispatchPanel({ order, onSuccess, onClose }) {
               type="button"
               onClick={() => setDeliveryType(value)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded border text-sm transition-colors ${deliveryType === value
-                  ? 'border-[rgb(0,255,255)] bg-cyan-900/20 text-white'
-                  : 'border-white/20 text-white/60 hover:border-white/40'
+                ? 'border-[rgb(0,255,255)] bg-cyan-900/20 text-white'
+                : 'border-white/20 text-white/60 hover:border-white/40'
                 }`}
             >
               <span className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 ${deliveryType === value ? 'border-[rgb(0,255,255)] bg-[rgb(0,255,255)]' : 'border-white/30'
@@ -401,8 +401,8 @@ function DispatchPanel({ order, onSuccess, onClose }) {
       {/* Result feedback */}
       {result && (
         <div className={`p-3 rounded border text-sm ${result.ok
-            ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200'
-            : 'border-red-500/40 bg-red-500/10 text-red-200'
+          ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200'
+          : 'border-red-500/40 bg-red-500/10 text-red-200'
           }`}>
           {result.ok ? (
             <>
@@ -436,6 +436,81 @@ function DispatchPanel({ order, onSuccess, onClose }) {
             'Confirmar despacho'
           )}
         </button>
+      )}
+    </div>
+  );
+}
+
+
+// Tracking Panel
+function TrackingPanel({ order, onSuccess }) {
+  const [trackingInput, setTrackingInput] = useState(order.shipping_tracking_number || '');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+
+  async function handleSave() {
+    if (!trackingInput.trim()) {
+      setResult({ ok: false, error: 'Ingresá un número de seguimiento.' });
+      return;
+    }
+    setLoading(true);
+    setResult(null);
+    try {
+      await saveTrackingNumber({ orderId: order.id, trackingNumber: trackingInput.trim() });
+      setResult({ ok: true });
+      onSuccess(order.id, trackingInput.trim());
+    } catch (err) {
+      setResult({ ok: false, error: err.message || 'Error al guardar' });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="mt-3 p-4 rounded-lg border border-amber-500/30 bg-amber-500/[0.04] space-y-3">
+      <h4 className="text-sm font-heading tracking-widest text-amber-300">
+        NÚMERO DE SEGUIMIENTO
+      </h4>
+      <p className="text-xs text-white/50">
+        Ingresá el tracking de Correo Argentino. Se le enviará un email al cliente con el enlace para rastrear su pedido.
+      </p>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={trackingInput}
+          onChange={(e) => setTrackingInput(e.target.value)}
+          placeholder="Ej: OE123456789AR"
+          className={inputClass + ' flex-1'}
+          disabled={loading || result?.ok}
+        />
+        {!result?.ok && (
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={loading || !trackingInput.trim()}
+            className="px-4 py-2 text-xs uppercase tracking-widest font-bold rounded bg-amber-500 text-black hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <span className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                Enviando…
+              </span>
+            ) : (
+              'Enviar seguimiento'
+            )}
+          </button>
+        )}
+      </div>
+      {result && (
+        <div className={`p-3 rounded border text-sm ${result.ok
+          ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200'
+          : 'border-red-500/40 bg-red-500/10 text-red-200'
+          }`}>
+          {result.ok
+            ? '✅ Tracking guardado y email enviado al cliente.'
+            : `❌ ${result.error}`
+          }
+        </div>
       )}
     </div>
   );
@@ -574,7 +649,15 @@ function OrderDetailSection({
             </div>
           )}
           {alreadyImported && order.shipping_provider === 'correo_argentino' && (
-            <p className="mt-2 text-xs text-emerald-400">✅ Despachado con Correo Argentino</p>
+            <>
+              <p className="mt-2 text-xs text-emerald-400">✅ Despachado con Correo Argentino</p>
+              {!savedTracking && (
+                <TrackingPanel
+                  order={order}
+                  onSuccess={handleDispatchSuccess}
+                />
+              )}
+            </>
           )}
         </div>
       )}
@@ -817,8 +900,8 @@ export default function AdminPedidos() {
                     <span className="font-mono text-sm text-[rgb(0,255,255)]">#{shortId(order.id)}</span>
                     <span className="text-white/60 text-sm">{formatDate(order.created_at)}</span>
                     <span className={`text-xs uppercase tracking-widest px-2 py-1 rounded ${order.channel === 'retail'
-                        ? 'bg-[rgb(0,255,255)]/15 text-[rgb(0,255,255)] border border-[rgb(0,255,255)]/30'
-                        : 'bg-[rgb(255,0,255)]/15 text-[rgb(255,0,255)] border border-[rgb(255,0,255)]/30'
+                      ? 'bg-[rgb(0,255,255)]/15 text-[rgb(0,255,255)] border border-[rgb(0,255,255)]/30'
+                      : 'bg-[rgb(255,0,255)]/15 text-[rgb(255,0,255)] border border-[rgb(255,0,255)]/30'
                       }`}>{order.channel === 'retail' ? 'Retail' : 'Mayorista'}</span>
                     {order.payment_method && (
                       <span className="text-xs uppercase tracking-widest px-2 py-1 rounded border border-white/20 text-white/70 bg-white/5">
@@ -861,8 +944,8 @@ export default function AdminPedidos() {
                   <motion.div key={order.id} layout initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}
                     transition={{ duration: 0.25, delay: index * 0.02 }}
                     className={`flex flex-col rounded-xl border bg-white/[0.03] overflow-hidden min-w-0 transition-shadow ${expandedId === order.id
-                        ? 'border-[rgb(0,255,255)]/40 shadow-[0_0_0_1px_rgba(0,255,255,0.12)]'
-                        : 'border-white/15 hover:border-white/25'
+                      ? 'border-[rgb(0,255,255)]/40 shadow-[0_0_0_1px_rgba(0,255,255,0.12)]'
+                      : 'border-white/15 hover:border-white/25'
                       }`}>
                     <button type="button" onClick={() => toggleExpand(order)} className="flex flex-col items-stretch text-left p-4 aspect-square max-h-[260px] min-h-[200px] hover:bg-white/[0.04] transition-colors">
                       <div className="flex items-start justify-between gap-2 mb-2">
@@ -872,8 +955,8 @@ export default function AdminPedidos() {
                       <span className="text-[10px] text-white/45 mb-3 line-clamp-2">{formatDate(order.created_at)}</span>
                       <div className="flex flex-wrap gap-1.5 mb-3">
                         <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded ${order.channel === 'retail'
-                            ? 'bg-[rgb(0,255,255)]/15 text-[rgb(0,255,255)] border border-[rgb(0,255,255)]/25'
-                            : 'bg-[rgb(255,0,255)]/15 text-[rgb(255,0,255)] border border-[rgb(255,0,255)]/25'
+                          ? 'bg-[rgb(0,255,255)]/15 text-[rgb(0,255,255)] border border-[rgb(0,255,255)]/25'
+                          : 'bg-[rgb(255,0,255)]/15 text-[rgb(255,0,255)] border border-[rgb(255,0,255)]/25'
                           }`}>{order.channel === 'retail' ? 'Retail' : 'Mayorista'}</span>
                         {order.payment_method && (
                           <span className="text-[10px] uppercase px-2 py-0.5 rounded border border-white/15 text-white/55">

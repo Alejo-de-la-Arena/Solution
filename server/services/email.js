@@ -321,9 +321,83 @@ async function sendRefundInitiatedEmail({ to, orderId }) {
   }
 }
 
+/**
+ * Email de seguimiento: se envía cuando el admin carga el tracking number
+ * después del despacho con Correo Argentino.
+ */
+async function sendTrackingEmail({ to, order, trackingNumber, deliveryType, agencyName }) {
+  const safeTo = (to || '').trim();
+  if (!safeTo) {
+    console.warn('[email] sendTrackingEmail: destinatario vacío');
+    return false;
+  }
+
+  try {
+    const trackingUrl = `https://www.correoargentino.com.ar/MiCorreo/public/home#seguimiento?n=${encodeURIComponent(trackingNumber)}`;
+    const isHomeDelivery = deliveryType !== 'S';
+    const deliveryLabel = isHomeDelivery ? 'Entrega a domicilio' : 'Retiro en sucursal';
+    const deliveryDetail = isHomeDelivery
+      ? [order.shipping_address_line1, order.shipping_city, order.shipping_state].filter(Boolean).join(', ')
+      : agencyName || 'Sucursal de Correo Argentino';
+
+    const body = `
+    <tr><td style="padding:40px;">
+      <h2 style="margin:0 0 16px;font-size:20px;color:#111827;">Tu número de seguimiento está listo 📬</h2>
+      <p style="margin:0 0 24px;font-size:16px;line-height:24px;color:#4b5563;">
+        Hola <strong>${escapeHtml((order.customer_name || '').trim() || 'cliente')}</strong>, ya podés rastrear tu pedido de SOLUTION con Correo Argentino.
+      </p>
+
+      <div style="background:#f9fafb;border:1px solid #eaeaea;border-radius:6px;padding:20px;margin-bottom:24px;">
+        <p style="margin:0 0 8px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Orden</p>
+        <p style="margin:0 0 16px;font-size:16px;color:#111827;font-weight:600;">#${escapeHtml(String(order.id))}</p>
+
+        <p style="margin:0 0 8px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Número de seguimiento</p>
+        <p style="margin:0 0 16px;font-size:18px;color:#111827;font-weight:700;font-family:monospace;">${escapeHtml(trackingNumber)}</p>
+
+        <p style="margin:0 0 8px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Modalidad</p>
+        <p style="margin:0 0 16px;font-size:15px;color:#111827;">${deliveryLabel}</p>
+
+        <p style="margin:0 0 8px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">${isHomeDelivery ? 'Dirección de entrega' : 'Sucursal de retiro'}</p>
+        <p style="margin:0;font-size:15px;color:#111827;">${escapeHtml(deliveryDetail)}</p>
+      </div>
+
+      <div style="text-align:center;margin:32px 0;">
+        <a href="${trackingUrl}"
+           style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:6px;font-size:15px;font-weight:600;letter-spacing:0.5px;">
+          Rastrear mi pedido
+        </a>
+        <p style="margin:12px 0 0;font-size:13px;color:#6b7280;">
+          También podés buscar el número <strong>${escapeHtml(trackingNumber)}</strong> directamente en
+          <a href="https://www.correoargentino.com.ar" style="color:#111827;">correoargentino.com.ar</a>
+        </p>
+      </div>
+
+      <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.6;">
+        Si tenés alguna consulta sobre tu envío, podés responder este email o contactarnos directamente.
+      </p>
+    </td></tr>`;
+
+    const out = await postResendEmail({
+      to: safeTo,
+      subject: 'Seguimiento de tu pedido — SOLUTION',
+      html: emailWrapper(body),
+    });
+
+    if (!out) {
+      console.warn('[email] sendTrackingEmail: Resend no devolvió respuesta');
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('[email] sendTrackingEmail:', e?.response?.data || e.message || e);
+    return false;
+  }
+}
+
 module.exports = {
   sendOrderEmail,
   sendPaymentConfirmationEmail,
   sendDispatchEmail,
+  sendTrackingEmail,
   sendRefundInitiatedEmail,
 };
