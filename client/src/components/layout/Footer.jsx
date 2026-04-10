@@ -92,7 +92,7 @@ export default function Footer() {
           <div className="flex flex-col items-start sm:items-end md:items-start">
             <div className="inline-flex items-center gap-2.5">
               <a
-                href="https://www.instagram.com/solution.ar?igsh=OWJzajEweHBmY2hn&utm_source=qr"
+                href="https://www.instagram.com/solution.ar/"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.preventDefault()}
