@@ -12,7 +12,7 @@ import {
 import {
     getSummaryToday,
     getTopPages7d,
-    getSessionsLast7d,
+    getVisitorsLastNDays,
     getRecentVisitors,
     getVisitorTimeline,
 } from "../../lib/adminAnalytics";
@@ -29,8 +29,9 @@ function timeAgo(ms) {
     return `hace ${h}h`;
 }
 
-function humanPath(path) {
-    if (!path) return "Página";
+function humanPath(rawPath) {
+    if (!rawPath) return "Página";
+    const path = rawPath.split("?")[0] || "/";
     if (path === "/") return "Inicio";
     if (path.startsWith("/tienda")) return "Tienda";
     if (path.startsWith("/acceso")) return "Acceso";
@@ -70,10 +71,10 @@ export default function AdminUsuarios() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    const [sessionsToday, setSessionsToday] = useState(0);
     const [visitorsToday, setVisitorsToday] = useState(0);
     const [topPages, setTopPages] = useState([]);
     const [chartData, setChartData] = useState([]);
+    const [chartRange, setChartRange] = useState(7);
 
     const [recentVisitors, setRecentVisitors] = useState([]);
     const [selectedVisitor, setSelectedVisitor] = useState(null);
@@ -98,13 +99,12 @@ export default function AdminUsuarios() {
                 const [summary, top, chart, visitors] = await Promise.all([
                     getSummaryToday(),
                     getTopPages7d(10),
-                    getSessionsLast7d(),
+                    getVisitorsLastNDays(chartRange),
                     getRecentVisitors(20),
                 ]);
 
                 if (!mounted) return;
 
-                setSessionsToday(Number(summary.sessions_today || 0));
                 setVisitorsToday(Number(summary.visitors_today || 0));
                 setTopPages(top);
                 setChartData(chart);
@@ -122,7 +122,7 @@ export default function AdminUsuarios() {
         return () => {
             mounted = false;
         };
-    }, []);
+    }, [chartRange]);
 
     async function openVisitor(visitor) {
         setSelectedVisitor(visitor);
@@ -165,7 +165,33 @@ export default function AdminUsuarios() {
 
             {/* Chart */}
             <div className="admin-section">
-                <h3 className="admin-section__title">Sesiones (últimos 7 días)</h3>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+                    <h3 className="admin-section__title" style={{ margin: 0 }}>
+                        Visitantes únicos ({chartRange === 7 ? "últimos 7 días" : chartRange === 14 ? "últimos 14 días" : "último mes"})
+                    </h3>
+                    <div style={{ display: "flex", gap: 4 }}>
+                        {[7, 14, 30].map((d) => (
+                            <button
+                                key={d}
+                                type="button"
+                                onClick={() => setChartRange(d)}
+                                style={{
+                                    padding: "4px 12px",
+                                    fontSize: 12,
+                                    border: "1px solid",
+                                    borderColor: chartRange === d ? "rgba(255,43,214,0.8)" : "rgba(255,255,255,0.2)",
+                                    borderRadius: 6,
+                                    background: chartRange === d ? "rgba(255,43,214,0.15)" : "transparent",
+                                    color: chartRange === d ? "#fff" : "rgba(255,255,255,0.6)",
+                                    cursor: "pointer",
+                                    transition: "all 0.15s ease",
+                                }}
+                            >
+                                {d}d
+                            </button>
+                        ))}
+                    </div>
+                </div>
                 {loading ? (
                     <div>…</div>
                 ) : (
@@ -173,10 +199,13 @@ export default function AdminUsuarios() {
                         <ResponsiveContainer>
                             <LineChart data={chartData}>
                                 <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                                <XAxis dataKey="day" tick={{ fontSize: 12, fill: "rgba(255,255,255,0.6)" }} />
-                                <YAxis tick={{ fontSize: 12, fill: "rgba(255,255,255,0.6)" }} />
-                                <Tooltip />
-                                <Line type="monotone" dataKey="sessions" strokeWidth={2} dot={false} />
+                                <XAxis dataKey="day" tick={{ fontSize: 11, fill: "rgba(255,255,255,0.6)" }} />
+                                <YAxis tick={{ fontSize: 12, fill: "rgba(255,255,255,0.6)" }} allowDecimals={false} />
+                                <Tooltip
+                                    contentStyle={{ background: "#111", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, fontSize: 13 }}
+                                    labelStyle={{ color: "rgba(255,255,255,0.7)" }}
+                                />
+                                <Line type="monotone" dataKey="visitors" strokeWidth={2} dot={chartRange <= 14} name="Visitantes" />
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
@@ -185,11 +214,6 @@ export default function AdminUsuarios() {
 
             {/* Metrics */}
             <div className="admin-cards-2">
-                <div className="admin-metric">
-                    <div className="admin-metric__label">Sesiones hoy</div>
-                    <div className="admin-metric__value">{loading ? "…" : sessionsToday}</div>
-                </div>
-
                 <div className="admin-metric">
                     <div className="admin-metric__label">Visitantes únicos hoy</div>
                     <div className="admin-metric__value">{loading ? "…" : visitorsToday}</div>
@@ -259,6 +283,8 @@ export default function AdminUsuarios() {
 
             {/* Drawer timeline */}
             {selectedVisitor ? (
+                <>
+                <div className="drawer-overlay" onClick={closeDrawer} />
                 <div className="drawer">
                     <div className="drawer__header">
                         <div>
@@ -313,6 +339,7 @@ export default function AdminUsuarios() {
                         <div style={{ opacity: 0.7 }}>Sin eventos todavía</div>
                     )}
                 </div>
+                </>
             ) : null}
         </div>
     );

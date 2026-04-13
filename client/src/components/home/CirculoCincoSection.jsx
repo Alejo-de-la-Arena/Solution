@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useScrollMotion } from '../../hooks/useScrollMotion';
 
@@ -205,8 +206,8 @@ export default function CirculoCincoSection() {
           transition={{ ...motionProps.transition, delay: 0 }}
           className="mt-14 sm:mt-16"
         >
-          <a
-            href="#tienda"
+          <Link
+            to="/tienda"
             className="btn-home-cta inline-flex items-center justify-center gap-3 rounded border px-8 py-4 text-sm tracking-widest text-white transition-all duration-300 hover:bg-[rgb(0,150,255)] hover:text-black hover:shadow-[0_0_28px_-4px_rgba(0,150,255,0.4)]"
             style={{ borderColor: COLORS.deepBlue }}
           >
@@ -214,7 +215,7 @@ export default function CirculoCincoSection() {
             <span className="inline-block w-4 h-4 ml-1" aria-hidden>
               →
             </span>
-          </a>
+          </Link>
         </motion.div>
       </div>
     </section>

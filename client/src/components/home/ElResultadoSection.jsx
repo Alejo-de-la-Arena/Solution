@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useScrollMotion } from '../../hooks/useScrollMotion';
 
@@ -145,8 +146,8 @@ export default function ElResultadoSection() {
               transition={{ duration: 0.55, delay: 0.22, ease: premiumEasing }}
               className="pt-2"
             >
-              <a
-                href="#tienda"
+              <Link
+                to="/tienda"
                 className="group inline-flex items-center gap-3 rounded border border-white/30 bg-white/[0.03] px-8 py-3 text-sm tracking-widest text-white backdrop-blur-sm transition-all duration-300 hover:border-[rgb(255,215,0)] hover:bg-white/[0.06] hover:shadow-[0_0_30px_rgba(255,215,0,0.12)]"
               >
                 EXPLORAR COLECCIÓN
@@ -156,7 +157,7 @@ export default function ElResultadoSection() {
                 >
                   →
                 </span>
-              </a>
+              </Link>
             </motion.div>
           </motion.div>
         </div>

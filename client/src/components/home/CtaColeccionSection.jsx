@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useScrollMotion } from '../../hooks/useScrollMotion';
 
@@ -79,10 +80,8 @@ export default function CtaColeccionSection() {
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.07)_0%,transparent_55%)]" />
 
               <div className="absolute bottom-6 left-6 right-6">
-                <motion.a
-                  {...motionProps}
-                  transition={{ ...motionProps.transition, delay: 0 }}
-                  href="#tienda"
+                <Link
+                  to="/tienda"
                   className="group relative inline-flex w-full items-center justify-center gap-3 overflow-hidden rounded-full border border-white/35 bg-white/5 px-8 py-4 text-[0.72rem] tracking-widest uppercase text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/10"
                 >
                   <span
@@ -101,7 +100,7 @@ export default function CtaColeccionSection() {
                   >
                     →
                   </span>
-                </motion.a>
+                </Link>
               </div>
             </div>
           </motion.div>

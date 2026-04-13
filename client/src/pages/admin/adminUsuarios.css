@@ -30,6 +30,8 @@
     border-radius: 12px;
     padding: 16px;
     margin-bottom: 16px;
+    overflow: hidden;
+    min-width: 0;
 }
 
 .admin-section__title {
@@ -108,6 +110,9 @@
 .user-card__title {
     font-weight: 700;
     margin-top: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .user-card__meta {
@@ -119,6 +124,13 @@
     flex-wrap: wrap;
 }
 
+.drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 9998;
+}
+
 .drawer {
     position: fixed;
     top: 0;
@@ -128,7 +140,7 @@
     background: rgba(10, 10, 10, 0.98);
     border-left: 1px solid rgba(255, 255, 255, 0.12);
     padding: 16px;
-    z-index: 50;
+    z-index: 9999;
     overflow: auto;
 }
 

@@ -8,7 +8,7 @@ import {
   getMyWholesaleOrders,
   getOrderItems,
 } from "../services/wholesaleOrders";
-import { normalizePlan, planLabel, WHOLESALE_PLANS_LANDING } from "../data/wholesalePlans";
+import { normalizePlan, planLabel, WHOLESALE_PLANS_LANDING, WHOLESALE_PRICE_TABLE } from "../data/wholesalePlans";
 
 import { WHATSAPP_NUMBER } from "../lib/contact";
 
@@ -18,6 +18,19 @@ function formatPrice(n) {
     currency: "ARS",
     maximumFractionDigits: 0,
   }).format(n);
+}
+
+const PLAN_COLORS = {
+  starter: "rgb(255, 215, 0)",
+  pro: "rgb(255, 0, 255)",
+  elite: "rgb(0, 255, 255)",
+};
+
+function getRetailPrice(product) {
+  const slug = (product?.slug || "").toLowerCase().replace(/\s+/g, "-");
+  const row = WHOLESALE_PRICE_TABLE[slug];
+  if (row) return row.retail;
+  return Number(product?.price_retail ?? 0) || 0;
 }
 
 function buildWhatsAppText(items, products, plan, totalUnits, totalAmount) {
@@ -183,7 +196,7 @@ export default function WholesalePortal() {
             <thead>
               <tr className="border-b border-white/20 bg-white/5">
                 <th className="px-4 py-3 text-sm font-medium text-white/80">Producto</th>
-                <th className="px-4 py-3 text-sm font-medium text-white/80 text-right">Precio (tu plan)</th>
+                <th className="px-4 py-3 text-sm font-medium text-white/80 text-right">Precio</th>
                 <th className="px-4 py-3 text-sm font-medium text-white/80 text-right w-28">Cantidad</th>
               </tr>
             </thead>
@@ -198,8 +211,13 @@ export default function WholesalePortal() {
                 products.map((p) => (
                   <tr key={p.id} className="border-b border-white/10">
                     <td className="px-4 py-3 text-white">{p.name}</td>
-                    <td className="px-4 py-3 text-right text-white">
-                      {formatPrice(priceForPlan(p, plan))}
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-white/40 line-through text-xs mr-2">
+                        {formatPrice(getRetailPrice(p))}
+                      </span>
+                      <span style={{ color: PLAN_COLORS[plan] || "#fff", fontWeight: 600 }}>
+                        {formatPrice(priceForPlan(p, plan))}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">

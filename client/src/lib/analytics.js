@@ -1,4 +1,3 @@
-// src/lib/analytics.js
 import { supabase } from "./supabaseClient";
 
 function getOrSetUUID(key) {
@@ -10,7 +9,6 @@ function getOrSetUUID(key) {
 }
 
 function getSessionId() {
-    // sesión nueva cada 30 min de inactividad
     const key = "sol_session_id";
     const tsKey = "sol_session_ts";
     const now = Date.now();
@@ -36,9 +34,15 @@ function getUTM() {
     };
 }
 
+const _trackedThisSession = new Set();
+
 export async function trackPageView(path, title) {
     const visitor_id = getOrSetUUID("sol_visitor_id");
     const session_id = getSessionId();
+
+    const dedupKey = `${visitor_id}:${session_id}:${path}`;
+    if (_trackedThisSession.has(dedupKey)) return;
+    _trackedThisSession.add(dedupKey);
 
     const payload = {
         visitor_id,
@@ -52,7 +56,6 @@ export async function trackPageView(path, title) {
         ...getUTM(),
     };
 
-    // fire-and-forget (no rompas UX si falla)
     supabase
         .from("analytics_events")
         .insert(payload)

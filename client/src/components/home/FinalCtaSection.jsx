@@ -60,7 +60,7 @@ export default function FinalCtaSection() {
             <div className="flex flex-col items-center lg:items-end gap-4 min-w-[260px]">
               <div className="flex flex-col sm:flex-row gap-4 items-center">
                 <Link
-                  to="/#tienda"
+                  to="/tienda"
                   className="inline-block bg-white text-black px-12 py-5 tracking-widest text-sm font-semibold rounded hover:bg-white/90 hover:shadow-[0_0_30px_-5px_rgba(255,255,255,0.3)] transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                 >
                   IR A LA TIENDA
