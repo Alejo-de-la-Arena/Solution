@@ -5,6 +5,7 @@ import { getProductBySlug, productToPerfume } from '../services/products';
 import { useCart } from '../contexts/CartContext';
 import { mediaUrl } from '../lib/mediaUrl';
 import { getProductGalleryImages } from '../lib/productGalleryImages';
+import { trackViewContent } from '../lib/metaPixel';
 
 export default function Producto() {
   const { id: slug } = useParams();
@@ -35,9 +36,17 @@ export default function Producto() {
     return () => { cancelled = true; };
   }, [slug]);
 
-  // Reset índice de galería cuando cambia el perfume
   useEffect(() => {
     setActiveIndex(0);
+  }, [perfume?.slug]);
+
+  useEffect(() => {
+    if (!perfume) return;
+    trackViewContent({
+      name: perfume.name,
+      id: perfume.slug || perfume.id,
+      price: perfume.price,
+    });
   }, [perfume?.slug]);
 
   // Auto-advance suave de la galería

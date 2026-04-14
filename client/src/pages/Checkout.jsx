@@ -11,6 +11,7 @@ import {
 import { quoteShipping } from '../services/shipping';
 import NaveEmbed from '../components/checkout/NaveEmbed';
 import MercadoPagoBrick from '../components/checkout/MercadoPagoBrick';
+import { trackInitiateCheckout, trackPurchase } from '../lib/metaPixel';
 
 const inputClass =
   'w-full bg-zinc-900 border-white/10 border rounded-sm p-3 focus:ring-1 focus:ring-[rgb(0,255,255)] focus:border-[rgb(0,255,255)] transition-colors';
@@ -197,9 +198,31 @@ export default function Checkout() {
       .finally(() => setChecking(false));
   }, [orderIdFromUrl, walletPaymentIdFromUrl, clearCart]);
 
+  const initiateCheckoutFired = useRef(false);
+  const checkoutSnapshot = useRef(null);
   useEffect(() => {
-    if (paymentResult === 'success') clearCart();
-  }, [paymentResult, clearCart]);
+    if (initiateCheckoutFired.current || cart.length === 0 || orderIdFromUrl) return;
+    initiateCheckoutFired.current = true;
+    const items = cart.map((i) => ({ id: i.productId || i.id, quantity: i.quantity }));
+    checkoutSnapshot.current = { items, totalValue: totalPrice };
+    trackInitiateCheckout({ items, totalValue: totalPrice });
+  }, [cart, totalPrice, orderIdFromUrl]);
+
+  const purchaseFired = useRef(false);
+  useEffect(() => {
+    if (paymentResult === 'success') {
+      clearCart();
+      if (!purchaseFired.current) {
+        purchaseFired.current = true;
+        const snap = checkoutSnapshot.current;
+        trackPurchase({
+          orderId: resultOrderId,
+          totalValue: snap?.totalValue || totalPrice || 0,
+          items: snap?.items || [],
+        });
+      }
+    }
+  }, [paymentResult, clearCart, resultOrderId, totalPrice]);
 
   // ── Auto-poll when status is pending (webhook may arrive any second) ──
   const pollCountRef = useRef(0);
