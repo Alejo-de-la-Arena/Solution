@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getPublicProducts } from '../services/products';
+import { trackAddToCart } from '../lib/metaPixel';
 
 const CartContext = createContext();
 
@@ -59,6 +60,14 @@ export function CartProvider({ children }) {
       return [...prev, { ...product, quantity }];
     });
     setIsOpen(true);
+
+    // Track AddToCart con datos del producto (fuera de setCart para no doblar en StrictMode)
+    trackAddToCart({
+      id: product.id,
+      name: product.name,
+      price: Number(product.price) || 0,
+      quantity,
+    });
   };
 
   const removeFromCart = (productId) => {

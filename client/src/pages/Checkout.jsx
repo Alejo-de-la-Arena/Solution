@@ -210,19 +210,34 @@ export default function Checkout() {
 
   const purchaseFired = useRef(false);
   useEffect(() => {
-    if (paymentResult === 'success') {
-      clearCart();
-      if (!purchaseFired.current) {
-        purchaseFired.current = true;
-        const snap = checkoutSnapshot.current;
-        trackPurchase({
-          orderId: resultOrderId,
-          totalValue: snap?.totalValue || totalPrice || 0,
-          items: snap?.items || [],
-        });
+    if (paymentResult !== 'success') return;
+    if (purchaseFired.current) return;
+
+    // Reconstruir items: primero del snapshot (ideal), sino del carrito actual (fallback)
+    const snap = checkoutSnapshot.current;
+    let items = snap?.items;
+    let totalValue = snap?.totalValue;
+
+    if (!items || items.length === 0) {
+      if (cart.length > 0) {
+        items = cart.map((i) => ({ id: i.productId || i.id, quantity: i.quantity }));
+        totalValue = totalPrice;
       }
     }
-  }, [paymentResult, clearCart, resultOrderId, totalPrice]);
+
+    // Solo disparar si tenemos data válida. Si no, mejor perder el evento que mandar basura.
+    if (resultOrderId && items && items.length > 0 && totalValue > 0) {
+      purchaseFired.current = true;
+      trackPurchase({
+        orderId: resultOrderId,
+        totalValue,
+        items,
+      });
+    }
+
+    // Limpiar carrito DESPUÉS de leerlo para el fallback
+    clearCart();
+  }, [paymentResult, clearCart, resultOrderId, totalPrice, cart]);
 
   // ── Auto-poll when status is pending (webhook may arrive any second) ──
   const pollCountRef = useRef(0);
