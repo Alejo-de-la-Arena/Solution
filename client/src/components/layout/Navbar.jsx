@@ -3,13 +3,40 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../contexts/CartContext';
+import { useTrackedOrders } from '../../hooks/useTrackedOrders';
 import CartDrawer from '../cart/CartDrawer';
+
+function trackedOrderDotClass(status) {
+  const s = (status || '').toLowerCase();
+  if (s === 'paid') return 'bg-[rgb(0,255,255)]';
+  if (s === 'payment_failed' || s === 'cancelled' || s === 'chargeback' || s === 'refunded') return 'bg-red-500';
+  return 'bg-yellow-400';
+}
+
+function TrackedOrderIcon({ latest, onClick, className = '' }) {
+  if (!latest?.orderId) return null;
+  return (
+    <Link
+      to={`/mi-pedido/${latest.orderId}`}
+      onClick={onClick}
+      className={`relative text-white hover:text-[rgb(0,255,255)] transition-colors ${className}`}
+      aria-label="Seguir mi pedido"
+      title="Seguir mi pedido"
+    >
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7L12 3 4 7m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+      </svg>
+      <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-black ${trackedOrderDotClass(latest.status)}`} />
+    </Link>
+  );
+}
 
 const SCROLL_THRESHOLD = 60;
 
 export default function Navbar() {
   const { user, profile, loading, signOut, isWholesaleApproved, isAdmin } = useAuth();
   const { totalItems, toggleCart } = useCart();
+  const { latest: latestTrackedOrder } = useTrackedOrders();
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -133,6 +160,9 @@ export default function Navbar() {
                 </>
               )}
 
+              {/* Tracked order — desktop, left of cart */}
+              <TrackedOrderIcon latest={latestTrackedOrder} onClick={close} />
+
               {/* Cart — desktop, inline with links */}
               <button
                 type="button"
@@ -154,6 +184,8 @@ export default function Navbar() {
 
             {/* Mobile: cart icon + hamburger */}
             <div className="flex md:hidden items-center gap-3">
+              <TrackedOrderIcon latest={latestTrackedOrder} onClick={close} className="z-[95]" />
+
               <button
                 type="button"
                 onClick={toggleCart}

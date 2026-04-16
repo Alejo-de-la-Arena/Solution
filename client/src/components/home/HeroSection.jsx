@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { perfumes, ACCENT_COLORS } from '../../data/perfumes';
+import { getPublicProducts, productToPerfume } from '../../services/products';
+import { ACCENT_COLORS } from '../../lib/accentColors';
 
 const EASE = [0.22, 1, 0.36, 1];
 const AUTOPLAY_MS = 7000;
@@ -10,8 +11,22 @@ export default function HeroSection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [cycleId, setCycleId] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [perfumes, setPerfumes] = useState([]);
   const touchStartX = useRef(null);
   const autoplayRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getPublicProducts()
+      .then((rows) => {
+        if (cancelled) return;
+        setPerfumes(rows.map(productToPerfume).filter(Boolean));
+      })
+      .catch(() => {
+        if (!cancelled) setPerfumes([]);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const slides = useMemo(
     () =>
@@ -23,11 +38,11 @@ export default function HeroSection() {
           p.descriptionParagraphs?.[0] ||
           'Fragancias masculinas auténticas, diseñadas desde cero.',
         accent: p.accent_color || ACCENT_COLORS[index],
-        image: p.image,
+        image: p.image || '',
         usage: p.tipo_de_uso || p.usage,
         feeling: p.family || p.feeling,
       })),
-    []
+    [perfumes]
   );
 
   useEffect(() => {
@@ -112,6 +127,14 @@ export default function HeroSection() {
   };
 
   const currentSlide = slides[activeIndex];
+
+  if (!currentSlide) {
+    return (
+      <section className="relative min-h-screen flex items-center justify-center bg-black text-white">
+        <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+      </section>
+    );
+  }
 
   const textItemVariants = reducedMotion
     ? {

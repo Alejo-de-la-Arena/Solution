@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useScrollMotion } from '../hooks/useScrollMotion';
 import { getPublicProducts, productToPerfume } from '../services/products';
-import { ACCENT_COLORS } from '../data/perfumes';
+import { ACCENT_COLORS } from '../lib/accentColors';
 import { getComboProfile, normalizeComboKey } from '../data/comboProfiles';
 import { mediaUrl } from '../lib/mediaUrl';
 import { getStoreProductImages } from '../lib/storeProductImages';
@@ -221,7 +221,7 @@ function PerfumeStoreImage({ perfume, accentColor, altView }) {
   const [defaultError, setDefaultError] = useState(false);
   const [altError, setAltError] = useState(false);
 
-  const productImages = getStoreProductImages(perfume.slug);
+  const productImages = getStoreProductImages(perfume);
 
   const defaultSrc = productImages?.default ? mediaUrl(productImages.default) : null;
   const altSrc = productImages?.hover ? mediaUrl(productImages.hover) : null;

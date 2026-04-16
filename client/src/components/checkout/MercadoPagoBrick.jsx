@@ -6,6 +6,9 @@ import { createMPPreference, processMPCardPayment, setCheckoutPaymentProvider } 
  * MercadoPago checkout:
  *   – Card Payment Brick para tarjetas de crédito/débito (embebido)
  *   – Botón de redirección a Checkout Pro para dinero en cuenta / otros medios
+ *
+ * La orden NO se crea al montar el componente. Se crea solo cuando el usuario
+ * inicia un pago real: al submit del Brick (tarjeta) o al click del botón wallet.
  */
 export default function MercadoPagoBrick({
   amount,
@@ -20,12 +23,8 @@ export default function MercadoPagoBrick({
   const controllerRef = useRef(null);
   const publicKey = (import.meta.env.VITE_MP_PUBLIC_KEY || '').trim();
 
-  // Preference state (para orden DB + init_point de wallet)
-  const [prefData, setPrefData] = useState(null);   // { order_id, preference_id, init_point }
-  const [prefLoading, setPrefLoading] = useState(false);
-  const [walletRedirecting, setWalletRedirecting] = useState(false);
+  const [walletLoading, setWalletLoading] = useState(false);
 
-  // Stable refs
   const getCheckoutPayloadRef = useRef(getCheckoutPayload);
   getCheckoutPayloadRef.current = getCheckoutPayload;
   const onErrorRef = useRef(onError);
@@ -34,55 +33,10 @@ export default function MercadoPagoBrick({
   onSuccessRef.current = onSuccess;
   const onBrickReadyRef = useRef(onBrickReady);
   onBrickReadyRef.current = onBrickReady;
-  const prefDataRef = useRef(prefData);
-  prefDataRef.current = prefData;
 
-  // ── 1) Crear preferencia (orden DB + preference MP) ──────────────────
+  // ── Renderizar Card Payment Brick (solo tarjetas, sin preferenceId) ─────
   useEffect(() => {
-    if (disabled || !publicKey || !(Number(amount) > 0)) {
-      setPrefData(null);
-      return;
-    }
-
-    let cancelled = false;
-
-    const base = typeof getCheckoutPayloadRef.current === 'function'
-      ? getCheckoutPayloadRef.current()
-      : null;
-    if (!base?.customer_name || !base?.customer_email) {
-      setPrefData(null);
-      return;
-    }
-
-    setPrefLoading(true);
-
-    createMPPreference({
-      ...base,
-      callback_url: `${window.location.origin}/checkout`,
-    })
-      .then((data) => {
-        if (!cancelled) {
-          if (!data?.order_id) {
-            onErrorRef.current?.('No se pudo crear la orden de pago.');
-            return;
-          }
-          setPrefData(data);
-          setCheckoutPaymentProvider('mercadopago');
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) onErrorRef.current?.(err.message);
-      })
-      .finally(() => {
-        if (!cancelled) setPrefLoading(false);
-      });
-
-    return () => { cancelled = true; };
-  }, [disabled, publicKey, amount]);
-
-  // ── 2) Renderizar Card Payment Brick (solo tarjetas, sin preferenceId) ─
-  useEffect(() => {
-    if (!publicKey || disabled || !prefData?.order_id) return undefined;
+    if (!publicKey || disabled || !(Number(amount) > 0)) return undefined;
 
     let cancelled = false;
 
@@ -132,10 +86,12 @@ export default function MercadoPagoBrick({
           },
 
           onSubmit: async (formData, additionalData) => {
-            const currentPref = prefDataRef.current;
-            if (!currentPref?.order_id) {
-              onErrorRef.current?.('Error interno: orden no encontrada.');
-              throw new Error('missing_order_id');
+            const basePayload = typeof getCheckoutPayloadRef.current === 'function'
+              ? getCheckoutPayloadRef.current()
+              : null;
+            if (!basePayload?.customer_name || !basePayload?.customer_email) {
+              onErrorRef.current?.('Completá nombre y email antes de pagar.');
+              throw new Error('missing_checkout_payload');
             }
 
             try {
@@ -155,8 +111,10 @@ export default function MercadoPagoBrick({
                   : undefined;
               } catch { device_id = undefined; }
 
+              setCheckoutPaymentProvider('mercadopago');
+
               const data = await processMPCardPayment({
-                order_id: currentPref.order_id,
+                ...basePayload,
                 mp_payment,
                 mp_public_key: publicKey,
                 ...(device_id ? { device_id } : {}),
@@ -174,7 +132,7 @@ export default function MercadoPagoBrick({
               onSuccessRef.current?.(data);
             } catch (err) {
               const msg = err.message || 'Error al procesar el pago.';
-              if (msg !== 'payment_failed') {
+              if (msg !== 'payment_failed' && msg !== 'missing_checkout_payload') {
                 onErrorRef.current?.(msg);
               }
               throw err;
@@ -201,16 +159,36 @@ export default function MercadoPagoBrick({
       try { controllerRef.current?.unmount?.(); } catch { /* ignore */ }
       controllerRef.current = null;
     };
-  }, [publicKey, disabled, amount, prefData, containerId]);
+  }, [publicKey, disabled, amount, containerId]);
 
-  // ── 3) Handler para wallet redirect ─────────────────────────────────
-  const handleWalletRedirect = () => {
-    if (!prefData?.init_point) {
-      onError?.('No se pudo preparar el pago con Mercado Pago. Intentá de nuevo.');
+  // ── Handler para wallet redirect: crea orden + preferencia on-demand ────
+  const handleWalletRedirect = async () => {
+    if (walletLoading) return;
+    const base = typeof getCheckoutPayloadRef.current === 'function'
+      ? getCheckoutPayloadRef.current()
+      : null;
+    if (!base?.customer_name || !base?.customer_email) {
+      onError?.('Completá nombre y email antes de pagar.');
       return;
     }
-    setWalletRedirecting(true);
-    window.location.assign(prefData.init_point);
+
+    setWalletLoading(true);
+    try {
+      setCheckoutPaymentProvider('mercadopago');
+      const data = await createMPPreference({
+        ...base,
+        callback_url: `${window.location.origin}/checkout`,
+      });
+      if (!data?.init_point) {
+        onError?.('No se pudo preparar el pago con Mercado Pago. Intentá de nuevo.');
+        setWalletLoading(false);
+        return;
+      }
+      window.location.assign(data.init_point);
+    } catch (err) {
+      onError?.(err.message || 'No se pudo preparar el pago con Mercado Pago.');
+      setWalletLoading(false);
+    }
   };
 
   // ── Renders condicionales ───────────────────────────────────────────
@@ -231,15 +209,6 @@ export default function MercadoPagoBrick({
     );
   }
 
-  if (prefLoading) {
-    return (
-      <div className="rounded-md overflow-hidden border border-white/10 bg-[#1a1a1a] p-6 flex flex-col items-center gap-3">
-        <div className="w-6 h-6 border-2 border-[rgb(0,255,255)] border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs text-white/40 tracking-wide">Preparando medios de pago...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       {/* Card Payment Brick — tarjeta crédito/débito */}
@@ -255,28 +224,26 @@ export default function MercadoPagoBrick({
       </div>
 
       {/* Botón Checkout Pro — dinero en cuenta, Rapipago, etc. */}
-      {prefData?.init_point && (
-        <button
-          type="button"
-          onClick={handleWalletRedirect}
-          disabled={walletRedirecting}
-          className="w-full flex items-center justify-center gap-3 bg-[#009ee3] hover:bg-[#007eb5] text-white py-3.5 px-6 rounded-md text-sm font-semibold tracking-wide transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {walletRedirecting ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Redirigiendo...
-            </>
-          ) : (
-            <>
-              <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-              </svg>
-              Pagar con dinero en cuenta u otros medios
-            </>
-          )}
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={handleWalletRedirect}
+        disabled={walletLoading}
+        className="w-full flex items-center justify-center gap-3 bg-[#009ee3] hover:bg-[#007eb5] text-white py-3.5 px-6 rounded-md text-sm font-semibold tracking-wide transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        {walletLoading ? (
+          <>
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            Redirigiendo...
+          </>
+        ) : (
+          <>
+            <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+            </svg>
+            Pagar con dinero en cuenta u otros medios
+          </>
+        )}
+      </button>
 
       <p className="text-[10px] text-white/35 text-center tracking-wide">
         Pagás de forma segura con Mercado Pago — tarjeta, débito o dinero en cuenta.

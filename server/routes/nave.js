@@ -145,7 +145,7 @@ router.post('/nave/create-payment', async (req, res) => {
   try {
     // ── 1. Crear orden en Supabase ──
     const orderPayload = {
-      user_id: null, status: 'pending_payment', currency: 'ARS',
+      user_id: null, status: 'payment_initiated', currency: 'ARS',
       total: orderTotal, channel: 'retail',
       customer_name: name, customer_email: email,
       customer_phone: (customer_phone || '').trim() || null,

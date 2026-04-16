@@ -11,6 +11,7 @@ import {
 import { quoteShipping } from '../services/shipping';
 import NaveEmbed from '../components/checkout/NaveEmbed';
 import MercadoPagoBrick from '../components/checkout/MercadoPagoBrick';
+import { getTrackedOrder, saveTrackedOrder, updateTrackedOrderStatus } from '../services/orderTracking';
 
 const inputClass =
   'w-full bg-zinc-900 border-white/10 border rounded-sm p-3 focus:ring-1 focus:ring-[rgb(0,255,255)] focus:border-[rgb(0,255,255)] transition-colors';
@@ -189,9 +190,26 @@ export default function Checkout() {
 
     fetchOrderPaymentStatus(pendingOrderId, walletPaymentIdFromUrl || undefined)
       .then((data) => {
-        if (isCheckoutPaid(data)) { setPaymentResult('success'); clearCart(); }
-        else if (data.order_status === 'payment_failed') setPaymentResult('rejected');
-        else setPaymentResult('pending');
+        // Si el usuario vuelve del redirect (wallet MP) y no ten\u00edamos el pedido en localStorage,
+        // lo agregamos ac\u00e1 para que se pueda seguir desde la navbar.
+        if (!getTrackedOrder(pendingOrderId)) {
+          saveTrackedOrder({
+            orderId: pendingOrderId,
+            paymentMethod: walletPaymentIdFromUrl ? 'mercadopago' : (getCheckoutPaymentProvider() || null),
+            status: data.order_status || 'payment_initiated',
+          });
+        }
+        if (isCheckoutPaid(data)) {
+          setPaymentResult('success');
+          updateTrackedOrderStatus(pendingOrderId, 'paid');
+          clearCart();
+        } else if (data.order_status === 'payment_failed') {
+          setPaymentResult('rejected');
+          updateTrackedOrderStatus(pendingOrderId, 'payment_failed');
+        } else {
+          setPaymentResult('pending');
+          updateTrackedOrderStatus(pendingOrderId, data.order_status || 'pending_payment');
+        }
       })
       .catch(() => setPaymentResult('pending'))
       .finally(() => setChecking(false));
@@ -220,10 +238,12 @@ export default function Checkout() {
         if (isCheckoutPaid(data)) {
           clearInterval(interval);
           setPaymentResult('success');
+          updateTrackedOrderStatus(resultOrderId, 'paid');
           clearCart();
         } else if (data.order_status === 'payment_failed') {
           clearInterval(interval);
           setPaymentResult('rejected');
+          updateTrackedOrderStatus(resultOrderId, 'payment_failed');
         }
       } catch {
         // ignore poll errors, keep trying
@@ -309,6 +329,16 @@ export default function Checkout() {
     setError('');
     setResultOrderId(data.order_id);
     const st = (data.order_status || '').toLowerCase();
+    const normalizedStatus = st === 'paid' ? 'paid' : st === 'payment_failed' ? 'payment_failed' : 'pending_payment';
+    if (data.order_id) {
+      saveTrackedOrder({
+        orderId: data.order_id,
+        paymentMethod: 'mercadopago',
+        total: grandTotal,
+        customerEmail: (form.email || '').trim() || null,
+        status: normalizedStatus,
+      });
+    }
     if (st === 'paid') {
       setPaymentResult('success');
       clearCart();
@@ -375,6 +405,15 @@ export default function Checkout() {
       setCheckoutPaymentProvider('nave');
       const data = await createNavePayment(payload);
       setResultOrderId(data.order_id);
+      if (data.order_id) {
+        saveTrackedOrder({
+          orderId: data.order_id,
+          paymentMethod: 'nave',
+          total: grandTotal,
+          customerEmail: email,
+          status: 'payment_initiated',
+        });
+      }
       const hasSdkConfig = Boolean((import.meta.env.VITE_NAVE_PUBLIC_KEY || '').toString().trim());
       const canUseEmbed = Boolean(data.payment_request_id) && hasSdkConfig;
 

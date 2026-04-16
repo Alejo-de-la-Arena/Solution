@@ -19,10 +19,12 @@ import AdminOverview from './pages/admin/AdminOverview';
 import AdminMayoristas from './pages/admin/AdminMayoristas';
 import AdminUsuarios from './pages/admin/AdminUsuarios';
 import AdminPedidos from './pages/admin/AdminPedidos';
+import AdminProductos from './pages/admin/AdminProductos';
 
 import Tienda from './pages/Tienda';
 import Producto from './pages/Producto';
 import Checkout from './pages/Checkout';
+import MiPedido from './pages/MiPedido';
 
 import SetPassword from './pages/SetPassword.jsx';
 
@@ -41,6 +43,8 @@ function AppRoutes() {
         <Route path="/tienda" element={<Tienda />} />
         <Route path="/producto/:id" element={<Producto />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/mi-pedido" element={<MiPedido />} />
+        <Route path="/mi-pedido/:orderId" element={<MiPedido />} />
         <Route path="/aplicar-mayorista" element={<WholesaleApply />} />
         <Route path="/programa-mayorista" element={<WholesaleLanding />} />
         <Route
@@ -56,6 +60,7 @@ function AppRoutes() {
           <Route path="usuarios" element={<AdminUsuarios />} />
           <Route path="mayoristas" element={<AdminMayoristas />} />
           <Route path="pedidos" element={<AdminPedidos />} />
+          <Route path="productos" element={<AdminProductos />} />
         </Route>
         <Route path="/set-password" element={<SetPassword />} />
         <Route path="*" element={<Navigate to="/" replace />} />

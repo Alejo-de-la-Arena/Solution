@@ -103,8 +103,10 @@ export async function createMPPreference(payload) {
 }
 
 /**
- * Mercado Pago: procesa pago con tarjeta para una orden existente (via Orders API).
- * @param {Object} payload - { order_id, mp_payment, device_id? }
+ * Mercado Pago: crea la orden en DB + procesa el pago con tarjeta en un solo request.
+ * @param {Object} payload - { ...checkoutPayload, mp_payment, device_id?, mp_public_key?, order_id? }
+ *                           Si se pasa `order_id`, reutiliza la orden existente (reintento).
+ *                           Si no, se crea la orden con el resto de los campos del checkout.
  */
 export async function processMPCardPayment(payload) {
   const url = `${API_URL}/api/mercadopago/process-card-payment`;
@@ -138,6 +140,22 @@ export async function createMPOrder(payload) {
     const err = new Error(data.error || 'Error al procesar el pago');
     err.status = res.status;
     err.payload = data;
+    throw err;
+  }
+  return data;
+}
+
+/**
+ * Tracking público del pedido (sin auth). Devuelve { order, items }.
+ * @param {string} orderId
+ */
+export async function getOrderTracking(orderId) {
+  const url = `${API_URL}/api/checkout/track/${encodeURIComponent(orderId)}`;
+  const res = await fetch(url);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.error || 'No se pudo consultar el pedido');
+    err.status = res.status;
     throw err;
   }
   return data;

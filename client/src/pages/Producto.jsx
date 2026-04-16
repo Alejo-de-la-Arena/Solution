@@ -43,7 +43,7 @@ export default function Producto() {
   // Auto-advance suave de la galería
   useEffect(() => {
     if (!perfume) return undefined;
-    const items = getProductGalleryImages(perfume.slug, perfume.image);
+    const items = getProductGalleryImages(perfume, perfume.image);
     const length = items.length;
     if (length <= 1) return undefined;
 
@@ -81,7 +81,7 @@ export default function Producto() {
     : perfume.description
       ? [perfume.description]
       : [];
-  const galleryItems = perfume ? getProductGalleryImages(perfume.slug, perfume.image) : [];
+  const galleryItems = perfume ? getProductGalleryImages(perfume, perfume.image) : [];
   const safeIndex = galleryItems.length > 0 ? Math.min(activeIndex, galleryItems.length - 1) : 0;
   const activeItem = galleryItems[safeIndex] || null;
 
