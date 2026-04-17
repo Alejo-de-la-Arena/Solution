@@ -717,7 +717,7 @@ function TiendaComboSection({
                   </li>
                   <li className="flex items-center justify-center gap-2">
                     <span style={{ color: 'rgb(255, 0, 255)' }}>•</span>
-                    <span>3 cuotas sin interes</span>
+                    <span>2 cuotas sin interes</span>
                   </li>
                 </ul>
               </div>
