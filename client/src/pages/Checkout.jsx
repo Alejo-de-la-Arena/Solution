@@ -560,7 +560,7 @@ export default function Checkout() {
       {/* Global loading overlay while calling Nave API */}
       <LoadingOverlay visible={loading} />
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-24">
         <div className="text-center mb-12 sm:mb-16">
           <h1 className="text-3xl sm:text-4xl font-heading tracking-widest">FINALIZAR COMPRA</h1>
           <Link to="/tienda" className="text-sm text-white/50 hover:text-white transition-colors tracking-widest mt-4 inline-block">

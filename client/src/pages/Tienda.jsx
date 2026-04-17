@@ -125,7 +125,7 @@ function TiendaHero() {
     <motion.section
       ref={ref}
       {...motionProps}
-      className="py-20 sm:py-32 px-4 border-b border-white/10"
+      className="py-24 sm:py-32 px-4 border-b border-white/10"
     >
       <div className="mx-auto max-w-7xl text-center space-y-16">
         <div>
@@ -541,7 +541,7 @@ function TiendaComboSection({
           <p className="text-base sm:text-lg opacity-72">2 perfumes de la colección a elección</p>
           <div className="inline-flex items-center justify-center">
             <div className="border border-white/10 bg-white/[0.03] px-5 py-3 text-[0.72rem] sm:text-xs tracking-[0.22em] uppercase text-white/82 backdrop-blur-sm">
-              ENVÍO GRATIS A TODO EL PAÍS + 3 CUOTAS SIN INTERES
+              ENVÍO GRATIS A TODO EL PAÍS + 2 CUOTAS SIN INTERES
             </div>
           </div>
         </div>
