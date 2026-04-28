@@ -231,32 +231,42 @@ export default function Checkout() {
     if (paymentResult !== 'success') return;
     if (purchaseFired.current) return;
 
-    // Reconstruir items: primero del snapshot (ideal), sino del carrito actual (fallback)
-    const snap = checkoutSnapshot.current;
-    let items = snap?.items;
-    let totalValue = snap?.totalValue;
+    // Intentar: 1) snapshot de localStorage, 2) ref en memoria, 3) carrito actual
+    let items = null;
+    let totalValue = null;
 
-    if (!items || items.length === 0) {
-      if (cart.length > 0) {
-        items = cart.map((i) => ({ id: i.productId || i.id, quantity: i.quantity }));
-        totalValue = totalPrice;
+    try {
+      const saved = localStorage.getItem('purchase_snapshot');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.items?.length > 0 && parsed?.totalValue > 0) {
+          items = parsed.items;
+          totalValue = parsed.totalValue;
+        }
+      }
+    } catch { /* ignore */ }
+
+    if (!items) {
+      const snap = checkoutSnapshot.current;
+      if (snap?.items?.length > 0 && snap?.totalValue > 0) {
+        items = snap.items;
+        totalValue = snap.totalValue;
       }
     }
 
-    // Solo disparar si tenemos data válida. Si no, mejor perder el evento que mandar basura.
-    if (resultOrderId && items && items.length > 0 && totalValue > 0) {
-      purchaseFired.current = true;
-      trackPurchase({
-        orderId: resultOrderId,
-        totalValue,
-        items,
-      });
+    if (!items && cart.length > 0) {
+      items = cart.map((i) => ({ id: i.productId || i.id, quantity: i.quantity }));
+      totalValue = totalPrice;
     }
 
-    // Limpiar carrito DESPUÉS de leerlo para el fallback
+    if (resultOrderId && items && items.length > 0 && totalValue > 0) {
+      purchaseFired.current = true;
+      trackPurchase({ orderId: resultOrderId, totalValue, items });
+      try { localStorage.removeItem('purchase_snapshot'); } catch { /* ignore */ }
+    }
+
     clearCart();
   }, [paymentResult, clearCart, resultOrderId, totalPrice, cart]);
-
   // ── Auto-poll when status is pending (webhook may arrive any second) ──
   const pollCountRef = useRef(0);
   useEffect(() => {
@@ -368,6 +378,14 @@ export default function Checkout() {
     setResultOrderId(data.order_id);
     const st = (data.order_status || '').toLowerCase();
     const normalizedStatus = st === 'paid' ? 'paid' : st === 'payment_failed' ? 'payment_failed' : 'pending_payment';
+
+    try {
+      localStorage.setItem('purchase_snapshot', JSON.stringify({
+        items: cart.map((i) => ({ id: i.productId || i.id, quantity: i.quantity })),
+        totalValue: grandTotal,
+      }));
+    } catch { /* ignore */ }
+
     if (data.order_id) {
       saveTrackedOrder({
         orderId: data.order_id,
@@ -439,6 +457,14 @@ export default function Checkout() {
           : undefined,
         shipping_quote_response: shippingQuote || undefined,
       };
+
+      // Guardar snapshot para trackPurchase después del redirect
+      try {
+        localStorage.setItem('purchase_snapshot', JSON.stringify({
+          items: itemsWithProductId.map((i) => ({ id: i.productId || i.id, quantity: i.quantity })),
+          totalValue: grandTotal,
+        }));
+      } catch { /* ignore */ }
 
       setCheckoutPaymentProvider('nave');
       const data = await createNavePayment(payload);
