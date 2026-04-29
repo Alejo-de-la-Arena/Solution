@@ -201,9 +201,20 @@ export default function Checkout() {
           });
         }
         if (isCheckoutPaid(data)) {
+          // Disparar Purchase desde el snapshot
+          try {
+            const saved = localStorage.getItem('purchase_snapshot');
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              if (parsed?.items?.length > 0 && parsed?.totalValue > 0) {
+                trackPurchase({ orderId: pendingOrderId, totalValue: parsed.totalValue, items: parsed.items });
+                localStorage.removeItem('purchase_snapshot');
+              }
+            }
+          } catch { /* ignore */ }
           setPaymentResult('success');
           updateTrackedOrderStatus(pendingOrderId, 'paid');
-          clearCart();
+          setTimeout(() => clearCart(), 500);
         } else if (data.order_status === 'payment_failed') {
           setPaymentResult('rejected');
           updateTrackedOrderStatus(pendingOrderId, 'payment_failed');
