@@ -230,44 +230,11 @@ export default function Checkout() {
   useEffect(() => {
     if (paymentResult !== 'success') return;
     if (purchaseFired.current) return;
-
-    let items = null;
-    let totalValue = null;
-
-    try {
-      const saved = localStorage.getItem('purchase_snapshot');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed?.items?.length > 0 && parsed?.totalValue > 0) {
-          items = parsed.items;
-          totalValue = parsed.totalValue;
-        }
-      }
-    } catch { /* ignore */ }
-
-    if (!items) {
-      const snap = checkoutSnapshot.current;
-      if (snap?.items?.length > 0 && snap?.totalValue > 0) {
-        items = snap.items;
-        totalValue = snap.totalValue;
-      }
-    }
-
-    if (!items && cart.length > 0) {
-      items = cart.map((i) => ({ id: i.productId || i.id, quantity: i.quantity }));
-      totalValue = totalPrice;
-    }
-
-    if (resultOrderId && items && items.length > 0 && totalValue > 0) {
-      purchaseFired.current = true;
-      trackPurchase({ orderId: resultOrderId, totalValue, items });
-      try { localStorage.removeItem('purchase_snapshot'); } catch { /* ignore */ }
-    }
-
-    // Delay para que el request de fbq se complete antes del re-render
-    setTimeout(() => clearCart(), 500);
-  }, [paymentResult, clearCart, resultOrderId, totalPrice, cart]);
-
+    purchaseFired.current = true;
+    // Purchase ya fue disparado en handleMPBrickSuccess o en el polling
+    // Solo limpiamos por si el clearCart del setTimeout no corrió
+    setTimeout(() => clearCart(), 600);
+  }, [paymentResult, clearCart]);
 
   // ── Auto-poll when status is pending (webhook may arrive any second) ──
   const pollCountRef = useRef(0);
@@ -287,9 +254,20 @@ export default function Checkout() {
         const data = await fetchOrderPaymentStatus(resultOrderId);
         if (isCheckoutPaid(data)) {
           clearInterval(interval);
+          // Disparar Purchase desde el snapshot guardado
+          try {
+            const saved = localStorage.getItem('purchase_snapshot');
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              if (parsed?.items?.length > 0 && parsed?.totalValue > 0) {
+                trackPurchase({ orderId: resultOrderId, totalValue: parsed.totalValue, items: parsed.items });
+                localStorage.removeItem('purchase_snapshot');
+              }
+            }
+          } catch { /* ignore */ }
           setPaymentResult('success');
           updateTrackedOrderStatus(resultOrderId, 'paid');
-          clearCart();
+          setTimeout(() => clearCart(), 500);
         } else if (data.order_status === 'payment_failed') {
           clearInterval(interval);
           setPaymentResult('rejected');
@@ -381,13 +359,6 @@ export default function Checkout() {
     const st = (data.order_status || '').toLowerCase();
     const normalizedStatus = st === 'paid' ? 'paid' : st === 'payment_failed' ? 'payment_failed' : 'pending_payment';
 
-    try {
-      localStorage.setItem('purchase_snapshot', JSON.stringify({
-        items: cart.map((i) => ({ id: i.productId || i.id, quantity: i.quantity })),
-        totalValue: grandTotal,
-      }));
-    } catch { /* ignore */ }
-
     if (data.order_id) {
       saveTrackedOrder({
         orderId: data.order_id,
@@ -397,12 +368,25 @@ export default function Checkout() {
         status: normalizedStatus,
       });
     }
+
     if (st === 'paid') {
+      // Disparar Purchase ANTES de limpiar el carrito
+      const items = cart.map((i) => ({ id: i.productId || i.id, quantity: i.quantity }));
+      if (data.order_id && items.length > 0 && grandTotal > 0) {
+        trackPurchase({ orderId: data.order_id, totalValue: grandTotal, items });
+      }
       setPaymentResult('success');
-      clearCart();
+      setTimeout(() => clearCart(), 500);
     } else if (st === 'payment_failed') {
       setPaymentResult('rejected');
     } else {
+      // Guardar snapshot para el polling/redirect flow
+      try {
+        localStorage.setItem('purchase_snapshot', JSON.stringify({
+          items: cart.map((i) => ({ id: i.productId || i.id, quantity: i.quantity })),
+          totalValue: grandTotal,
+        }));
+      } catch { /* ignore */ }
       setPaymentResult('pending');
     }
   };
