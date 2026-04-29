@@ -184,16 +184,21 @@ export default function MercadoPagoBrick({
         setWalletLoading(false);
         return;
       }
+
+      // Guardar con key dedicada que NADA más toca
       try {
         const items = (base.items || []).map((i) => ({
           id: i.product_id || i.id,
           quantity: i.quantity,
         }));
-        const totalValue = items.reduce((sum, i) => {
-          const original = (base.items || []).find((x) => (x.product_id || x.id) === i.id);
-          return sum + (original?.unit_price || 0) * i.quantity;
+        const totalValue = items.reduce((sum, it) => {
+          const orig = (base.items || []).find((x) => (x.product_id || x.id) === it.id);
+          return sum + (orig?.unit_price || 0) * it.quantity;
         }, 0) + (base.shipping_cost || 0);
-        localStorage.setItem('purchase_snapshot', JSON.stringify({ items, totalValue }));
+        const snap = JSON.stringify({ items, totalValue });
+        localStorage.setItem('purchase_snapshot', snap);
+        localStorage.setItem('mp_purchase_backup', snap);
+        sessionStorage.setItem('mp_purchase_backup', snap);
       } catch { /* ignore */ }
 
       window.location.assign(data.init_point);

@@ -191,8 +191,6 @@ export default function Checkout() {
 
     fetchOrderPaymentStatus(pendingOrderId, walletPaymentIdFromUrl || undefined)
       .then((data) => {
-        // Si el usuario vuelve del redirect (wallet MP) y no ten\u00edamos el pedido en localStorage,
-        // lo agregamos ac\u00e1 para que se pueda seguir desde la navbar.
         if (!getTrackedOrder(pendingOrderId)) {
           saveTrackedOrder({
             orderId: pendingOrderId,
@@ -201,20 +199,44 @@ export default function Checkout() {
           });
         }
         if (isCheckoutPaid(data)) {
-          // Disparar Purchase desde el snapshot
-          try {
-            const saved = localStorage.getItem('purchase_snapshot');
-            if (saved) {
-              const parsed = JSON.parse(saved);
-              if (parsed?.items?.length > 0 && parsed?.totalValue > 0) {
-                trackPurchase({ orderId: pendingOrderId, totalValue: parsed.totalValue, items: parsed.items });
-                localStorage.removeItem('purchase_snapshot');
+          // Intentar leer snapshot de múltiples fuentes
+          let purchaseItems = null;
+          let purchaseTotal = null;
+
+          const sources = [
+            () => localStorage.getItem('purchase_snapshot'),
+            () => localStorage.getItem('mp_purchase_backup'),
+            () => sessionStorage.getItem('mp_purchase_backup'),
+          ];
+
+          for (const getSource of sources) {
+            if (purchaseItems) break;
+            try {
+              const raw = getSource();
+              if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed?.items?.length > 0 && parsed?.totalValue > 0) {
+                  purchaseItems = parsed.items;
+                  purchaseTotal = parsed.totalValue;
+                }
               }
-            }
-          } catch { /* ignore */ }
+            } catch { /* ignore */ }
+          }
+
+          // Disparar Purchase si tenemos datos
+          if (pendingOrderId && purchaseItems && purchaseItems.length > 0 && purchaseTotal > 0) {
+            trackPurchase({ orderId: pendingOrderId, totalValue: purchaseTotal, items: purchaseItems });
+          }
+
+          // Limpiar todas las copias
+          try { localStorage.removeItem('purchase_snapshot'); } catch { /* ignore */ }
+          try { localStorage.removeItem('mp_purchase_backup'); } catch { /* ignore */ }
+          try { sessionStorage.removeItem('mp_purchase_backup'); } catch { /* ignore */ }
+
           setPaymentResult('success');
           updateTrackedOrderStatus(pendingOrderId, 'paid');
           setTimeout(() => clearCart(), 500);
+
         } else if (data.order_status === 'payment_failed') {
           setPaymentResult('rejected');
           updateTrackedOrderStatus(pendingOrderId, 'payment_failed');
