@@ -167,7 +167,7 @@ router.get('/track/:orderId', async (req, res) => {
       'id', 'status', 'total', 'currency', 'payment_method', 'created_at',
       'customer_name',
       'mp_status', 'mp_status_detail', 'mp_card_brand', 'mp_card_last4', 'mp_installments', 'mp_paid_at',
-      'nave_status', 'nave_card_brand', 'nave_card_last4', 'nave_installments', 'nave_paid_at',
+      'nave_card_brand', 'nave_card_last4', 'nave_installments', 'nave_paid_at', 'nave_status_reason',
       'shipping_method', 'shipping_address_line1', 'shipping_address_line2',
       'shipping_city', 'shipping_state', 'shipping_postal_code', 'shipping_country',
       'shipping_provider', 'shipping_mode', 'shipping_agency_name', 'shipping_cost', 'shipping_is_free',
