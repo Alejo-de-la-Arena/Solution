@@ -13,6 +13,7 @@ import NaveEmbed from '../components/checkout/NaveEmbed';
 import MercadoPagoBrick from '../components/checkout/MercadoPagoBrick';
 import { trackInitiateCheckout, trackPurchase } from '../lib/metaPixel';
 import { getTrackedOrder, saveTrackedOrder, updateTrackedOrderStatus } from '../services/orderTracking';
+import { firePurchaseEvent } from '../lib/firePurchaseEvent';
 
 const inputClass =
   'w-full bg-zinc-900 border-white/10 border rounded-sm p-3 focus:ring-1 focus:ring-[rgb(0,255,255)] focus:border-[rgb(0,255,255)] transition-colors';
@@ -199,44 +200,10 @@ export default function Checkout() {
           });
         }
         if (isCheckoutPaid(data)) {
-          // Intentar leer snapshot de múltiples fuentes
-          let purchaseItems = null;
-          let purchaseTotal = null;
-
-          const sources = [
-            () => localStorage.getItem('purchase_snapshot'),
-            () => localStorage.getItem('mp_purchase_backup'),
-            () => sessionStorage.getItem('mp_purchase_backup'),
-          ];
-
-          for (const getSource of sources) {
-            if (purchaseItems) break;
-            try {
-              const raw = getSource();
-              if (raw) {
-                const parsed = JSON.parse(raw);
-                if (parsed?.items?.length > 0 && parsed?.totalValue > 0) {
-                  purchaseItems = parsed.items;
-                  purchaseTotal = parsed.totalValue;
-                }
-              }
-            } catch { /* ignore */ }
-          }
-
-          // Disparar Purchase si tenemos datos
-          if (pendingOrderId && purchaseItems && purchaseItems.length > 0 && purchaseTotal > 0) {
-            trackPurchase({ orderId: pendingOrderId, totalValue: purchaseTotal, items: purchaseItems });
-          }
-
-          // Limpiar todas las copias
-          try { localStorage.removeItem('purchase_snapshot'); } catch { /* ignore */ }
-          try { localStorage.removeItem('mp_purchase_backup'); } catch { /* ignore */ }
-          try { sessionStorage.removeItem('mp_purchase_backup'); } catch { /* ignore */ }
-
+          firePurchaseEvent(pendingOrderId);
           setPaymentResult('success');
           updateTrackedOrderStatus(pendingOrderId, 'paid');
           setTimeout(() => clearCart(), 500);
-
         } else if (data.order_status === 'payment_failed') {
           setPaymentResult('rejected');
           updateTrackedOrderStatus(pendingOrderId, 'payment_failed');
@@ -264,8 +231,6 @@ export default function Checkout() {
     if (paymentResult !== 'success') return;
     if (purchaseFired.current) return;
     purchaseFired.current = true;
-    // Purchase ya fue disparado en handleMPBrickSuccess o en el polling
-    // Solo limpiamos por si el clearCart del setTimeout no corrió
     setTimeout(() => clearCart(), 600);
   }, [paymentResult, clearCart]);
 
@@ -287,17 +252,7 @@ export default function Checkout() {
         const data = await fetchOrderPaymentStatus(resultOrderId);
         if (isCheckoutPaid(data)) {
           clearInterval(interval);
-          // Disparar Purchase desde el snapshot guardado
-          try {
-            const saved = localStorage.getItem('purchase_snapshot');
-            if (saved) {
-              const parsed = JSON.parse(saved);
-              if (parsed?.items?.length > 0 && parsed?.totalValue > 0) {
-                trackPurchase({ orderId: resultOrderId, totalValue: parsed.totalValue, items: parsed.items });
-                localStorage.removeItem('purchase_snapshot');
-              }
-            }
-          } catch { /* ignore */ }
+          firePurchaseEvent(resultOrderId);
           setPaymentResult('success');
           updateTrackedOrderStatus(resultOrderId, 'paid');
           setTimeout(() => clearCart(), 500);
@@ -403,23 +358,12 @@ export default function Checkout() {
     }
 
     if (st === 'paid') {
-      // Disparar Purchase ANTES de limpiar el carrito
-      const items = cart.map((i) => ({ id: i.productId || i.id, quantity: i.quantity }));
-      if (data.order_id && items.length > 0 && grandTotal > 0) {
-        trackPurchase({ orderId: data.order_id, totalValue: grandTotal, items });
-      }
+      firePurchaseEvent(data.order_id);
       setPaymentResult('success');
       setTimeout(() => clearCart(), 500);
     } else if (st === 'payment_failed') {
       setPaymentResult('rejected');
     } else {
-      // Guardar snapshot para el polling/redirect flow
-      try {
-        localStorage.setItem('purchase_snapshot', JSON.stringify({
-          items: cart.map((i) => ({ id: i.productId || i.id, quantity: i.quantity })),
-          totalValue: grandTotal,
-        }));
-      } catch { /* ignore */ }
       setPaymentResult('pending');
     }
   };
