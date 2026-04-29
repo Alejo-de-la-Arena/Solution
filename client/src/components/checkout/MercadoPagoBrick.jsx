@@ -184,6 +184,18 @@ export default function MercadoPagoBrick({
         setWalletLoading(false);
         return;
       }
+      try {
+        const items = (base.items || []).map((i) => ({
+          id: i.product_id || i.id,
+          quantity: i.quantity,
+        }));
+        const totalValue = items.reduce((sum, i) => {
+          const original = (base.items || []).find((x) => (x.product_id || x.id) === i.id);
+          return sum + (original?.unit_price || 0) * i.quantity;
+        }, 0) + (base.shipping_cost || 0);
+        localStorage.setItem('purchase_snapshot', JSON.stringify({ items, totalValue }));
+      } catch { /* ignore */ }
+
       window.location.assign(data.init_point);
     } catch (err) {
       onError?.(err.message || 'No se pudo preparar el pago con Mercado Pago.');
