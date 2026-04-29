@@ -231,7 +231,6 @@ export default function Checkout() {
     if (paymentResult !== 'success') return;
     if (purchaseFired.current) return;
 
-    // Intentar: 1) snapshot de localStorage, 2) ref en memoria, 3) carrito actual
     let items = null;
     let totalValue = null;
 
@@ -265,8 +264,11 @@ export default function Checkout() {
       try { localStorage.removeItem('purchase_snapshot'); } catch { /* ignore */ }
     }
 
-    clearCart();
+    // Delay para que el request de fbq se complete antes del re-render
+    setTimeout(() => clearCart(), 500);
   }, [paymentResult, clearCart, resultOrderId, totalPrice, cart]);
+
+
   // ── Auto-poll when status is pending (webhook may arrive any second) ──
   const pollCountRef = useRef(0);
   useEffect(() => {
