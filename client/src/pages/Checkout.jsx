@@ -13,6 +13,7 @@ import NaveEmbed from '../components/checkout/NaveEmbed';
 import MercadoPagoBrick from '../components/checkout/MercadoPagoBrick';
 import { trackInitiateCheckout, trackPurchase } from '../lib/metaPixel';
 import { getTrackedOrder, saveTrackedOrder, updateTrackedOrderStatus } from '../services/orderTracking';
+import { firePurchaseEvent } from '../lib/firePurchaseEvent';
 
 const inputClass =
   'w-full bg-zinc-900 border-white/10 border rounded-sm p-3 focus:ring-1 focus:ring-[rgb(0,255,255)] focus:border-[rgb(0,255,255)] transition-colors';
@@ -191,8 +192,6 @@ export default function Checkout() {
 
     fetchOrderPaymentStatus(pendingOrderId, walletPaymentIdFromUrl || undefined)
       .then((data) => {
-        // Si el usuario vuelve del redirect (wallet MP) y no ten\u00edamos el pedido en localStorage,
-        // lo agregamos ac\u00e1 para que se pueda seguir desde la navbar.
         if (!getTrackedOrder(pendingOrderId)) {
           saveTrackedOrder({
             orderId: pendingOrderId,
@@ -201,9 +200,10 @@ export default function Checkout() {
           });
         }
         if (isCheckoutPaid(data)) {
+          firePurchaseEvent(pendingOrderId);
           setPaymentResult('success');
           updateTrackedOrderStatus(pendingOrderId, 'paid');
-          clearCart();
+          setTimeout(() => clearCart(), 500);
         } else if (data.order_status === 'payment_failed') {
           setPaymentResult('rejected');
           updateTrackedOrderStatus(pendingOrderId, 'payment_failed');
@@ -230,32 +230,9 @@ export default function Checkout() {
   useEffect(() => {
     if (paymentResult !== 'success') return;
     if (purchaseFired.current) return;
-
-    // Reconstruir items: primero del snapshot (ideal), sino del carrito actual (fallback)
-    const snap = checkoutSnapshot.current;
-    let items = snap?.items;
-    let totalValue = snap?.totalValue;
-
-    if (!items || items.length === 0) {
-      if (cart.length > 0) {
-        items = cart.map((i) => ({ id: i.productId || i.id, quantity: i.quantity }));
-        totalValue = totalPrice;
-      }
-    }
-
-    // Solo disparar si tenemos data válida. Si no, mejor perder el evento que mandar basura.
-    if (resultOrderId && items && items.length > 0 && totalValue > 0) {
-      purchaseFired.current = true;
-      trackPurchase({
-        orderId: resultOrderId,
-        totalValue,
-        items,
-      });
-    }
-
-    // Limpiar carrito DESPUÉS de leerlo para el fallback
-    clearCart();
-  }, [paymentResult, clearCart, resultOrderId, totalPrice, cart]);
+    purchaseFired.current = true;
+    setTimeout(() => clearCart(), 600);
+  }, [paymentResult, clearCart]);
 
   // ── Auto-poll when status is pending (webhook may arrive any second) ──
   const pollCountRef = useRef(0);
@@ -275,9 +252,10 @@ export default function Checkout() {
         const data = await fetchOrderPaymentStatus(resultOrderId);
         if (isCheckoutPaid(data)) {
           clearInterval(interval);
+          firePurchaseEvent(resultOrderId);
           setPaymentResult('success');
           updateTrackedOrderStatus(resultOrderId, 'paid');
-          clearCart();
+          setTimeout(() => clearCart(), 500);
         } else if (data.order_status === 'payment_failed') {
           clearInterval(interval);
           setPaymentResult('rejected');
@@ -368,6 +346,7 @@ export default function Checkout() {
     setResultOrderId(data.order_id);
     const st = (data.order_status || '').toLowerCase();
     const normalizedStatus = st === 'paid' ? 'paid' : st === 'payment_failed' ? 'payment_failed' : 'pending_payment';
+
     if (data.order_id) {
       saveTrackedOrder({
         orderId: data.order_id,
@@ -377,9 +356,11 @@ export default function Checkout() {
         status: normalizedStatus,
       });
     }
+
     if (st === 'paid') {
+      firePurchaseEvent(data.order_id);
       setPaymentResult('success');
-      clearCart();
+      setTimeout(() => clearCart(), 500);
     } else if (st === 'payment_failed') {
       setPaymentResult('rejected');
     } else {
@@ -439,6 +420,14 @@ export default function Checkout() {
           : undefined,
         shipping_quote_response: shippingQuote || undefined,
       };
+
+      // Guardar snapshot para trackPurchase después del redirect
+      try {
+        localStorage.setItem('purchase_snapshot', JSON.stringify({
+          items: itemsWithProductId.map((i) => ({ id: i.productId || i.id, quantity: i.quantity })),
+          totalValue: grandTotal,
+        }));
+      } catch { /* ignore */ }
 
       setCheckoutPaymentProvider('nave');
       const data = await createNavePayment(payload);
@@ -560,7 +549,7 @@ export default function Checkout() {
       {/* Global loading overlay while calling Nave API */}
       <LoadingOverlay visible={loading} />
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-24">
         <div className="text-center mb-12 sm:mb-16">
           <h1 className="text-3xl sm:text-4xl font-heading tracking-widest">FINALIZAR COMPRA</h1>
           <Link to="/tienda" className="text-sm text-white/50 hover:text-white transition-colors tracking-widest mt-4 inline-block">
