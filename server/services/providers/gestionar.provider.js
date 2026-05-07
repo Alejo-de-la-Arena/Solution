@@ -62,22 +62,43 @@ async function request({ method, path, params, body, multipart = false }) {
 /**
  * Cotiza envío Gestionar para CABA/GBA.
  *
- * En el modo fullfilment Gestionar no expone una API pública de tarifas — la
- * cobertura es CABA/GBA con un precio fijo negociado por contrato. Lo leemos
- * de `GESTIONAR_FLAT_RATE_HOME` (ARS) y reutilizamos la regla de envío gratis
- * del resto del sistema (≥2 perfumes = sin costo).
+ * Gestionar (modo fullfilment) no expone API pública de tarifas, así que
+ * espejamos el precio que cobraría Correo Argentino (Clásico Domicilio) para
+ * la misma dirección. Mantenemos la regla de envío gratis (≥2 perfumes) y la
+ * presentación de Gestionar (eta, label).
+ *
+ * `GESTIONAR_FLAT_RATE_HOME` actúa como switch binario en `shipping.rules.js`:
+ * cualquier valor activa Gestionar para CABA/GBA, vacío lo deshabilita. El
+ * valor numérico ya no se usa.
  */
-function quote({ items /* , address */ } = {}) {
-    const rateRaw = process.env.GESTIONAR_FLAT_RATE_HOME;
-    const rate = Number(rateRaw);
-    if (!Number.isFinite(rate)) {
+async function quote({ items, address } = {}) {
+    // Lazy-require para evitar ciclo (correo.provider no depende de gestionar).
+    const correoProvider = require('./correo/correo.provider');
+
+    let correoQuote;
+    try {
+        correoQuote = await correoProvider.quote({ items, address });
+    } catch (err) {
         throw new GestionarError(
-            'GESTIONAR_FLAT_RATE_HOME no configurado o inválido.',
-            500,
+            `No se pudo obtener tarifa de referencia (Correo): ${err.message || err}`,
+            err.status || 502,
+            err.raw || null,
         );
     }
-    const eta = process.env.GESTIONAR_ETA_HOME || '1 a 3 días hábiles';
+
+    const homeOptions = (correoQuote?.options || []).filter((o) => o.mode === 'home');
+    // Preferimos Clásico (CP); fallback a Expreso (EP) si Correo no devolvió CP.
+    const reference = homeOptions.find((o) => o.serviceType === 'CP') || homeOptions[0];
+    if (!reference) {
+        throw new GestionarError(
+            'Correo Argentino no devolvió cotización a domicilio para esta dirección.',
+            422,
+        );
+    }
+
     const free = hasFreeShipping(items || []);
+    const eta = process.env.GESTIONAR_ETA_HOME || '1 a 3 días hábiles';
+    const originalPrice = Number(reference.originalPrice ?? reference.price ?? 0) || 0;
 
     return {
         provider: 'gestionar',
@@ -88,11 +109,11 @@ function quote({ items /* , address */ } = {}) {
                 label: 'Envío a domicilio (CABA / GBA)',
                 mode: 'home',
                 serviceType: 'GESTIONAR_HOME',
-                price: free ? 0 : rate,
-                originalPrice: rate,
+                price: free ? 0 : originalPrice,
+                originalPrice,
                 currency: 'ARS',
                 eta,
-                raw: null,
+                raw: { correoReference: reference.serviceType, correoRaw: reference.raw || null },
             },
         ],
         raw: null,
