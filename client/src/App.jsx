@@ -20,6 +20,7 @@ import AdminMayoristas from './pages/admin/AdminMayoristas';
 import AdminUsuarios from './pages/admin/AdminUsuarios';
 import AdminPedidos from './pages/admin/AdminPedidos';
 import AdminProductos from './pages/admin/AdminProductos';
+import AdminGestionar from './pages/admin/AdminGestionar';
 
 import Tienda from './pages/Tienda';
 import Producto from './pages/Producto';
@@ -61,6 +62,7 @@ function AppRoutes() {
           <Route path="mayoristas" element={<AdminMayoristas />} />
           <Route path="pedidos" element={<AdminPedidos />} />
           <Route path="productos" element={<AdminProductos />} />
+          <Route path="gestionar" element={<AdminGestionar />} />
         </Route>
         <Route path="/set-password" element={<SetPassword />} />
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -6,6 +6,9 @@ const router = express.Router();
 const { supabase, supabaseAuth } = require('../lib/supabase');
 const naveRouter = require('./nave');
 const { sendRefundInitiatedEmail } = require('../services/email');
+const gestionarProvider = require('../services/providers/gestionar.provider');
+const gestionarCatalog = require('../services/gestionar.catalog');
+const gestionarDispatcher = require('../services/gestionar.dispatcher');
 
 const PRODUCTS_BUCKET = 'solution-products';
 const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -594,6 +597,94 @@ router.delete('/products/:id/images/:imageId', async (req, res) => {
     return res.status(500).json({ error: 'No se pudo borrar la imagen' });
   }
   return res.json({ ok: true });
+});
+
+// ===========================================================================
+// GESTIONAR (logística — fullfilment)
+// ===========================================================================
+
+/**
+ * GET /api/admin/gestionar/discovery
+ * Lee en paralelo categorías, productos, depósitos y horas de colecta para
+ * confirmar el estado actual en Gestionar antes de hacer cualquier cambio.
+ */
+router.get('/gestionar/discovery', async (req, res) => {
+  const user = await assertAdmin(req, res);
+  if (!user) return;
+
+  try {
+    const [categories, products, warehouses, pickupTimes] = await Promise.all([
+      gestionarProvider.getProductCategories(),
+      gestionarProvider.getProducts(),
+      gestionarProvider.getWarehouses(),
+      gestionarProvider.getPickupTimes(),
+    ]);
+    return res.json({
+      ok: true,
+      categories,
+      products,
+      warehouses,
+      pickupTimes,
+    });
+  } catch (err) {
+    const status = err.status || 500;
+    console.error('[admin gestionar/discovery]', err.message, err.raw || '');
+    return res.status(status).json({
+      ok: false,
+      error: err.message || 'Error consultando Gestionar',
+      raw: err.raw || null,
+    });
+  }
+});
+
+/**
+ * POST /api/admin/gestionar/link-catalog
+ * Concilia products.sku ↔ Gestionar y rellena products.gestionar_product_id.
+ * No crea productos nuevos en Gestionar.
+ */
+router.post('/gestionar/link-catalog', async (req, res) => {
+  const user = await assertAdmin(req, res);
+  if (!user) return;
+
+  try {
+    const result = await gestionarCatalog.linkCatalog();
+    return res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('[admin gestionar/link-catalog]', err.message, err.raw || '');
+    const status = err.status || 500;
+    return res.status(status).json({
+      ok: false,
+      error: err.message || 'Error al mapear catálogo',
+      raw: err.raw || null,
+    });
+  }
+});
+
+/**
+ * POST /api/admin/gestionar/dispatch-now
+ * Body opcional: { orderId: string, limit: number }
+ *  - orderId: si está, sólo procesa esa orden (force retry de una).
+ *  - limit:   default 50.
+ */
+router.post('/gestionar/dispatch-now', async (req, res) => {
+  const user = await assertAdmin(req, res);
+  if (!user) return;
+
+  const orderId = req.body?.orderId || null;
+  const limit = Number.isFinite(Number(req.body?.limit))
+    ? Math.max(1, Math.min(200, Number(req.body.limit)))
+    : 50;
+
+  try {
+    const result = await gestionarDispatcher.dispatchPendingOrders({ limit, orderId });
+    return res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('[admin gestionar/dispatch-now]', err.message, err.stack);
+    return res.status(500).json({
+      ok: false,
+      error: err.message || 'Error al despachar órdenes',
+    });
+  }
 });
 
 // multer error handler (tamaño, mime, etc.)

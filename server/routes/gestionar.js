@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 
-const GESTIONAR_API_URL = 'https://api.gestionarlogistica.com'; // Assuming this is the base URL
+const GESTIONAR_API_URL =
+  process.env.GESTIONAR_API_URL || 'https://apiv1.gestionarlogistica.com.ar';
 const API_KEY = process.env.GESTIONAR_API_KEY;
 
 // Middleware for Gestionar-only endpoints

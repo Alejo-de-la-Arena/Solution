@@ -6,6 +6,7 @@ const navItems = [
   { to: '/admin/productos', end: false, label: 'Productos' },
   { to: '/admin/usuarios', end: false, label: 'Usuarios' },
   { to: '/admin/mayoristas', end: false, label: 'Mayoristas' },
+  { to: '/admin/gestionar', end: false, label: 'Gestionar' },
 ];
 
 export default function AdminLayout() {

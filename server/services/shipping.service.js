@@ -1,5 +1,6 @@
 const correoProvider = require('./providers/correo/correo.provider');
-const { shouldUseCorreo, hasFreeShipping } = require('./shipping.rules');
+const gestionarProvider = require('./providers/gestionar.provider');
+const { shouldUseCorreo } = require('./shipping.rules');
 const { getOrderBundle, updateOrderShippingFields } = require('./shipping.data');
 const { buildAddressFromOrder } = require('./providers/correo/correo.mapper');
 
@@ -7,20 +8,7 @@ async function quoteShipping({ items, address }) {
     if (shouldUseCorreo(address)) {
         return correoProvider.quote({ items, address });
     }
-
-    // ── Gestionar (Buenos Aires / GBA) — DESHABILITADO TEMPORALMENTE ──────
-    // Cuando se reactive, descomentar este bloque y eliminar el return de arriba.
-    //
-    // return {
-    //     provider: 'gestionar',
-    //     freeShipping: hasFreeShipping(items),
-    //     options: [],
-    //     message: 'Cotización Gestionar todavía no integrada en shipping.service v1.',
-    // };
-    // ─────────────────────────────────────────────────────────────────────
-
-    // Fallback (nunca debería llegar acá mientras shouldUseCorreo === true)
-    return correoProvider.quote({ items, address });
+    return gestionarProvider.quote({ items, address });
 }
 
 async function quoteShippingFromOrder(orderId) {

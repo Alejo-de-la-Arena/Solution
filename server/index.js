@@ -101,4 +101,40 @@ app.use((req, res, _next) => {
 // Start server (0.0.0.0: evita "connection refused" detrás del proxy de Railway)
 app.listen(port, '0.0.0.0', () => {
   console.log(`Server listening on 0.0.0.0:${port}`);
+  startGestionarBatchScheduler();
 });
+
+/**
+ * Cron in-process para subir las órdenes paid a Gestionar en lote.
+ * Sólo arranca si GESTIONAR_BATCH_ENABLED=true. Apto para hosts 24/7
+ * (Railway/Render/VPS); en serverless usar Supabase scheduled functions
+ * apuntando a POST /api/admin/gestionar/dispatch-now.
+ */
+function startGestionarBatchScheduler() {
+  const enabled = String(process.env.GESTIONAR_BATCH_ENABLED || '').toLowerCase() === 'true';
+  if (!enabled) {
+    console.log('[boot] Gestionar batch: deshabilitado (GESTIONAR_BATCH_ENABLED != true)');
+    return;
+  }
+  const intervalMin = Number(process.env.GESTIONAR_BATCH_INTERVAL_MINUTES) || 15;
+  const intervalMs = Math.max(1, intervalMin) * 60_000;
+  const { dispatchPendingOrders } = require('./services/gestionar.dispatcher');
+
+  const tick = async () => {
+    try {
+      const result = await dispatchPendingOrders({ limit: 50 });
+      if (result.picked > 0) {
+        console.log(
+          `[gestionar.batch] picked=${result.picked} ok=${result.succeeded} fail=${result.failed}`,
+        );
+      }
+    } catch (err) {
+      console.error('[gestionar.batch] error:', err.message);
+    }
+  };
+
+  console.log(`[boot] Gestionar batch: cada ${intervalMin} min`);
+  // Primer tick a los 30s (deja al server arrancar en paz), después cada intervalMs
+  setTimeout(tick, 30_000);
+  setInterval(tick, intervalMs);
+}
