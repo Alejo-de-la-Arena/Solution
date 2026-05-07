@@ -4,6 +4,9 @@ import { useCart } from '../../contexts/CartContext';
 
 export default function CartDrawer() {
   const { cart, isOpen, setIsOpen, removeFromCart, updateQuantity, totalPrice } = useCart();
+  // Mismo umbral que la regla server-side de envío gratis (≥2 unidades).
+  const totalUnits = cart.reduce((acc, it) => acc + Number(it.quantity || 0), 0);
+  const hasFreeShipping = totalUnits >= 2;
 
   return (
     <AnimatePresence>
@@ -147,10 +150,12 @@ export default function CartDrawer() {
                     <span>Subtotal</span>
                     <span>${totalPrice.toLocaleString('es-AR')}</span>
                   </div>
-                  <div className="flex justify-between items-center text-white/60 text-sm">
-                    <span>Envío</span>
-                    <span className="text-[rgb(0,255,255)]">Gratis</span>
-                  </div>
+                  {hasFreeShipping && (
+                    <div className="flex justify-between items-center text-white/60 text-sm">
+                      <span>Envío</span>
+                      <span className="text-[rgb(0,255,255)]">Gratis</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-end pt-3 border-t border-white/10">
                     <span className="text-white font-heading tracking-widest">TOTAL</span>
                     <span className="text-2xl font-light text-white tracking-tight">
