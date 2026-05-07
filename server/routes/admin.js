@@ -12,7 +12,9 @@ const gestionarDispatcher = require('../services/gestionar.dispatcher');
 
 const PRODUCTS_BUCKET = 'solution-products';
 const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_PRODUCT_VIDEO_BYTES = 50 * 1024 * 1024;
 const ALLOWED_IMAGE_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const ALLOWED_VIDEO_MIMES = new Set(['video/mp4', 'video/webm']);
 const ALLOWED_IMAGE_ROLES = new Set(['store_default', 'store_hover', 'gallery']);
 
 const productImageUpload = multer({
@@ -26,10 +28,23 @@ const productImageUpload = multer({
   },
 });
 
+const productVideoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_PRODUCT_VIDEO_BYTES },
+  fileFilter: (_req, file, cb) => {
+    if (!ALLOWED_VIDEO_MIMES.has(file.mimetype)) {
+      return cb(new Error('Formato no soportado (mp4/webm)'));
+    }
+    cb(null, true);
+  },
+});
+
 function extForMime(mime) {
   if (mime === 'image/jpeg') return 'jpg';
   if (mime === 'image/png') return 'png';
   if (mime === 'image/webp') return 'webp';
+  if (mime === 'video/mp4') return 'mp4';
+  if (mime === 'video/webm') return 'webm';
   return 'bin';
 }
 
@@ -363,7 +378,10 @@ function validateProductPatch(body) {
 async function fetchProductWithImages(productId) {
   const { data, error } = await supabase
     .from('products')
-    .select('*, product_images(id, storage_path, role, sort_order, created_at)')
+    .select(
+      '*, product_images(id, storage_path, role, sort_order, created_at), ' +
+        'product_videos(id, storage_path, poster_storage_path, sort_order, created_at)'
+    )
     .eq('id', productId)
     .single();
   if (error) return { data: null, error };
@@ -372,6 +390,9 @@ async function fetchProductWithImages(productId) {
       if (a.role !== b.role) return a.role.localeCompare(b.role);
       return (a.sort_order ?? 0) - (b.sort_order ?? 0);
     });
+  }
+  if (data?.product_videos) {
+    data.product_videos.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
   }
   return { data, error: null };
 }
@@ -385,7 +406,10 @@ router.get('/products', async (req, res) => {
 
   const { data, error } = await supabase
     .from('products')
-    .select('*, product_images(id, storage_path, role, sort_order, created_at)')
+    .select(
+      '*, product_images(id, storage_path, role, sort_order, created_at), ' +
+        'product_videos(id, storage_path, poster_storage_path, sort_order, created_at)'
+    )
     .order('sort_order', { ascending: true });
 
   if (error) {
@@ -398,6 +422,9 @@ router.get('/products', async (req, res) => {
         if (a.role !== b.role) return a.role.localeCompare(b.role);
         return (a.sort_order ?? 0) - (b.sort_order ?? 0);
       });
+    }
+    if (p.product_videos) {
+      p.product_videos.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
     }
   }
   return res.json({ products: data || [] });
@@ -595,6 +622,137 @@ router.delete('/products/:id/images/:imageId', async (req, res) => {
   if (dErr) {
     console.error('[admin] delete product_image:', dErr);
     return res.status(500).json({ error: 'No se pudo borrar la imagen' });
+  }
+  return res.json({ ok: true });
+});
+
+// ===========================================================================
+// VIDEOS DEL PRODUCTO (galería del detalle)
+// ===========================================================================
+
+/**
+ * POST /api/admin/products/:id/videos — sube un mp4/webm al bucket + inserta fila.
+ * multipart/form-data: file (mp4 o webm), sort_order? (default = autoincrement).
+ * Todos los videos van al carrusel de la galería; no hay roles como en imágenes.
+ */
+router.post('/products/:id/videos', productVideoUpload.single('file'), async (req, res) => {
+  const user = await assertAdmin(req, res);
+  if (!user) return;
+
+  if (!req.file) return res.status(400).json({ error: 'Falta archivo (file)' });
+
+  const { data: product, error: pErr } = await supabase
+    .from('products')
+    .select('id, slug')
+    .eq('id', req.params.id)
+    .single();
+  if (pErr || !product) return res.status(404).json({ error: 'Producto no encontrado' });
+
+  const ext = extForMime(req.file.mimetype);
+  const storagePath = `${product.slug}/admin/videos/${crypto.randomUUID()}.${ext}`;
+
+  const { error: upErr } = await supabase.storage
+    .from(PRODUCTS_BUCKET)
+    .upload(storagePath, req.file.buffer, {
+      contentType: req.file.mimetype,
+      upsert: false,
+    });
+  if (upErr) {
+    console.error('[admin] storage upload (video):', upErr);
+    return res.status(502).json({ error: 'No se pudo subir el video' });
+  }
+
+  let sortOrder = 0;
+  const parsed = Number.parseInt(req.body?.sort_order, 10);
+  if (Number.isFinite(parsed)) {
+    sortOrder = parsed;
+  } else {
+    const { data: maxRow } = await supabase
+      .from('product_videos')
+      .select('sort_order')
+      .eq('product_id', product.id)
+      .order('sort_order', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    sortOrder = (maxRow?.sort_order ?? -1) + 1;
+  }
+
+  const { data: inserted, error: insErr } = await supabase
+    .from('product_videos')
+    .insert({
+      product_id: product.id,
+      storage_path: storagePath,
+      sort_order: sortOrder,
+    })
+    .select('*')
+    .single();
+  if (insErr) {
+    console.error('[admin] insert product_video:', insErr);
+    await supabase.storage.from(PRODUCTS_BUCKET).remove([storagePath]).catch(() => {});
+    return res.status(500).json({ error: 'No se pudo registrar el video' });
+  }
+
+  return res.json({ video: inserted });
+});
+
+/**
+ * PATCH /api/admin/products/:id/videos/reorder
+ * Body: { items: [{ id, sort_order }] }
+ */
+router.patch('/products/:id/videos/reorder', async (req, res) => {
+  const user = await assertAdmin(req, res);
+  if (!user) return;
+
+  const items = Array.isArray(req.body?.items) ? req.body.items : null;
+  if (!items || items.length === 0) {
+    return res.status(400).json({ error: 'items[] requerido' });
+  }
+
+  const productId = req.params.id;
+  const videoIds = items.map((it) => it?.id).filter(Boolean);
+  const { data: owned, error: ownErr } = await supabase
+    .from('product_videos')
+    .select('id')
+    .eq('product_id', productId)
+    .in('id', videoIds);
+  if (ownErr) return res.status(500).json({ error: 'Error verificando videos' });
+  if ((owned || []).length !== videoIds.length) {
+    return res.status(400).json({ error: 'Hay videos que no pertenecen al producto' });
+  }
+
+  for (const it of items) {
+    const so = Number.parseInt(it.sort_order, 10);
+    if (!Number.isFinite(so)) continue;
+    await supabase.from('product_videos').update({ sort_order: so }).eq('id', it.id);
+  }
+
+  return res.json({ ok: true });
+});
+
+/**
+ * DELETE /api/admin/products/:id/videos/:videoId
+ */
+router.delete('/products/:id/videos/:videoId', async (req, res) => {
+  const user = await assertAdmin(req, res);
+  if (!user) return;
+
+  const { id: productId, videoId } = req.params;
+
+  const { data: vid, error: fErr } = await supabase
+    .from('product_videos')
+    .select('id, storage_path, product_id')
+    .eq('id', videoId)
+    .single();
+  if (fErr || !vid) return res.status(404).json({ error: 'Video no encontrado' });
+  if (vid.product_id !== productId) {
+    return res.status(400).json({ error: 'El video no pertenece al producto' });
+  }
+
+  await supabase.storage.from(PRODUCTS_BUCKET).remove([vid.storage_path]).catch(() => {});
+  const { error: dErr } = await supabase.from('product_videos').delete().eq('id', videoId);
+  if (dErr) {
+    console.error('[admin] delete product_video:', dErr);
+    return res.status(500).json({ error: 'No se pudo borrar el video' });
   }
   return res.json({ ok: true });
 });

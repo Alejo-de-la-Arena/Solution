@@ -35,7 +35,6 @@ export default function Tienda() {
   const [loading, setLoading] = useState(true);
   const [selectedPerfume1, setSelectedPerfume1] = useState(null);
   const [selectedPerfume2, setSelectedPerfume2] = useState(null);
-  const [altView, setAltView] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,14 +63,6 @@ export default function Tienda() {
     if (perfumes.length > 1 && !selectedPerfume2) setSelectedPerfume2(perfumes[1].id);
   }, [perfumes, selectedPerfume1, selectedPerfume2]);
 
-  // Auto-cambio sincronizado de imagen (sin hover) para todo el listado
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      setAltView((v) => !v);
-    }, 6500);
-    return () => window.clearInterval(id);
-  }, []);
-
   const perfume1 = perfumes.find((p) => p.id === selectedPerfume1);
   const perfume2 = perfumes.find((p) => p.id === selectedPerfume2);
 
@@ -94,7 +85,7 @@ export default function Tienda() {
               <p className="text-center text-white/60 py-12">No hay productos disponibles.</p>
             ) : (
               perfumes.map((perfume, index) => (
-                <ProductBlock key={perfume.id} perfume={perfume} index={index} altView={altView} />
+                <ProductBlock key={perfume.id} perfume={perfume} index={index} />
               ))
             )}
           </div>
@@ -149,7 +140,7 @@ function TiendaHero() {
   );
 }
 
-function ProductBlock({ perfume, index, altView }) {
+function ProductBlock({ perfume, index }) {
   const { ref, motionProps } = useScrollMotion();
   const accentColor = perfume.accent_color || ACCENT_COLORS[index];
 
@@ -177,7 +168,7 @@ function ProductBlock({ perfume, index, altView }) {
         </div>
 
         <div className="lg:col-span-6 order-1 lg:order-2">
-          <PerfumeStoreImage perfume={perfume} accentColor={accentColor} altView={altView} />
+          <PerfumeStoreImage perfume={perfume} accentColor={accentColor} />
 
           <div className="text-center mt-10 space-y-5">
             <div>
@@ -217,20 +208,10 @@ function ProductBlock({ perfume, index, altView }) {
   );
 }
 
-function PerfumeStoreImage({ perfume, accentColor, altView }) {
+function PerfumeStoreImage({ perfume, accentColor }) {
   const [defaultError, setDefaultError] = useState(false);
-  const [altError, setAltError] = useState(false);
-
   const productImages = getStoreProductImages(perfume);
-
   const defaultSrc = productImages?.default ? mediaUrl(productImages.default) : null;
-  const altSrc = productImages?.hover ? mediaUrl(productImages.hover) : null;
-  const hasAlt = Boolean(altSrc);
-  const showAlt = Boolean(altView && hasAlt && !altError);
-  const isBlackCode = (perfume.slug || '').trim().toLowerCase() === 'black-code';
-  const baseScale = isBlackCode ? 0.985 : 1;
-  const activeScale = showAlt ? (isBlackCode ? 1.01 : 1.015) : baseScale;
-  const inactiveScale = showAlt ? baseScale : (isBlackCode ? 1.01 : 1.04);
 
   if (!defaultSrc) {
     return (
@@ -242,106 +223,36 @@ function PerfumeStoreImage({ perfume, accentColor, altView }) {
 
   return (
     <Link to={`/producto/${perfume.id}`} className="group block">
-      <motion.div
-        className="relative mx-auto w-full max-w-[420px]"
-        initial={false}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-      >
+      <div className="relative mx-auto w-full max-w-[420px]">
         {/* Glow exterior */}
-        <motion.div
-          className="absolute inset-0 rounded-[28px] blur-[58px]"
+        <div
+          className="absolute inset-0 rounded-[28px] blur-[58px] opacity-[0.16] scale-[0.94]"
           style={{ backgroundColor: accentColor }}
-          animate={{
-            opacity: showAlt ? 0.22 : 0.16,
-            scale: showAlt ? 1.0 : 0.94,
-          }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
         />
 
         {/* Card */}
-        <motion.div
-          className="relative z-10 aspect-[4/5] overflow-hidden rounded-[28px] border border-white/10 bg-[#080808]"
-          animate={{
-            borderColor: showAlt ? `${accentColor}55` : 'rgba(255,255,255,0.10)',
-            boxShadow: showAlt
-              ? `0 22px 70px rgba(0,0,0,0.52), 0 0 24px ${accentColor}14`
-              : '0 16px 48px rgba(0,0,0,0.38)',
-            scale: 1,
-          }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-        >
+        <div className="relative z-10 aspect-[4/5] overflow-hidden rounded-[28px] border border-white/10 bg-[#080808] shadow-[0_16px_48px_rgba(0,0,0,0.38)]">
           {/* Glow interno */}
-          <motion.div
-            className="pointer-events-none absolute inset-x-[18%] bottom-[6%] h-[24%] rounded-full blur-[56px]"
+          <div
+            className="pointer-events-none absolute inset-x-[18%] bottom-[6%] h-[24%] rounded-full blur-[56px] opacity-[0.14]"
             style={{ backgroundColor: accentColor }}
-            animate={{
-              opacity: showAlt ? 0.2 : 0.14,
-              scale: showAlt ? 1.04 : 1,
-            }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
           />
 
-          {/* Imagen base */}
+          {/* Imagen principal (única) */}
           {!defaultError && (
-            <motion.img
+            <img
               src={defaultSrc}
               alt={perfume.name}
               className="absolute inset-0 h-full w-full object-cover object-center"
               loading="lazy"
-              animate={{
-                opacity: showAlt ? 0 : 1,
-                scale: showAlt ? inactiveScale : activeScale,
-                filter: showAlt ? 'blur(2px)' : 'blur(0px)',
-              }}
-              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
               onError={() => setDefaultError(true)}
             />
           )}
 
-          {/* Imagen alternativa (auto) */}
-          {altSrc && !altError && (
-            <motion.img
-              src={altSrc}
-              alt={`${perfume.name} combo`}
-              className="absolute inset-0 h-full w-full object-cover object-center"
-              loading="lazy"
-              initial={false}
-              animate={{
-                opacity: showAlt ? 1 : 0,
-                scale: showAlt ? activeScale : inactiveScale,
-                filter: showAlt ? 'blur(0px)' : 'blur(2px)',
-              }}
-              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-              onError={() => setAltError(true)}
-            />
-          )}
-
           {/* Overlay premium */}
-          <motion.div
-            className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.10)_0%,rgba(0,0,0,0.03)_38%,rgba(0,0,0,0.18)_100%)]"
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          />
-
-          {/* Indicio premium de segunda vista */}
-          {hasAlt && (
-            <div className="pointer-events-none absolute bottom-4 right-4">
-              <div className="relative overflow-hidden rounded-[18px] border border-black bg-black/45 backdrop-blur-md shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
-                <div className="relative h-14 w-14">
-                  <img
-                    src={showAlt ? defaultSrc : altSrc}
-                    alt=""
-                    className="h-full w-full object-cover object-center opacity-90"
-                    draggable={false}
-                  />
-                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.06)_0%,rgba(0,0,0,0.26)_100%)]" />
-                </div>
-              </div>
-            </div>
-          )}
-        </motion.div>
-      </motion.div>
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.10)_0%,rgba(0,0,0,0.03)_38%,rgba(0,0,0,0.18)_100%)]" />
+        </div>
+      </div>
     </Link>
   );
 }

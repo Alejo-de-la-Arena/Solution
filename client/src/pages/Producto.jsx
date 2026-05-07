@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getProductBySlug, productToPerfume } from '../services/products';
 import { useCart } from '../contexts/CartContext';
 import { mediaUrl } from '../lib/mediaUrl';
-import { getProductGalleryImages } from '../lib/productGalleryImages';
+import { getProductGalleryMedia } from '../lib/productGalleryMedia';
 import { trackViewContent } from '../lib/metaPixel';
 
 export default function Producto() {
@@ -52,7 +52,7 @@ export default function Producto() {
   // Auto-advance suave de la galería
   useEffect(() => {
     if (!perfume) return undefined;
-    const items = getProductGalleryImages(perfume, perfume.image);
+    const items = getProductGalleryMedia(perfume, perfume.image);
     const length = items.length;
     if (length <= 1) return undefined;
 
@@ -90,7 +90,7 @@ export default function Producto() {
     : perfume.description
       ? [perfume.description]
       : [];
-  const galleryItems = perfume ? getProductGalleryImages(perfume, perfume.image) : [];
+  const galleryItems = perfume ? getProductGalleryMedia(perfume, perfume.image) : [];
   const safeIndex = galleryItems.length > 0 ? Math.min(activeIndex, galleryItems.length - 1) : 0;
   const activeItem = galleryItems[safeIndex] || null;
 
@@ -197,9 +197,24 @@ export default function Producto() {
 
                   <div className="absolute inset-0 bg-black/25" />
 
-                  {/* Imagen principal */}
+                  {/* Slide activo (imagen o video) */}
                   <AnimatePresence initial={false} mode="wait">
-                    {activeItem && (
+                    {activeItem && activeItem.kind === 'video' ? (
+                      <motion.video
+                        key={activeItem.path}
+                        src={activeItem.path.startsWith('http') ? activeItem.path : mediaUrl(activeItem.path)}
+                        poster={activeItem.poster ? (activeItem.poster.startsWith('http') ? activeItem.poster : mediaUrl(activeItem.poster)) : undefined}
+                        className="absolute inset-0 h-full w-full object-contain object-center"
+                        initial={{ opacity: 0, scale: 1.04, y: 10, filter: 'blur(8px)' }}
+                        animate={{ opacity: 1, scale: 1.02, y: 0, filter: 'blur(0px)' }}
+                        exit={{ opacity: 0, scale: 0.98, y: -8, filter: 'blur(6px)' }}
+                        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                      />
+                    ) : activeItem && (
                       <motion.img
                         key={activeItem.path}
                         src={activeItem.path.startsWith('http') ? activeItem.path : mediaUrl(activeItem.path)}
@@ -254,10 +269,11 @@ export default function Producto() {
                   {galleryItems.map((item, index) => {
                     const isActive = index === activeIndex;
                     const src = item.path.startsWith('http') ? item.path : mediaUrl(item.path);
+                    const isVideo = item.kind === 'video';
 
                     return (
                       <button
-                        key={item.path}
+                        key={item.id || item.path}
                         type="button"
                         onClick={() => setActiveIndex(index)}
                         className={`relative h-16 w-16 sm:h-[4.75rem] sm:w-[4.75rem] flex-shrink-0 overflow-hidden rounded-2xl border transition-all duration-200 ${
@@ -267,13 +283,32 @@ export default function Producto() {
                           backgroundColor: '#050505',
                         }}
                       >
-                        <img
-                          src={src}
-                          alt=""
-                          className="h-full w-full object-cover object-center"
-                          loading="lazy"
-                          draggable={false}
-                        />
+                        {isVideo ? (
+                          <>
+                            <video
+                              src={src}
+                              className="h-full w-full object-cover object-center"
+                              muted
+                              playsInline
+                              preload="metadata"
+                            />
+                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20">
+                              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/60 backdrop-blur-sm">
+                                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-white" aria-hidden="true">
+                                  <path d="M8 5v14l11-7z" />
+                                </svg>
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <img
+                            src={src}
+                            alt=""
+                            className="h-full w-full object-cover object-center"
+                            loading="lazy"
+                            draggable={false}
+                          />
+                        )}
                         {isActive && (
                           <div className="pointer-events-none absolute inset-0 border border-white/40 mix-blend-screen" />
                         )}

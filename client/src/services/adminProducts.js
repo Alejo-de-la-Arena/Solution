@@ -81,3 +81,37 @@ export async function deleteAdminProductImage(productId, imageId) {
   );
   return handleJson(res);
 }
+
+export async function uploadAdminProductVideo(productId, file, sortOrder = null) {
+  const token = await getAccessToken();
+  const form = new FormData();
+  form.append('file', file);
+  if (sortOrder !== null && sortOrder !== undefined) form.append('sort_order', String(sortOrder));
+
+  const res = await fetch(`${API_URL}/api/admin/products/${encodeURIComponent(productId)}/videos`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  const data = await handleJson(res);
+  return data.video;
+}
+
+export async function reorderAdminProductVideos(productId, items) {
+  const token = await getAccessToken();
+  const res = await fetch(`${API_URL}/api/admin/products/${encodeURIComponent(productId)}/videos/reorder`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items }),
+  });
+  return handleJson(res);
+}
+
+export async function deleteAdminProductVideo(productId, videoId) {
+  const token = await getAccessToken();
+  const res = await fetch(
+    `${API_URL}/api/admin/products/${encodeURIComponent(productId)}/videos/${encodeURIComponent(videoId)}`,
+    { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } },
+  );
+  return handleJson(res);
+}

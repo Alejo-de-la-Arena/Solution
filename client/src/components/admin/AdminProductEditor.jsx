@@ -5,6 +5,9 @@ import {
   uploadAdminProductImage,
   deleteAdminProductImage,
   reorderAdminProductImages,
+  uploadAdminProductVideo,
+  deleteAdminProductVideo,
+  reorderAdminProductVideos,
   getAdminProduct,
 } from '../../services/adminProducts';
 
@@ -35,6 +38,7 @@ export default function AdminProductEditor({ product, onProductUpdated }) {
     is_active: !!product.is_active,
   }));
   const [images, setImages] = useState(product.product_images || []);
+  const [videos, setVideos] = useState(product.product_videos || []);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState(null);
   const [error, setError] = useState(null);
@@ -49,13 +53,16 @@ export default function AdminProductEditor({ product, onProductUpdated }) {
       is_active: !!product.is_active,
     });
     setImages(product.product_images || []);
+    setVideos(product.product_videos || []);
   }, [product.id]);
 
   const { store, gallery } = splitImagesByRole(images);
+  const sortedVideos = videos.slice().sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
   async function refreshFromServer() {
     const fresh = await getAdminProduct(product.id);
     setImages(fresh.product_images || []);
+    setVideos(fresh.product_videos || []);
     if (onProductUpdated) onProductUpdated(fresh);
   }
 
@@ -79,6 +86,7 @@ export default function AdminProductEditor({ product, onProductUpdated }) {
       };
       const updated = await updateAdminProduct(product.id, payload);
       setImages(updated.product_images || []);
+      setVideos(updated.product_videos || []);
       setSavedAt(new Date());
       if (onProductUpdated) onProductUpdated(updated);
     } catch (err) {
@@ -208,6 +216,25 @@ export default function AdminProductEditor({ product, onProductUpdated }) {
         <GalleryGrid
           productId={product.id}
           images={gallery}
+          onChanged={refreshFromServer}
+        />
+      </section>
+
+      {/* === Videos === */}
+      <section className="space-y-4 border-t border-white/10 pt-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-heading tracking-widest text-sm text-white/70 uppercase">Videos del detalle</h3>
+            <p className="text-xs text-white/50 mt-1">
+              Aparecen al final del carrusel en /producto/{product.slug}. mp4 / webm hasta 50&nbsp;MB.
+            </p>
+          </div>
+          <VideoAddButton productId={product.id} onAdded={refreshFromServer} />
+        </div>
+
+        <VideoGrid
+          productId={product.id}
+          videos={sortedVideos}
           onChanged={refreshFromServer}
         />
       </section>
@@ -383,6 +410,133 @@ function GalleryGrid({ productId, images, onChanged }) {
               className="text-[0.65rem] tracking-widest uppercase text-red-300 hover:text-red-200 transition disabled:opacity-50"
             >
               {busyId === img.id ? '…' : 'Eliminar'}
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function VideoAddButton({ productId, onAdded }) {
+  const fileRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+
+  async function handleFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setUploading(true);
+    try {
+      await uploadAdminProductVideo(productId, file);
+      await onAdded();
+    } catch (err) {
+      alert(err.message || 'Error al subir el video');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        disabled={uploading}
+        className="text-xs tracking-widest uppercase border border-[rgb(255,0,255)] rounded px-4 py-2 text-white hover:bg-[rgb(255,0,255)] hover:text-black transition disabled:opacity-50"
+      >
+        {uploading ? 'Subiendo…' : '+ Agregar video'}
+      </button>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="video/mp4,video/webm"
+        className="hidden"
+        onChange={handleFile}
+      />
+    </>
+  );
+}
+
+function VideoGrid({ productId, videos, onChanged }) {
+  const [busyId, setBusyId] = useState(null);
+  const [reordering, setReordering] = useState(false);
+
+  async function move(index, direction) {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= videos.length) return;
+    const next = videos.slice();
+    [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+    const items = next.map((v, i) => ({ id: v.id, sort_order: i }));
+    setReordering(true);
+    try {
+      await reorderAdminProductVideos(productId, items);
+      await onChanged();
+    } catch (err) {
+      alert(err.message || 'Error al reordenar');
+    } finally {
+      setReordering(false);
+    }
+  }
+
+  async function remove(video) {
+    if (!window.confirm('¿Eliminar este video?')) return;
+    setBusyId(video.id);
+    try {
+      await deleteAdminProductVideo(productId, video.id);
+      await onChanged();
+    } catch (err) {
+      alert(err.message || 'Error al eliminar');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (videos.length === 0) {
+    return <p className="text-white/40 text-sm">Todavía no hay videos.</p>;
+  }
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      {videos.map((vid, index) => (
+        <div key={vid.id} className="border border-white/10 rounded-lg overflow-hidden bg-[#080808]">
+          <div className="aspect-[4/5] bg-[#050505]">
+            <video
+              src={mediaUrl(vid.storage_path)}
+              className="w-full h-full object-cover"
+              muted
+              playsInline
+              preload="metadata"
+            />
+          </div>
+          <div className="p-2 flex items-center justify-between gap-1">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => move(index, -1)}
+                disabled={reordering || index === 0}
+                className="w-7 h-7 text-xs border border-white/20 rounded text-white/70 hover:text-white disabled:opacity-30"
+                aria-label="Mover izquierda"
+              >
+                ←
+              </button>
+              <button
+                type="button"
+                onClick={() => move(index, 1)}
+                disabled={reordering || index === videos.length - 1}
+                className="w-7 h-7 text-xs border border-white/20 rounded text-white/70 hover:text-white disabled:opacity-30"
+                aria-label="Mover derecha"
+              >
+                →
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => remove(vid)}
+              disabled={busyId === vid.id}
+              className="text-[0.65rem] tracking-widest uppercase text-red-300 hover:text-red-200 transition disabled:opacity-50"
+            >
+              {busyId === vid.id ? '…' : 'Eliminar'}
             </button>
           </div>
         </div>

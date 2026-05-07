@@ -9,7 +9,10 @@ import { mediaUrl } from '../lib/mediaUrl';
 export async function getPublicProducts() {
   const { data, error } = await supabase
     .from('products')
-    .select('*, product_images(id, storage_path, role, sort_order)')
+    .select(
+      '*, product_images(id, storage_path, role, sort_order), ' +
+        'product_videos(id, storage_path, poster_storage_path, sort_order)'
+    )
     .eq('is_active', true)
     .order('sort_order', { ascending: true });
   if (error) throw error;
@@ -22,7 +25,10 @@ export async function getPublicProducts() {
 export async function getProductBySlug(slug) {
   const { data, error } = await supabase
     .from('products')
-    .select('*, product_images(id, storage_path, role, sort_order)')
+    .select(
+      '*, product_images(id, storage_path, role, sort_order), ' +
+        'product_videos(id, storage_path, poster_storage_path, sort_order)'
+    )
     .eq('slug', slug)
     .eq('is_active', true)
     .single();
@@ -42,6 +48,7 @@ export function productToPerfume(p) {
   if (!p) return null;
 
   const images = Array.isArray(p.product_images) ? p.product_images : [];
+  const videos = Array.isArray(p.product_videos) ? p.product_videos : [];
   const rawFallback =
     images.find((i) => i.role === 'store_default')?.storage_path ||
     images[0]?.storage_path ||
@@ -61,6 +68,7 @@ export function productToPerfume(p) {
     price_wholesale: Number(p.price_wholesale) || 0,
     image: fallbackImage,
     images,
+    videos,
     intensity: Number(p.intensidad || 0),
     family: p.family || p.perfil_olfativo || '',
     feeling: p.perfil_olfativo || p.family || '',
