@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react';
+﻿import { useEffect, useRef } from 'react';
 
 const ITEMS = [
-  'Envío a todo el país',
+  'EnvÃ­o a todo el paÃ­s',
   'Hasta 12 cuotas con Mercado Pago',
-  'Garantía 30 días',
-  'Producción argentina',
+  'GarantÃ­a 30 dÃ­as',
+  'ProducciÃ³n argentina',
 ];
 
 export default function TickerBanner() {
@@ -33,7 +33,7 @@ export default function TickerBanner() {
         {ITEMS.map((item) => (
           <span key={item}>
             <span
-              className="font-jmono"
+              className="font-jakarta"
               style={{
                 display: 'inline-block',
                 fontSize: '10px',
@@ -47,11 +47,11 @@ export default function TickerBanner() {
               {item}
             </span>
             <span
-              className="font-jmono"
+              className="font-jakarta"
               style={{ color: 'rgba(0,0,0,0.80)', fontSize: '8px', padding: '0 4px' }}
               aria-hidden
             >
-              ◆
+              â—†
             </span>
           </span>
         ))}
@@ -59,3 +59,4 @@ export default function TickerBanner() {
     </div>
   );
 }
+

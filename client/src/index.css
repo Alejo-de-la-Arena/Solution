@@ -690,37 +690,67 @@
 
 /* ─────────────  PRODUCT PAGE LAYOUT  ─────────────────────────────────────── */
 
-/* Mobile: single column (default) */
+/* Always single column */
 .sol-prod-main {
   display: block;
-}
-.sol-prod-img-panel {
-  width: 100%;
-}
-.sol-prod-info-panel {
-  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
 }
 
-/* Desktop: 2-col sticky layout */
+/* Stage: portrait on mobile, landscape on desktop */
+.sol-prod-stage {
+  aspect-ratio: 4 / 5;
+}
 @media (min-width: 1024px) {
-  .sol-prod-main {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    align-items: start;
-    max-width: 1280px;
-    margin: 0 auto;
-  }
-  .sol-prod-img-panel {
-    position: sticky;
-    top: calc(var(--sol-nav-h, 56px) + 1px);
-    border-right: 0.5px solid var(--sol-line);
-  }
-  .sol-prod-info-panel {
-    /* scrolls normally */
+  .sol-prod-stage {
+    aspect-ratio: 16 / 9;
+    max-height: 80vh;
   }
 }
 
 /* Spin keyframe for loading screen */
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* ─────────────  MOBILE: CENTER ALL HEADINGS  ──────────────────────────────── */
+@media (max-width: 767px) {
+  h1, h2, h3 {
+    text-align: center;
+  }
+  /* Section header rows → stack vertically, centered */
+  .sol-section-head {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  .sol-section-head > div:first-child {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+/* ─────────────  TESTIMONIALS AUTO-SCROLL  ─────────────────────────────────── */
+@keyframes sol-test-autoscroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.sol-test-track {
+  display: flex;
+  gap: 12px;
+  width: max-content;
+  animation: sol-test-autoscroll 42s linear infinite;
+  will-change: transform;
+}
+.sol-test-track:hover {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sol-test-track { animation: none; }
+}
+
+/* ─────────────  FONT-JMONO FALLBACK (safety net) ──────────────────────────── */
+.font-jmono {
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }

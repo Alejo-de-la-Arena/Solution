@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 import { useReveal } from '../../hooks/useReveal';
 
 export default function FinalCtaSection() {
@@ -22,7 +22,7 @@ export default function FinalCtaSection() {
         <div ref={innerRef} className="sol-reveal" style={{ position: 'relative', zIndex: 1 }}>
           {/* Eyebrow */}
           <div
-            className="font-jmono sol-cta-eyebrow"
+            className="font-jakarta sol-cta-eyebrow"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -35,7 +35,7 @@ export default function FinalCtaSection() {
               position: 'relative',
             }}
           >
-            El perfume más caro es el que no usás
+            El perfume mÃ¡s caro es el que no usÃ¡s
           </div>
 
           {/* Headline */}
@@ -51,7 +51,7 @@ export default function FinalCtaSection() {
               marginBottom: '24px',
             }}
           >
-            ¿Cuál es<br />
+            Â¿CuÃ¡l es<br />
             <em style={{ fontStyle: 'italic', color: 'var(--sol-green)', fontWeight: 300 }}>
               tu momento?
             </em>
@@ -68,7 +68,7 @@ export default function FinalCtaSection() {
             }}
           >
             Cinco fragancias para cinco momentos.<br />
-            Envío a todo el país. Garantía de 30 días.
+            EnvÃ­o a todo el paÃ­s. GarantÃ­a de 30 dÃ­as.
           </p>
 
           {/* Buttons */}
@@ -97,7 +97,7 @@ export default function FinalCtaSection() {
               onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--sol-ink)'; e.currentTarget.style.color = 'var(--sol-bg)'; }}
             >
               <span>Ir a la tienda</span>
-              <span className="sol-arrow">→</span>
+              <span className="sol-arrow">â†’</span>
             </Link>
 
             <Link
@@ -125,13 +125,13 @@ export default function FinalCtaSection() {
               onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--sol-ink-dim)'; e.currentTarget.style.borderColor = 'var(--sol-line-mid)'; }}
             >
               <span>Ser punto de venta</span>
-              <span className="sol-arrow">↗</span>
+              <span className="sol-arrow">â†—</span>
             </Link>
           </div>
 
           {/* Footer tag */}
           <div
-            className="font-jmono sol-arg"
+            className="font-jakarta sol-arg"
             style={{
               marginTop: '48px',
               fontSize: '9px',
@@ -150,3 +150,4 @@ export default function FinalCtaSection() {
     </section>
   );
 }
+

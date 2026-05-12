@@ -1,4 +1,4 @@
-const ITEMS = [
+﻿const ITEMS = [
   {
     icon: (
       <svg style={{ width: 18, height: 18, margin: '0 auto 10px', stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1, display: 'block' }} viewBox="0 0 24 24" aria-hidden>
@@ -6,8 +6,8 @@ const ITEMS = [
         <circle cx="7" cy="18" r="1.6"/><circle cx="18" cy="18" r="1.6"/>
       </svg>
     ),
-    title: 'Envío gratis',
-    sub: 'A todo el país\ndesde $80.000',
+    title: 'EnvÃ­o gratis',
+    sub: 'A todo el paÃ­s\ndesde $80.000',
   },
   {
     icon: (
@@ -17,7 +17,7 @@ const ITEMS = [
       </svg>
     ),
     title: '12 cuotas',
-    sub: 'Mercado Pago\nsin interés',
+    sub: 'Mercado Pago\nsin interÃ©s',
   },
   {
     icon: (
@@ -26,8 +26,8 @@ const ITEMS = [
         <path d="M9 12l2.2 2.2L15 10"/>
       </svg>
     ),
-    title: '30 días',
-    sub: 'Garantía\nde calidad',
+    title: '30 dÃ­as',
+    sub: 'GarantÃ­a\nde calidad',
   },
 ];
 
@@ -63,7 +63,7 @@ export default function TrustBar() {
                 {item.title}
               </div>
               <div
-                className="font-jmono"
+                className="font-jakarta"
                 style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-muted)', lineHeight: 1.5, whiteSpace: 'pre-line' }}
               >
                 {item.sub}
@@ -75,3 +75,4 @@ export default function TrustBar() {
     </div>
   );
 }
+

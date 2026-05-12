@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../../hooks/useAuth';
@@ -7,7 +7,7 @@ import { useTrackedOrders } from '../../hooks/useTrackedOrders';
 import CartDrawer from '../cart/CartDrawer';
 import { CONTACT_EMAIL, WHATSAPP_NUMBER, INSTAGRAM_URL } from '../../lib/contact';
 
-// ─── Tracked order dot ────────────────────────────────────────────────────────
+// â”€â”€â”€ Tracked order dot â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function trackedOrderDotColor(status) {
   const s = (status || '').toLowerCase();
   if (s === 'paid') return 'var(--sol-green)';
@@ -39,7 +39,7 @@ function TrackedOrderIcon({ latest, onClick }) {
   );
 }
 
-// ─── Cart button ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Cart button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function CartBtn({ totalItems, toggleCart, isCheckoutPage }) {
   return (
     <button
@@ -121,7 +121,7 @@ export default function Navbar() {
 
   return (
     <>
-      {/* ── Fixed bar ── */}
+      {/* â”€â”€ Fixed bar â”€â”€ */}
       <motion.nav
         initial={{ y: -16, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -147,12 +147,12 @@ export default function Navbar() {
             alignItems: 'center',
           }}
         >
-          {/* Left — Hamburger */}
+          {/* Left â€” Hamburger */}
           <div>
             <button
               type="button"
               onClick={() => setMenuOpen((o) => !o)}
-              aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
+              aria-label={menuOpen ? 'Cerrar menÃº' : 'Abrir menÃº'}
               aria-expanded={menuOpen}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}
             >
@@ -174,11 +174,11 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* Center — Logo */}
+          {/* Center â€” Logo */}
           <Link
             to="/"
             onClick={close}
-            className="font-jmono"
+            className="font-jakarta"
             style={{
               fontSize: 'var(--sol-nav-logo-fs)',
               letterSpacing: '0.28em', textTransform: 'uppercase',
@@ -192,7 +192,7 @@ export default function Navbar() {
             SOLUTION<span style={{ color: 'var(--sol-green)' }}>.</span>
           </Link>
 
-          {/* Right — Tracked + Cart */}
+          {/* Right â€” Tracked + Cart */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 20 }}>
             <TrackedOrderIcon latest={latestTrackedOrder} onClick={close} />
             <CartBtn totalItems={totalItems} toggleCart={toggleCart} isCheckoutPage={isCheckoutPage} />
@@ -200,7 +200,7 @@ export default function Navbar() {
         </div>
       </motion.nav>
 
-      {/* ── Side panel ── */}
+      {/* â”€â”€ Side panel â”€â”€ */}
       <AnimatePresence>
         {menuOpen && (
           <>
@@ -240,13 +240,13 @@ export default function Navbar() {
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 flexShrink: 0,
               }}>
-                <span className="font-jmono" style={{ fontSize: 13, letterSpacing: '0.28em', textTransform: 'uppercase', color: 'var(--sol-ink)', fontWeight: 500 }}>
+                <span className="font-jakarta" style={{ fontSize: 13, letterSpacing: '0.28em', textTransform: 'uppercase', color: 'var(--sol-ink)', fontWeight: 500 }}>
                   SOLUTION<span style={{ color: 'var(--sol-green)' }}>.</span>
                 </span>
                 <button
                   type="button"
                   onClick={close}
-                  aria-label="Cerrar menú"
+                  aria-label="Cerrar menÃº"
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--sol-muted)', padding: 4, display: 'flex', alignItems: 'center', transition: 'color 0.3s var(--sol-ease)' }}
                   onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--sol-ink)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--sol-muted)'; }}
@@ -257,7 +257,7 @@ export default function Navbar() {
                 </button>
               </div>
 
-              {/* ── Nav links ── */}
+              {/* â”€â”€ Nav links â”€â”€ */}
               <nav style={{ flex: 1 }}>
                 {/* Main links */}
                 {[
@@ -285,7 +285,7 @@ export default function Navbar() {
                   </Link>
                 ))}
 
-                {/* Secondary: ¿Ya sos mayorista? */}
+                {/* Secondary: Â¿Ya sos mayorista? */}
                 {!loading && !user && (
                   <Link
                     to="/acceso"
@@ -301,7 +301,7 @@ export default function Navbar() {
                     onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--sol-ink-dim)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--sol-muted)'; }}
                   >
-                    ¿Ya sos mayorista? Ingresá
+                    Â¿Ya sos mayorista? IngresÃ¡
                   </Link>
                 )}
 
@@ -329,27 +329,27 @@ export default function Navbar() {
                 {!loading && user && (
                   <div style={{ padding: '16px 24px', borderBottom: '0.5px solid var(--sol-line)' }}>
                     {accountLabel && (
-                      <p className="font-jmono" style={{ fontSize: 9, letterSpacing: '0.18em', color: 'var(--sol-muted)', marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <p className="font-jakarta" style={{ fontSize: 9, letterSpacing: '0.18em', color: 'var(--sol-muted)', marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {accountLabel}
                       </p>
                     )}
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="font-jmono"
+                      className="font-jakarta"
                       style={{ fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.3s var(--sol-ease)' }}
                       onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--sol-ink)'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--sol-muted)'; }}
                     >
-                      Cerrar sesión
+                      Cerrar sesiÃ³n
                     </button>
                   </div>
                 )}
               </nav>
 
-              {/* ── Contact footer ── */}
+              {/* â”€â”€ Contact footer â”€â”€ */}
               <div style={{ padding: '24px', borderTop: '0.5px solid var(--sol-line)', flexShrink: 0 }}>
-                <div className="font-jmono" style={{ fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: 16 }}>
+                <div className="font-jakarta" style={{ fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: 16 }}>
                   Contacto
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -402,3 +402,4 @@ export default function Navbar() {
     </>
   );
 }
+

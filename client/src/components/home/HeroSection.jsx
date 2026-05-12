@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 import { useReveal } from '../../hooks/useReveal';
 
-// ─── Reemplazá esta constante con la URL del video cuando esté disponible ───
+// â”€â”€â”€ ReemplazÃ¡ esta constante con la URL del video cuando estÃ© disponible â”€â”€â”€
 const VSL_VIDEO_URL = '';
 
 export default function HeroSection() {
@@ -26,7 +26,7 @@ export default function HeroSection() {
         {/* sol-hero-inner: on desktop becomes a 2-col grid via CSS */}
         <div className="sol-hero-inner">
 
-          {/* ── Meta row ── */}
+          {/* â”€â”€ Meta row â”€â”€ */}
           <div
             ref={metaRef}
             className="sol-hero-meta sol-reveal"
@@ -38,10 +38,10 @@ export default function HeroSection() {
             }}
           >
             <div
-              className="font-jmono"
+              className="font-jakarta"
               style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}
             >
-              N°/01{' '}
+              NÂ°/01{' '}
               <span
                 style={{
                   display: 'inline-block',
@@ -56,14 +56,14 @@ export default function HeroSection() {
               New Era
             </div>
             <div
-              className="font-jmono"
+              className="font-jakarta"
               style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-muted)' }}
             >
               MMXXVI
             </div>
           </div>
 
-          {/* ── Headline ── */}
+          {/* â”€â”€ Headline â”€â”€ */}
           <h1
             ref={headlineRef}
             className="font-jost sol-hero-head sol-reveal"
@@ -88,12 +88,12 @@ export default function HeroSection() {
                 marginTop: '4px',
               }}
             >
-              <span style={{ color: 'var(--sol-green)', fontStyle: 'normal' }}>— </span>
+              <span style={{ color: 'var(--sol-green)', fontStyle: 'normal' }}>â€” </span>
               Competimos con<br />la costumbre de<br />no usar perfume.
             </em>
           </h1>
 
-          {/* ── Video VSL ── */}
+          {/* â”€â”€ Video VSL â”€â”€ */}
           <div
             ref={videoRef}
             className="sol-video sol-hero-video sol-reveal"
@@ -109,7 +109,7 @@ export default function HeroSection() {
               transition: 'border-color 0.4s var(--sol-ease)',
             }}
             role="img"
-            aria-label="Video de presentación Solution"
+            aria-label="Video de presentaciÃ³n Solution"
           >
             {VSL_VIDEO_URL ? (
               <video
@@ -121,32 +121,32 @@ export default function HeroSection() {
             ) : (
               <>
                 <span
-                  className="font-jmono"
+                  className="font-jakarta"
                   style={{ position: 'absolute', top: '14px', left: '16px', fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted-2)', zIndex: 2 }}
                 >
-                  FILM · 01
+                  FILM Â· 01
                 </span>
                 <span
-                  className="font-jmono sol-video-live"
+                  className="font-jakarta sol-video-live"
                   style={{ position: 'absolute', top: '14px', right: '16px', fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-green)', zIndex: 2 }}
                 >
                   LIVE
                 </span>
                 <span
-                  className="font-jmono"
+                  className="font-jakarta"
                   style={{ position: 'absolute', bottom: '14px', left: '16px', fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted-2)', zIndex: 2 }}
                 >
                   00:20
                 </span>
                 <span
-                  className="font-jmono"
+                  className="font-jakarta"
                   style={{ position: 'absolute', bottom: '14px', right: '16px', fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted-2)', zIndex: 2 }}
                 >
                   MP4
                 </span>
                 <div className="sol-video-play" aria-hidden />
                 <div
-                  className="font-jmono"
+                  className="font-jakarta"
                   style={{
                     position: 'absolute',
                     bottom: '38px',
@@ -161,13 +161,13 @@ export default function HeroSection() {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  Reproducir presentación —
+                  Reproducir presentaciÃ³n â€”
                 </div>
               </>
             )}
           </div>
 
-          {/* ── CTAs ── */}
+          {/* â”€â”€ CTAs â”€â”€ */}
           <div
             ref={ctasRef}
             className="sol-hero-ctas sol-reveal"
@@ -198,7 +198,7 @@ export default function HeroSection() {
               onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--sol-ink)'; e.currentTarget.style.color = 'var(--sol-bg)'; }}
             >
               <span>Elegir mi fragancia</span>
-              <span className="sol-arrow">→</span>
+              <span className="sol-arrow">â†’</span>
             </Link>
 
             <Link
@@ -227,7 +227,7 @@ export default function HeroSection() {
               onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--sol-ink-dim)'; e.currentTarget.style.borderColor = 'var(--sol-line-mid)'; }}
             >
               <span>Ver las 5 fragancias</span>
-              <span className="sol-arrow">↓</span>
+              <span className="sol-arrow">â†“</span>
             </Link>
           </div>
 
@@ -236,3 +236,4 @@ export default function HeroSection() {
     </section>
   );
 }
+

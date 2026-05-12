@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 import { CONTACT_EMAIL, WHATSAPP_NUMBER, INSTAGRAM_URL } from '../../lib/contact';
 
 const NAV_LINKS = [
@@ -72,7 +72,7 @@ const mailIcon = (
 
 function ColLabel({ children }) {
   return (
-    <div className="font-jmono" style={{
+    <div className="font-jakarta" style={{
       fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase',
       color: 'var(--sol-green)', marginBottom: 20,
       display: 'flex', alignItems: 'center', gap: 8,
@@ -88,12 +88,12 @@ export default function Footer() {
     <footer style={{ background: 'var(--sol-bg)', color: 'var(--sol-ink)', borderTop: '0.5px solid var(--sol-line-mid)' }}>
       <div className="sol-container" style={{ padding: 'var(--sol-section-py) var(--sol-section-px)' }}>
 
-        {/* ── Grid ── */}
+        {/* â”€â”€ Grid â”€â”€ */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '48px 40px', marginBottom: 56 }}>
 
           {/* Brand */}
           <div>
-            <div className="font-jmono" style={{ fontSize: 14, letterSpacing: '0.28em', textTransform: 'uppercase', fontWeight: 500, marginBottom: 6 }}>
+            <div className="font-jakarta" style={{ fontSize: 14, letterSpacing: '0.28em', textTransform: 'uppercase', fontWeight: 500, marginBottom: 6 }}>
               SOLUTION<span style={{ color: 'var(--sol-green)' }}>.</span>
             </div>
             <p className="font-jakarta" style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--sol-ink-dim)', maxWidth: 220, marginTop: 12 }}>
@@ -101,9 +101,9 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Navegación */}
+          {/* NavegaciÃ³n */}
           <div>
-            <ColLabel>Navegación</ColLabel>
+            <ColLabel>NavegaciÃ³n</ColLabel>
             <div>
               {NAV_LINKS.map((l) => (
                 <FooterLink key={l.to} to={l.to}>{l.label}</FooterLink>
@@ -122,7 +122,7 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* ── Bottom bar ── */}
+        {/* â”€â”€ Bottom bar â”€â”€ */}
         <div style={{
           paddingTop: 24,
           borderTop: '0.5px solid var(--sol-line-mid)',
@@ -130,7 +130,7 @@ export default function Footer() {
           flexWrap: 'wrap', gap: 12,
         }}>
           <p className="font-jakarta" style={{ fontSize: 12, color: 'var(--sol-ink-dim)', fontWeight: 400 }}>
-            © 2026 SOLUTION — Todos los derechos reservados.
+            Â© 2026 SOLUTION â€” Todos los derechos reservados.
           </p>
           <p className="font-jakarta sol-arg" style={{ fontSize: 12, color: 'var(--sol-ink-dim)', display: 'flex', alignItems: 'center', gap: 6 }}>
             Hecho en Argentina
@@ -140,3 +140,4 @@ export default function Footer() {
     </footer>
   );
 }
+

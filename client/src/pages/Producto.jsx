@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getProductBySlug, productToPerfume } from '../services/products';
@@ -7,11 +7,11 @@ import { mediaUrl } from '../lib/mediaUrl';
 import { getProductGalleryMedia } from '../lib/productGalleryMedia';
 import { trackViewContent } from '../lib/metaPixel';
 
-// ─── Per-slug static content (copy, badges, reference, testimonials) ──────────
+// â”€â”€â”€ Per-slug static content (copy, badges, reference, testimonials) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SLUG_DATA = {
   'red-desire': {
     code: '01',
-    subtitle: 'Pasión y seducción',
+    subtitle: 'PasiÃ³n y seducciÃ³n',
     accent: '#c0392b',
     accentGlow: 'rgba(192,57,43,0.25)',
     accentSoft: 'rgba(192,57,43,0.09)',
@@ -19,29 +19,29 @@ const SLUG_DATA = {
     btl1: '#3a1612', btl2: '#1a0907',
     badges: [
       { icon: 'moon',  label: 'Momento', value: 'Noche' },
-      { icon: 'flame', label: 'Ocasión', value: 'Citas' },
+      { icon: 'flame', label: 'OcasiÃ³n', value: 'Citas' },
       { icon: 'glass', label: 'Salidas', value: 'Nocturnas' },
     ],
     leadPre: 'Hay noches', leadEm: 'que no se explican.', leadPost: 'Se sienten.',
     body: [
-      'Red Desire nace para ese momento exacto en el que la energía cambia. La dulzura inicial envuelve, la lavanda marca carácter y el fondo cálido y ahumado deja una estela que no pasa desapercibida.',
-      'Es intensidad controlada. Es la cercanía que se vuelve fuego. Es el perfume del hombre que no necesita levantar la voz para dominar la escena.',
+      'Red Desire nace para ese momento exacto en el que la energÃ­a cambia. La dulzura inicial envuelve, la lavanda marca carÃ¡cter y el fondo cÃ¡lido y ahumado deja una estela que no pasa desapercibida.',
+      'Es intensidad controlada. Es la cercanÃ­a que se vuelve fuego. Es el perfume del hombre que no necesita levantar la voz para dominar la escena.',
     ],
-    closingLine: 'Red Desire no acompaña la noche.',
+    closingLine: 'Red Desire no acompaÃ±a la noche.',
     closingEm: 'La enciende.',
-    reference: 'Stronger With You — Armani',
-    referenceDesc: 'Va por la misma línea olfativa — calidez especiada con fondo dulce. Ideal para otoño e invierno. Intenso y memorable para cerrar el día.',
-    notes: { top: ['Castaña', 'Azúcar'], heart: ['Lavanda', 'Salvia'], base: ['Vainilla', 'Humo'] },
-    family: ['Oriental', 'Dulce', 'Especiado', 'Amaderado', 'Cálido'],
-    stock: 'Más vendido · Stock limitado',
+    reference: 'Stronger With You â€” Armani',
+    referenceDesc: 'Va por la misma lÃ­nea olfativa â€” calidez especiada con fondo dulce. Ideal para otoÃ±o e invierno. Intenso y memorable para cerrar el dÃ­a.',
+    notes: { top: ['CastaÃ±a', 'AzÃºcar'], heart: ['Lavanda', 'Salvia'], base: ['Vainilla', 'Humo'] },
+    family: ['Oriental', 'Dulce', 'Especiado', 'Amaderado', 'CÃ¡lido'],
+    stock: 'MÃ¡s vendido Â· Stock limitado',
     testimonials: [
-      { stars: 5, text: 'Si te gustan los perfumes dulces recomiendo el Red Desire, tiene un parecido al Stronger With You.', name: 'Juan Pérez', city: 'Buenos Aires', initial: 'J' },
-      { stars: 5, text: 'Probé el Red Desire y el Black Code — los dos son un 10. Antes vendían equivalencias y ya eran buenos, ahora con perfume propio subieron el nivel.', name: 'Patricia Montone', city: 'Mar del Plata', initial: 'P' },
+      { stars: 5, text: 'Si te gustan los perfumes dulces recomiendo el Red Desire, tiene un parecido al Stronger With You.', name: 'Juan PÃ©rez', city: 'Buenos Aires', initial: 'J' },
+      { stars: 5, text: 'ProbÃ© el Red Desire y el Black Code â€” los dos son un 10. Antes vendÃ­an equivalencias y ya eran buenos, ahora con perfume propio subieron el nivel.', name: 'Patricia Montone', city: 'Mar del Plata', initial: 'P' },
     ],
   },
   'black-code': {
     code: '02',
-    subtitle: 'Presencia y carácter masculino',
+    subtitle: 'Presencia y carÃ¡cter masculino',
     accent: '#9a8060',
     accentGlow: 'rgba(154,128,96,0.22)',
     accentSoft: 'rgba(154,128,96,0.08)',
@@ -49,84 +49,84 @@ const SLUG_DATA = {
     btl1: '#1a1a1c', btl2: '#070708',
     badges: [
       { icon: 'moon',      label: 'Momento', value: 'Noche' },
-      { icon: 'handshake', label: 'Ocasión', value: 'Reuniones' },
+      { icon: 'handshake', label: 'OcasiÃ³n', value: 'Reuniones' },
       { icon: 'sparkle',   label: 'Salidas', value: 'Eventos' },
     ],
     leadPre: 'Hay presencias', leadEm: 'que no se anuncian.', leadPost: 'Se imponen.',
     body: [
-      'Black Code nace para el hombre que entra sin hacer ruido y se va dejando marca. La apertura vibrante despierta la atención, el corazón elegante sostiene la mirada y el fondo amaderado profundo construye una identidad firme y segura.',
-      'Es liderazgo natural. Es ambición silenciosa. Es seguridad que no necesita demostrarse.',
+      'Black Code nace para el hombre que entra sin hacer ruido y se va dejando marca. La apertura vibrante despierta la atenciÃ³n, el corazÃ³n elegante sostiene la mirada y el fondo amaderado profundo construye una identidad firme y segura.',
+      'Es liderazgo natural. Es ambiciÃ³n silenciosa. Es seguridad que no necesita demostrarse.',
     ],
-    closingLine: 'Black Code no busca aprobación.',
+    closingLine: 'Black Code no busca aprobaciÃ³n.',
     closingEm: 'La genera.',
     reference: 'Creed Aventus',
-    referenceDesc: 'Va por la misma línea olfativa — elegancia frutal con base amaderada. Ideal para otoño e invierno, funciona muy bien en primavera. Presencia que se recuerda.',
-    notes: { top: ['Bergamota', 'Manzana', 'Grosellas', 'Lima', 'P. Rosa'], heart: ['Piña', 'Pachuli', 'Jazmín'], base: ['Musgo', 'Abedul', 'Cedro', 'Almizcles'] },
-    family: ['Aromático', 'Amaderado', 'Afrutado', 'Cítrico', 'Elegante'],
-    stock: 'En stock · Envío inmediato',
+    referenceDesc: 'Va por la misma lÃ­nea olfativa â€” elegancia frutal con base amaderada. Ideal para otoÃ±o e invierno, funciona muy bien en primavera. Presencia que se recuerda.',
+    notes: { top: ['Bergamota', 'Manzana', 'Grosellas', 'Lima', 'P. Rosa'], heart: ['PiÃ±a', 'Pachuli', 'JazmÃ­n'], base: ['Musgo', 'Abedul', 'Cedro', 'Almizcles'] },
+    family: ['AromÃ¡tico', 'Amaderado', 'Afrutado', 'CÃ­trico', 'Elegante'],
+    stock: 'En stock Â· EnvÃ­o inmediato',
     testimonials: [
-      { stars: 5, text: 'Compré el Black Code y cumple con la descripción, super elegante para usar en eventos.', name: 'Ezequiel Zotto', city: 'Mendoza', initial: 'E' },
-      { stars: 5, text: 'Compré el combo de 2 para regalarle a mi hijo, están bárbaros, recomiendo.', name: 'Patricia Montone', city: 'Mar del Plata', initial: 'P' },
+      { stars: 5, text: 'ComprÃ© el Black Code y cumple con la descripciÃ³n, super elegante para usar en eventos.', name: 'Ezequiel Zotto', city: 'Mendoza', initial: 'E' },
+      { stars: 5, text: 'ComprÃ© el combo de 2 para regalarle a mi hijo, estÃ¡n bÃ¡rbaros, recomiendo.', name: 'Patricia Montone', city: 'Mar del Plata', initial: 'P' },
     ],
   },
   'yellow-bloom': {
     code: '03',
-    subtitle: 'Una explosión frutal que destaca',
+    subtitle: 'Una explosiÃ³n frutal que destaca',
     accent: '#ef9f27',
     accentGlow: 'rgba(239,159,39,0.22)',
     accentSoft: 'rgba(239,159,39,0.08)',
     accentDim: 'rgba(239,159,39,0.4)',
     btl1: '#3a2e10', btl2: '#1a1207',
     badges: [
-      { icon: 'suncloud', label: 'Momento', value: 'Día y noche' },
-      { icon: 'leaf',     label: 'Ocasión', value: 'Aire libre' },
+      { icon: 'suncloud', label: 'Momento', value: 'DÃ­a y noche' },
+      { icon: 'leaf',     label: 'OcasiÃ³n', value: 'Aire libre' },
       { icon: 'confetti', label: 'Eventos', value: 'Sociales' },
     ],
-    leadPre: 'Hay días', leadEm: 'que se sienten más intensos.', leadPost: 'Más vivos.',
+    leadPre: 'Hay dÃ­as', leadEm: 'que se sienten mÃ¡s intensos.', leadPost: 'MÃ¡s vivos.',
     body: [
-      'Yellow Bloom nace en ese instante donde la energía se expande. La explosión frutal despierta los sentidos, la dulzura envuelve con naturalidad y el fondo cálido deja una estela luminosa que permanece.',
-      'Es alegría que se vuelve presencia. Es frescura que se transforma en atracción. Es el perfume de quien no teme brillar.',
+      'Yellow Bloom nace en ese instante donde la energÃ­a se expande. La explosiÃ³n frutal despierta los sentidos, la dulzura envuelve con naturalidad y el fondo cÃ¡lido deja una estela luminosa que permanece.',
+      'Es alegrÃ­a que se vuelve presencia. Es frescura que se transforma en atracciÃ³n. Es el perfume de quien no teme brillar.',
     ],
     closingLine: 'Yellow Bloom no sigue la luz.',
     closingEm: 'La crea.',
-    reference: 'Erba Pura — Sospiro',
-    referenceDesc: 'Va por la misma línea olfativa — frescura luminosa y frutal. Ideal para primavera y verano, destaca en noches templadas. El compañero ideal para el día a día.',
-    notes: { top: ['Naranja', 'Bergamota', 'Limón'], heart: ['Cocktail frutal', 'Musco'], base: ['Vainilla', 'Ámbar', 'Almizcles'] },
+    reference: 'Erba Pura â€” Sospiro',
+    referenceDesc: 'Va por la misma lÃ­nea olfativa â€” frescura luminosa y frutal. Ideal para primavera y verano, destaca en noches templadas. El compaÃ±ero ideal para el dÃ­a a dÃ­a.',
+    notes: { top: ['Naranja', 'Bergamota', 'LimÃ³n'], heart: ['Cocktail frutal', 'Musco'], base: ['Vainilla', 'Ãmbar', 'Almizcles'] },
     family: ['Frutal', 'Dulce', 'Ambarado', 'Oriental'],
-    stock: 'En stock · Envío inmediato',
+    stock: 'En stock Â· EnvÃ­o inmediato',
     testimonials: [
-      { stars: 5, text: 'Yellow Bloom es un acierto. Tiene un parecido muy fiel al Erba Pura, y a una fracción del precio. Lo uso todos los días.', name: 'Sebastián Carmona', city: 'Rosario', initial: 'SC' },
-      { stars: 5, text: 'Si te gustan los perfumes dulces y frutales, el Yellow Bloom es ideal. Una estela que dura todo el día.', name: 'Nicolás Méndez', city: 'Buenos Aires', initial: 'N' },
+      { stars: 5, text: 'Yellow Bloom es un acierto. Tiene un parecido muy fiel al Erba Pura, y a una fracciÃ³n del precio. Lo uso todos los dÃ­as.', name: 'SebastiÃ¡n Carmona', city: 'Rosario', initial: 'SC' },
+      { stars: 5, text: 'Si te gustan los perfumes dulces y frutales, el Yellow Bloom es ideal. Una estela que dura todo el dÃ­a.', name: 'NicolÃ¡s MÃ©ndez', city: 'Buenos Aires', initial: 'N' },
     ],
   },
   'deep-blue': {
     code: '04',
-    subtitle: 'Elegancia clásica',
+    subtitle: 'Elegancia clÃ¡sica',
     accent: '#378add',
     accentGlow: 'rgba(55,138,221,0.22)',
     accentSoft: 'rgba(55,138,221,0.08)',
     accentDim: 'rgba(55,138,221,0.4)',
     btl1: '#0f2236', btl2: '#060c14',
     badges: [
-      { icon: 'sun',       label: 'Momento', value: 'Día' },
-      { icon: 'briefcase', label: 'Ocasión', value: 'Trabajo' },
+      { icon: 'sun',       label: 'Momento', value: 'DÃ­a' },
+      { icon: 'briefcase', label: 'OcasiÃ³n', value: 'Trabajo' },
       { icon: 'handshake', label: 'Negocios', value: 'Reuniones' },
     ],
     leadPre: 'Hay espacios donde', leadEm: 'cada detalle importa.', leadPost: 'Y cada gesto construye presencia.',
     body: [
-      'Deep Blue se abre con una frescura limpia y precisa. Las notas aromáticas aportan claridad, mientras el fondo amaderado sostiene una estela elegante, equilibrada y segura.',
-      'Es enfoque que se percibe. Es serenidad con carácter. Es el perfume de quien avanza con decisión, sin necesidad de exagerar.',
+      'Deep Blue se abre con una frescura limpia y precisa. Las notas aromÃ¡ticas aportan claridad, mientras el fondo amaderado sostiene una estela elegante, equilibrada y segura.',
+      'Es enfoque que se percibe. Es serenidad con carÃ¡cter. Es el perfume de quien avanza con decisiÃ³n, sin necesidad de exagerar.',
     ],
     closingLine: 'Deep Blue no busca impresionar.',
     closingEm: 'Inspira confianza.',
     reference: 'Bleu de Chanel',
-    referenceDesc: 'Va por la misma línea olfativa — fresco, limpio y sofisticado. Apto para todo el año. Transmite profesionalismo y elegancia.',
-    notes: { top: ['Limón', 'Pomelo', 'Menta', 'P. Rosa'], heart: ['N. Moscada', 'Jengibre', 'Jazmín'], base: ['Cedro', 'Sándalo', 'Vetiver', 'Incienso', 'Almizcles'] },
+    referenceDesc: 'Va por la misma lÃ­nea olfativa â€” fresco, limpio y sofisticado. Apto para todo el aÃ±o. Transmite profesionalismo y elegancia.',
+    notes: { top: ['LimÃ³n', 'Pomelo', 'Menta', 'P. Rosa'], heart: ['N. Moscada', 'Jengibre', 'JazmÃ­n'], base: ['Cedro', 'SÃ¡ndalo', 'Vetiver', 'Incienso', 'Almizcles'] },
     family: ['Amaderado', 'Fresco', 'Elegante', 'Intenso'],
-    stock: 'En stock · Envío en 24/48hs',
+    stock: 'En stock Â· EnvÃ­o en 24/48hs',
     testimonials: [
-      { stars: 5, text: 'Elegí el Deep Blue y cumplió 100%. Lo que me terminó de convencer fue el frasco — original y práctico para llevarlo a donde sea.', name: 'Ezequiel Zotto', city: 'Mendoza', initial: 'E' },
-      { stars: 5, text: 'Buena atención, buen producto. Lo uso todos los días para trabajar.', name: 'Nicolás Méndez', city: 'Buenos Aires', initial: 'N' },
+      { stars: 5, text: 'ElegÃ­ el Deep Blue y cumpliÃ³ 100%. Lo que me terminÃ³ de convencer fue el frasco â€” original y prÃ¡ctico para llevarlo a donde sea.', name: 'Ezequiel Zotto', city: 'Mendoza', initial: 'E' },
+      { stars: 5, text: 'Buena atenciÃ³n, buen producto. Lo uso todos los dÃ­as para trabajar.', name: 'NicolÃ¡s MÃ©ndez', city: 'Buenos Aires', initial: 'N' },
     ],
   },
   'white-ice': {
@@ -139,29 +139,29 @@ const SLUG_DATA = {
     btl1: '#1a2624', btl2: '#080d0c',
     badges: [
       { icon: 'sunrise', label: 'Momento', value: 'Uso diario' },
-      { icon: 'compass', label: 'Ocasión', value: 'Rutina' },
+      { icon: 'compass', label: 'OcasiÃ³n', value: 'Rutina' },
       { icon: 'dumbbell', label: 'Deporte', value: 'Movimiento' },
     ],
     leadPre: 'Hay momentos', leadEm: 'que no necesitan intensidad.', leadPost: 'Necesitan claridad.',
     body: [
       'White Ice aparece cuando todo se vuelve liviano. La frescura inicial despierta los sentidos, las notas marinas limpian el aire y el fondo suave y elegante deja una estela pura que transmite calma y seguridad.',
-      'Es frescura que ordena. Es limpieza que atrae. Es el perfume de quien se siente cómodo siendo auténtico.',
+      'Es frescura que ordena. Es limpieza que atrae. Es el perfume de quien se siente cÃ³modo siendo autÃ©ntico.',
     ],
     closingLine: 'White Ice no invade.',
     closingEm: 'Refresca.',
-    reference: 'Acqua di Giò — Armani',
-    referenceDesc: 'Va por la misma línea olfativa — acuático y energizante. Ideal para primavera y verano. Liviano para el movimiento, fresco para el esfuerzo.',
-    notes: { top: ['Bergamota', 'Lima', 'Limón', 'Mandarina', 'Naranja'], heart: ['Marino', 'Jazmín', 'Romero', 'Fresia'], base: ['Ámbar', 'Cedro', 'Musgo', 'Pachulí', 'Almizcles'] },
-    family: ['Fresco', 'Acuático', 'Cítrico', 'Limpio'],
-    stock: 'En stock · Envío en 24/48hs',
+    reference: 'Acqua di GiÃ² â€” Armani',
+    referenceDesc: 'Va por la misma lÃ­nea olfativa â€” acuÃ¡tico y energizante. Ideal para primavera y verano. Liviano para el movimiento, fresco para el esfuerzo.',
+    notes: { top: ['Bergamota', 'Lima', 'LimÃ³n', 'Mandarina', 'Naranja'], heart: ['Marino', 'JazmÃ­n', 'Romero', 'Fresia'], base: ['Ãmbar', 'Cedro', 'Musgo', 'PachulÃ­', 'Almizcles'] },
+    family: ['Fresco', 'AcuÃ¡tico', 'CÃ­trico', 'Limpio'],
+    stock: 'En stock Â· EnvÃ­o en 24/48hs',
     testimonials: [
-      { stars: 5, text: 'El White Ice es ideal para el día a día, muy fresco y liviano. Lo uso para ir al gym y a la oficina.', name: 'Nicolás Méndez', city: 'Buenos Aires', initial: 'N' },
-      { stars: 5, text: 'Buena atención, buen producto. Me lo recomendaron y no me defraudó.', name: 'Jonás Castro', city: 'Córdoba', initial: 'J' },
+      { stars: 5, text: 'El White Ice es ideal para el dÃ­a a dÃ­a, muy fresco y liviano. Lo uso para ir al gym y a la oficina.', name: 'NicolÃ¡s MÃ©ndez', city: 'Buenos Aires', initial: 'N' },
+      { stars: 5, text: 'Buena atenciÃ³n, buen producto. Me lo recomendaron y no me defraudÃ³.', name: 'JonÃ¡s Castro', city: 'CÃ³rdoba', initial: 'J' },
     ],
   },
 };
 
-// ─── SVG badge icons ───────────────────────────────────────────────────────────
+// â”€â”€â”€ SVG badge icons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function BadgeIcon({ type, style }) {
   const paths = {
     moon:      <path d="M20 14.5a8 8 0 1 1-10.5-10.5 7 7 0 0 0 10.5 10.5Z" />,
@@ -185,7 +185,7 @@ function BadgeIcon({ type, style }) {
   );
 }
 
-// ─── Registration corner marks ─────────────────────────────────────────────────
+// â”€â”€â”€ Registration corner marks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function RegMarks({ size = 14 }) {
   const base = { position: 'absolute', width: size, height: size, borderColor: 'var(--sol-muted-2)', borderStyle: 'solid' };
   const pad = size + 4;
@@ -199,7 +199,7 @@ function RegMarks({ size = 14 }) {
   );
 }
 
-// ─── CSS Bottle large ──────────────────────────────────────────────────────────
+// â”€â”€â”€ CSS Bottle large â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function CSSBottle({ name, btl1, btl2 }) {
   return (
     <div style={{
@@ -241,8 +241,8 @@ function CSSBottle({ name, btl1, btl2 }) {
           {/* Accent line above */}
           <div style={{ width: 30, height: '0.5px', background: 'var(--accent)', margin: '0 auto 8px' }} />
           {name}
-          <small className="font-jmono" style={{ display: 'block', fontSize: '7px', letterSpacing: '0.24em', color: 'var(--sol-ink-dim)', marginTop: '6px', fontWeight: 400, opacity: 0.7 }}>
-            EDP · 100ML
+          <small className="font-jakarta" style={{ display: 'block', fontSize: '7px', letterSpacing: '0.24em', color: 'var(--sol-ink-dim)', marginTop: '6px', fontWeight: 400, opacity: 0.7 }}>
+            EDP Â· 100ML
           </small>
           {/* Accent line below */}
           <div style={{ width: 30, height: '0.5px', background: 'var(--accent)', margin: '6px auto 0' }} />
@@ -252,7 +252,7 @@ function CSSBottle({ name, btl1, btl2 }) {
   );
 }
 
-// ─── Screens ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Screens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function LoadingScreen() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--sol-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -265,7 +265,7 @@ function NotFoundScreen() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--sol-bg)', color: 'var(--sol-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 22px' }}>
       <div style={{ textAlign: 'center' }}>
-        <div className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '20px' }}>
+        <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '20px' }}>
           404
         </div>
         <h2 className="font-jost" style={{ fontSize: '28px', fontWeight: 400, letterSpacing: '-0.02em', marginBottom: '24px' }}>
@@ -273,17 +273,17 @@ function NotFoundScreen() {
         </h2>
         <Link
           to="/tienda"
-          className="font-jmono"
+          className="font-jakarta"
           style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-ink)', textDecoration: 'none', borderBottom: '0.5px solid var(--sol-line-mid)', paddingBottom: 4 }}
         >
-          Volver a la tienda →
+          Volver a la tienda â†’
         </Link>
       </div>
     </div>
   );
 }
 
-// ─── Main component ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function Producto() {
   const { id: slug } = useParams();
   const [perfume, setPerfume]   = useState(null);
@@ -333,14 +333,7 @@ export default function Producto() {
     };
   }, [slug, perfume?.accent_color]);
 
-  // Gallery auto-advance
-  useEffect(() => {
-    if (!perfume) return;
-    const items = getProductGalleryMedia(perfume, perfume.image);
-    if (items.length <= 1) return;
-    const id = window.setInterval(() => setActiveIdx(i => (i + 1) % items.length), 9000);
-    return () => window.clearInterval(id);
-  }, [perfume?.slug, perfume?.image]);
+  // No auto-advance — slider is 100% manual
 
   if (loading) return <LoadingScreen />;
   if (error || !perfume) return <NotFoundScreen />;
@@ -362,10 +355,14 @@ export default function Producto() {
     ? data.family
     : (perfume.family ? [perfume.family] : []);
 
-  // Gallery
-  const galleryItems = getProductGalleryMedia(perfume, perfume.image);
-  const safeIdx      = galleryItems.length > 0 ? Math.min(activeIdx, galleryItems.length - 1) : 0;
-  const activeItem   = galleryItems[safeIdx] || null;
+  // Gallery — videos always first, then images
+  const rawGallery   = getProductGalleryMedia(perfume, perfume.image);
+  const galleryItems = [
+    ...rawGallery.filter(i => i.kind === 'video'),
+    ...rawGallery.filter(i => i.kind !== 'video'),
+  ];
+  const safeIdx    = galleryItems.length > 0 ? Math.min(activeIdx, galleryItems.length - 1) : 0;
+  const activeItem = galleryItems[safeIdx] || null;
 
   const hasImage = !!activeItem;
 
@@ -375,11 +372,11 @@ export default function Producto() {
   return (
     <div style={{ background: 'var(--sol-bg)', color: 'var(--sol-ink)', minHeight: '100vh', overflowX: 'hidden' }}>
 
-      {/* ── Breadcrumb nav ─────────────────────────────────────────── */}
+      {/* â”€â”€ Breadcrumb nav â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div style={{ borderBottom: '0.5px solid var(--sol-line)', padding: '14px 22px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         <Link
           to="/tienda"
-          className="font-jmono"
+          className="font-jakarta"
           style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           onMouseEnter={e => e.currentTarget.style.color = 'var(--sol-ink)'}
           onMouseLeave={e => e.currentTarget.style.color = 'var(--sol-muted)'}
@@ -389,23 +386,22 @@ export default function Producto() {
           </svg>
           Tienda
         </Link>
-        <span className="font-jmono" style={{ fontSize: '10px', color: 'var(--sol-muted-2)', letterSpacing: '0.1em' }}>/</span>
-        <span className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-ink-dim)' }}>
+        <span className="font-jakarta" style={{ fontSize: '10px', color: 'var(--sol-muted-2)', letterSpacing: '0.1em' }}>/</span>
+        <span className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-ink-dim)' }}>
           {perfume.name}
         </span>
       </div>
 
-      {/* ── HERO: 2-col on desktop ──────────────────────────────────── */}
+      {/* â”€â”€ HERO: 2-col on desktop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="sol-prod-main">
 
-        {/* ── Image panel ── */}
-        <div className="sol-prod-img-panel">
+        {/* â”€â”€ Image panel â”€â”€ */}
+        <div >
 
           {/* Stage */}
-          <div style={{
+          <div className="sol-prod-stage" style={{
             position: 'relative',
             width: '100%',
-            aspectRatio: '4 / 5',
             background: `
               radial-gradient(60% 45% at 50% 55%, var(--accent-glow) 0%, transparent 65%),
               radial-gradient(130% 90% at 50% 0%, #131313 0%, var(--sol-bg) 70%)
@@ -423,16 +419,16 @@ export default function Producto() {
             }} />
 
             {/* Stage labels */}
-            <span className="font-jmono" style={{ position: 'absolute', top: 16, left: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', zIndex: 2 }}>
-              N°/{data.code || '??'} · Solution
+            <span className="font-jakarta" style={{ position: 'absolute', top: 16, left: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', zIndex: 2 }}>
+              NÂ°/{data.code || '??'} Â· Solution
             </span>
-            <span className="font-jmono" style={{ position: 'absolute', top: 16, right: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--accent)', zIndex: 2 }}>
-              ● En stock
+            <span className="font-jakarta" style={{ position: 'absolute', top: 16, right: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--accent)', zIndex: 2 }}>
+              â— En stock
             </span>
-            <span className="font-jmono" style={{ position: 'absolute', bottom: 16, left: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', zIndex: 2 }}>
-              EDP · 100ML
+            <span className="font-jakarta" style={{ position: 'absolute', bottom: 16, left: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', zIndex: 2 }}>
+              EDP Â· 100ML
             </span>
-            <span className="font-jmono" style={{ position: 'absolute', bottom: 16, right: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', zIndex: 2 }}>
+            <span className="font-jakarta" style={{ position: 'absolute', bottom: 16, right: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', zIndex: 2 }}>
               Origen AR
             </span>
 
@@ -490,7 +486,7 @@ export default function Producto() {
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.06) 38%, rgba(0,0,0,0.32) 100%)', pointerEvents: 'none' }} />
                 {/* Gallery counter */}
                 {galleryItems.length > 1 && (
-                  <div className="font-jmono" style={{ position: 'absolute', right: 14, bottom: 40, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,0,0,0.55)', padding: '4px 10px', zIndex: 2 }}>
+                  <div className="font-jakarta" style={{ position: 'absolute', right: 14, bottom: 40, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,0,0,0.55)', padding: '4px 10px', zIndex: 2 }}>
                     <span style={{ display: 'block', width: 20, height: '0.5px', background: 'rgba(255,255,255,0.5)' }} />
                     <span style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)' }}>
                       {String(safeIdx + 1).padStart(2, '0')}/{String(galleryItems.length).padStart(2, '0')}
@@ -535,18 +531,18 @@ export default function Producto() {
           )}
         </div>
 
-        {/* ── Info panel ── */}
-        <div className="sol-prod-info-panel">
+        {/* â”€â”€ Info panel â”€â”€ */}
+        <div >
 
           {/* Product head */}
           <div style={{ padding: '32px 22px 28px', ...SEC }}>
-            <div className="font-jmono" style={{
+            <div className="font-jakarta" style={{
               fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase',
               color: 'var(--accent)', marginBottom: '14px',
               display: 'flex', alignItems: 'center', gap: '8px',
             }}>
               <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block', flexShrink: 0 }} />
-              Colección Solution · N°/{data.code || '??'}
+              ColecciÃ³n Solution Â· NÂ°/{data.code || '??'}
             </div>
             <h1 className="font-jost" style={{
               fontWeight: 300, fontSize: 'clamp(38px, 10vw, 52px)',
@@ -578,7 +574,7 @@ export default function Producto() {
                   {/* Radial glow */}
                   <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(100% 60% at 50% 100%, var(--accent-soft) 0%, transparent 80%)', pointerEvents: 'none' }} />
                   <BadgeIcon type={b.icon} style={{ width: 22, height: 22, color: 'var(--accent)', display: 'block', margin: '0 auto 10px' }} />
-                  <div className="font-jmono" style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '5px' }}>
+                  <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '5px' }}>
                     {b.label}
                   </div>
                   <div className="font-jost" style={{ fontSize: '14px', fontWeight: 500, color: 'var(--sol-ink)' }}>
@@ -627,7 +623,7 @@ export default function Producto() {
             <div style={{ padding: '36px 22px', ...SEC, display: 'flex', gap: 20, alignItems: 'flex-start' }}>
               <div style={{ width: '1px', background: 'var(--accent)', alignSelf: 'stretch', flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="font-jmono" style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '8px' }}>
+                <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '8px' }}>
                   Referencia en el mercado
                 </div>
                 <div className="font-jost" style={{ fontWeight: 500, fontSize: '22px', color: 'var(--sol-ink)', letterSpacing: '-0.015em', marginBottom: '12px', lineHeight: 1.15 }}>
@@ -644,8 +640,8 @@ export default function Producto() {
           {(notes.top.length > 0 || notes.heart.length > 0 || notes.base.length > 0) && (
             <div style={{ padding: '48px 22px 40px', ...SEC }}>
               <div style={{ textAlign: 'center', marginBottom: '36px' }}>
-                <div className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '10px' }}>
-                  Pirámide olfativa
+                <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '10px' }}>
+                  PirÃ¡mide olfativa
                 </div>
                 <h2 className="font-jost" style={{ fontWeight: 300, fontSize: '26px', letterSpacing: '-0.02em', color: 'var(--sol-ink)' }}>
                   Tres tiempos.<br />
@@ -655,14 +651,14 @@ export default function Producto() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
                 {[
                   { num: '01', name: 'Salida',   items: notes.top },
-                  { num: '02', name: 'Corazón',  items: notes.heart },
+                  { num: '02', name: 'CorazÃ³n',  items: notes.heart },
                   { num: '03', name: 'Fondo',    items: notes.base },
                 ].map(col => col.items.length > 0 && (
                   <div key={col.name} style={{ display: 'flex', flexDirection: 'column' }}>
                     {/* Column head */}
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '14px' }}>
-                      <div className="font-jmono" style={{ fontSize: '9px', letterSpacing: '0.22em', color: 'var(--accent)', marginBottom: '4px' }}>
-                        N°/{col.num}
+                      <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', color: 'var(--accent)', marginBottom: '4px' }}>
+                        NÂ°/{col.num}
                       </div>
                       <div className="font-jost" style={{ fontSize: '12px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--sol-ink)' }}>
                         {col.name}
@@ -697,14 +693,14 @@ export default function Producto() {
           {family.length > 0 && (
             <div style={{ padding: '32px 22px', ...SEC }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '20px' }}>
-                <div className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
+                <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
                   Familia olfativa
                 </div>
-                <div className="font-jmono" style={{ fontSize: '9px', letterSpacing: '0.22em', color: 'var(--accent)' }}>§ 04</div>
+                <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', color: 'var(--accent)' }}>Â§ 04</div>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {family.map(f => (
-                  <span key={f} className="font-jmono" style={{
+                  <span key={f} className="font-jakarta" style={{
                     fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase',
                     color: 'var(--sol-ink-dim)', border: '0.5px solid var(--sol-line-mid)',
                     padding: '7px 12px', borderRadius: '100px',
@@ -729,26 +725,26 @@ export default function Producto() {
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '8px', position: 'relative' }}>
               <div className="font-jost" style={{ fontWeight: 300, fontSize: '42px', letterSpacing: '-0.025em', color: 'var(--sol-ink)', lineHeight: 1 }}>
                 {price}
-                <small className="font-jmono" style={{ fontSize: '11px', color: 'var(--sol-muted)', letterSpacing: '0.18em', marginLeft: '4px' }}>ARS</small>
+                <small className="font-jakarta" style={{ fontSize: '11px', color: 'var(--sol-muted)', letterSpacing: '0.18em', marginLeft: '4px' }}>ARS</small>
               </div>
             </div>
-            <div className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '22px', position: 'relative' }}>
+            <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '22px', position: 'relative' }}>
               <strong style={{ color: 'var(--sol-ink-dim)', fontWeight: 400 }}>{data.stock || 'En stock'}</strong>
-              {' · '}Hasta 12 cuotas
+              {' Â· '}Hasta 12 cuotas
             </div>
 
             {/* Trust row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', padding: '18px 0', marginBottom: '22px', borderTop: '0.5px solid var(--sol-line)', borderBottom: '0.5px solid var(--sol-line)' }}>
               {[
-                { icon: <path d="M3 7h13v9H3z M16 11h4l1 2v3h-5z" />, label: 'Envío\n24/48hs' },
-                { icon: <path d="M12 3l8 3v6c0 4.5-3.5 8-8 9-4.5-1-8-4.5-8-9V6l8-3Z M9 12l2.2 2.2L15 10" />, label: 'Garantía\n30 días' },
-                { icon: <><rect x="3" y="6" width="18" height="13" rx="1"/><path d="M3 10h18"/></>, label: 'Cuotas\nsin interés' },
+                { icon: <path d="M3 7h13v9H3z M16 11h4l1 2v3h-5z" />, label: 'EnvÃ­o\n24/48hs' },
+                { icon: <path d="M12 3l8 3v6c0 4.5-3.5 8-8 9-4.5-1-8-4.5-8-9V6l8-3Z M9 12l2.2 2.2L15 10" />, label: 'GarantÃ­a\n30 dÃ­as' },
+                { icon: <><rect x="3" y="6" width="18" height="13" rx="1"/><path d="M3 10h18"/></>, label: 'Cuotas\nsin interÃ©s' },
               ].map((t, i) => (
                 <div key={i} style={{ textAlign: 'center', borderRight: i < 2 ? '0.5px solid var(--sol-line)' : 'none', padding: '0 6px' }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="var(--sol-ink-dim)" strokeWidth="1.2" aria-hidden style={{ width: 16, height: 16, display: 'block', margin: '0 auto 8px' }}>
                     {t.icon}
                   </svg>
-                  <div className="font-jmono" style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-ink-dim)', lineHeight: 1.5, whiteSpace: 'pre-line' }}>
+                  <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-ink-dim)', lineHeight: 1.5, whiteSpace: 'pre-line' }}>
                     {t.label}
                   </div>
                 </div>
@@ -772,20 +768,20 @@ export default function Producto() {
               onMouseLeave={e => e.currentTarget.style.opacity = '1'}
             >
               <span>Agregar al carrito</span>
-              <span style={{ display: 'inline-block', transition: 'transform 0.3s' }}>→</span>
+              <span style={{ display: 'inline-block', transition: 'transform 0.3s' }}>â†’</span>
             </button>
           </div>
 
         </div>{/* end info panel */}
       </div>{/* end hero grid */}
 
-      {/* ── TESTIMONIALS ───────────────────────────────────────────── */}
+      {/* â”€â”€ TESTIMONIALS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {data.testimonials?.length > 0 && (
         <section style={{ padding: 'var(--sol-section-py) 0', ...SEC }}>
           <div className="sol-container" style={{ padding: '0 var(--sol-section-px)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '28px' }}>
               <div>
-                <div className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '8px' }}>
+                <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '8px' }}>
                   Voces reales
                 </div>
                 <h2 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(22px, 5vw, 28px)', letterSpacing: '-0.02em', color: 'var(--sol-ink)' }}>
@@ -793,7 +789,7 @@ export default function Producto() {
                   <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>quienes lo usan</em>.
                 </h2>
               </div>
-              <div className="font-jmono" style={{ fontSize: '9px', letterSpacing: '0.22em', color: 'var(--sol-muted)' }}>§ 05</div>
+              <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', color: 'var(--sol-muted)' }}>Â§ 05</div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {data.testimonials.map((t, i) => (
@@ -807,9 +803,9 @@ export default function Producto() {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <div style={{ display: 'flex', gap: '2px', color: 'var(--accent)', fontSize: '13px', letterSpacing: '0.1em' }}>
-                      {'★'.repeat(t.stars)}{'☆'.repeat(5 - t.stars)}
+                      {'â˜…'.repeat(t.stars)}{'â˜†'.repeat(5 - t.stars)}
                     </div>
-                    <div className="font-jmono" style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
                       <span style={{ width: 5, height: 5, background: 'var(--accent)', borderRadius: '50%', display: 'inline-block' }} />
                       Compra verificada
                     </div>
@@ -829,7 +825,7 @@ export default function Producto() {
                     </div>
                     <div>
                       <div className="font-jost" style={{ fontSize: '13px', fontWeight: 500, color: 'var(--sol-ink)' }}>{t.name}</div>
-                      <div className="font-jmono" style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginTop: '2px' }}>{t.city}</div>
+                      <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginTop: '2px' }}>{t.city}</div>
                     </div>
                   </div>
                 </article>
@@ -839,22 +835,22 @@ export default function Producto() {
         </section>
       )}
 
-      {/* ── VIDEO REELS (placeholder) ───────────────────────────────── */}
+      {/* â”€â”€ VIDEO REELS (placeholder) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section style={{ padding: 'var(--sol-section-py) 0', ...SEC }}>
         <div className="sol-container" style={{ padding: '0 var(--sol-section-px)' }}>
           <div style={{ marginBottom: '28px' }}>
-            <div className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '8px' }}>
-              Reseñas en video
+            <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '8px' }}>
+              ReseÃ±as en video
             </div>
             <h2 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(22px, 5vw, 28px)', letterSpacing: '-0.02em', color: 'var(--sol-ink)', marginBottom: '6px' }}>
               Lo probaron <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)' }}>y lo contaron</em>.
             </h2>
-            <div className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 5, height: 5, background: 'var(--accent)', borderRadius: '50%', display: 'inline-block' }} />
-              Clientes reales · Sin filtros
+              Clientes reales Â· Sin filtros
             </div>
           </div>
-          {/* 2×2 grid of video placeholders */}
+          {/* 2Ã—2 grid of video placeholders */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             {[
               { num: '01', handle: 'andresf.ok',  dur: '0:24', likes: '1.2K' },
@@ -873,10 +869,10 @@ export default function Producto() {
                   backgroundImage: 'repeating-linear-gradient(135deg, transparent 0, transparent 18px, rgba(244,241,236,0.012) 18px, rgba(244,241,236,0.012) 19px)',
                   pointerEvents: 'none',
                 }} />
-                <span className="font-jmono" style={{ position: 'absolute', top: 10, left: 12, fontSize: '8px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
-                  N°/{r.num}
+                <span className="font-jakarta" style={{ position: 'absolute', top: 10, left: 12, fontSize: '8px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
+                  NÂ°/{r.num}
                 </span>
-                <span className="font-jmono" style={{ position: 'absolute', top: 10, right: 12, fontSize: '8px', letterSpacing: '0.2em', color: 'var(--sol-ink-dim)', background: 'rgba(0,0,0,0.55)', padding: '2px 6px' }}>
+                <span className="font-jakarta" style={{ position: 'absolute', top: 10, right: 12, fontSize: '8px', letterSpacing: '0.2em', color: 'var(--sol-ink-dim)', background: 'rgba(0,0,0,0.55)', padding: '2px 6px' }}>
                   {r.dur}
                 </span>
                 {/* Play button */}
@@ -893,7 +889,7 @@ export default function Producto() {
                   <div className="font-jost" style={{ fontSize: '11px', color: 'var(--sol-ink)', fontWeight: 500 }}>
                     <span style={{ color: 'var(--accent)' }}>@</span>{r.handle}
                   </div>
-                  <div className="font-jmono" style={{ fontSize: '8px', letterSpacing: '0.18em', color: 'var(--sol-ink-dim)' }}>
+                  <div className="font-jakarta" style={{ fontSize: '8px', letterSpacing: '0.18em', color: 'var(--sol-ink-dim)' }}>
                     {r.likes}
                   </div>
                 </div>
@@ -903,14 +899,14 @@ export default function Producto() {
         </div>
       </section>
 
-      {/* ── FINAL CTA ──────────────────────────────────────────────── */}
+      {/* â”€â”€ FINAL CTA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section style={{ padding: 'var(--sol-section-py) 0 calc(var(--sol-section-py) * 1.5)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         {/* Accent glow */}
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(80% 80% at 50% 100%, var(--accent-soft) 0%, transparent 65%)', pointerEvents: 'none' }} />
         <div className="sol-container" style={{ padding: '0 var(--sol-section-px)', position: 'relative' }}>
-          <div className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
             <span style={{ display: 'inline-block', width: 18, height: '0.5px', background: 'var(--sol-line-mid)', verticalAlign: 'middle' }} />
-            ¿Listo?
+            Â¿Listo?
             <span style={{ display: 'inline-block', width: 18, height: '0.5px', background: 'var(--sol-line-mid)', verticalAlign: 'middle' }} />
           </div>
           <h2 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(32px, 9vw, 48px)', lineHeight: 1.05, letterSpacing: '-0.025em', marginBottom: '28px' }}>
@@ -931,8 +927,8 @@ export default function Producto() {
             onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
             onMouseLeave={e => e.currentTarget.style.opacity = '1'}
           >
-            <span>Agregar al carrito · {price}</span>
-            <span>→</span>
+            <span>Agregar al carrito Â· {price}</span>
+            <span>â†’</span>
           </button>
         </div>
       </section>
@@ -940,3 +936,4 @@ export default function Producto() {
     </div>
   );
 }
+
