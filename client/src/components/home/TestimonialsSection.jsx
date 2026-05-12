@@ -63,9 +63,9 @@ export default function TestimonialsSection() {
         <div className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-muted)' }}>§ 03</div>
       </div>
 
-      {/* Horizontal scroll */}
+      {/* Horizontal scroll / desktop grid */}
       <div
-        className="sol-scroll"
+        className="sol-scroll sol-test-scroll"
         style={{
           display: 'flex',
           gap: '12px',
@@ -75,6 +75,9 @@ export default function TestimonialsSection() {
           paddingRight: 'var(--sol-section-px)',
           paddingBottom: '8px',
           WebkitOverflowScrolling: 'touch',
+          maxWidth: 1280,
+          marginLeft: 'auto',
+          marginRight: 'auto',
         }}
       >
         {TESTIMONIALS.map((t) => (

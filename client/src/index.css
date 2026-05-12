@@ -227,6 +227,12 @@
   .sol-reveal            { opacity: 1 !important; transform: none !important; }
 }
 
+/* ── Layout heights ── */
+:root {
+  --sol-ticker-h: 40px;
+  --sol-nav-h:    56px;
+}
+
 /* ── Responsive spacing tokens ── */
 :root {
   --sol-section-px: 22px;
@@ -282,9 +288,18 @@
   .sol-prod-card { flex-basis: 300px !important; }
 }
 
-/* ── Testimonials: wider cards on desktop ── */
+/* ── Testimonials: 3-col grid on desktop ── */
 @media (min-width: 1024px) {
-  .sol-test-card { flex-basis: 340px !important; }
+  .sol-test-scroll {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    overflow-x: visible !important;
+    scroll-snap-type: none !important;
+  }
+  .sol-test-card {
+    flex: none !important;
+  }
 }
 
 @tailwind base;

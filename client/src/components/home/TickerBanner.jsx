@@ -18,10 +18,14 @@ export default function TickerBanner() {
   return (
     <div
       style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 90,
+        height: 'var(--sol-ticker-h)',
         overflow: 'hidden',
-        background: '#050505',
-        borderBottom: '0.5px solid var(--sol-line)',
-        padding: '10px 0',
+        background: 'var(--sol-green)',
+        display: 'flex',
+        alignItems: 'center',
         whiteSpace: 'nowrap',
       }}
     >
@@ -35,7 +39,7 @@ export default function TickerBanner() {
                 fontSize: '10px',
                 letterSpacing: '0.28em',
                 textTransform: 'uppercase',
-                color: 'var(--sol-ink-dim)',
+                color: 'rgba(0,0,0,0.82)',
                 padding: '0 22px',
               }}
             >
@@ -43,7 +47,7 @@ export default function TickerBanner() {
             </span>
             <span
               className="font-jmono"
-              style={{ color: 'var(--sol-green)', fontSize: '8px', padding: '0 4px' }}
+              style={{ color: 'rgba(0,0,0,0.28)', fontSize: '8px', padding: '0 4px' }}
               aria-hidden
             >
               ◆

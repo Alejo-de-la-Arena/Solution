@@ -1,7 +1,7 @@
 const ITEMS = [
   {
     icon: (
-      <svg style={{ width: 18, height: 18, margin: '0 auto 10px', stroke: 'var(--sol-ink)', fill: 'none', strokeWidth: 1, display: 'block' }} viewBox="0 0 24 24" aria-hidden>
+      <svg style={{ width: 18, height: 18, margin: '0 auto 10px', stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1, display: 'block' }} viewBox="0 0 24 24" aria-hidden>
         <path d="M3 7h13v9H3z"/><path d="M16 11h4l1 2v3h-5z"/>
         <circle cx="7" cy="18" r="1.6"/><circle cx="18" cy="18" r="1.6"/>
       </svg>
@@ -11,7 +11,7 @@ const ITEMS = [
   },
   {
     icon: (
-      <svg style={{ width: 18, height: 18, margin: '0 auto 10px', stroke: 'var(--sol-ink)', fill: 'none', strokeWidth: 1, display: 'block' }} viewBox="0 0 24 24" aria-hidden>
+      <svg style={{ width: 18, height: 18, margin: '0 auto 10px', stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1, display: 'block' }} viewBox="0 0 24 24" aria-hidden>
         <rect x="3" y="6" width="18" height="13" rx="1"/>
         <path d="M3 10h18"/>
       </svg>
@@ -21,7 +21,7 @@ const ITEMS = [
   },
   {
     icon: (
-      <svg style={{ width: 18, height: 18, margin: '0 auto 10px', stroke: 'var(--sol-ink)', fill: 'none', strokeWidth: 1, display: 'block' }} viewBox="0 0 24 24" aria-hidden>
+      <svg style={{ width: 18, height: 18, margin: '0 auto 10px', stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1, display: 'block' }} viewBox="0 0 24 24" aria-hidden>
         <path d="M12 3l8 3v6c0 4.5-3.5 8-8 9-4.5-1-8-4.5-8-9V6l8-3Z"/>
         <path d="M9 12l2.2 2.2L15 10"/>
       </svg>
