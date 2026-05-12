@@ -3,6 +3,7 @@ import { useCart } from '../contexts/CartContext';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   createNavePayment,
+  createMPPreference,
   getPaymentStatus,
   getMPOrderStatus,
   getCheckoutPaymentProvider,
@@ -10,7 +11,6 @@ import {
 } from '../services/checkout';
 import { quoteShipping } from '../services/shipping';
 import NaveEmbed from '../components/checkout/NaveEmbed';
-import MercadoPagoBrick from '../components/checkout/MercadoPagoBrick';
 import { trackInitiateCheckout, trackPurchase } from '../lib/metaPixel';
 import { getTrackedOrder, saveTrackedOrder, updateTrackedOrderStatus } from '../services/orderTracking';
 import { firePurchaseEvent } from '../lib/firePurchaseEvent';
@@ -519,41 +519,9 @@ export default function Checkout() {
     };
   }, [cart, form, shippingCost, shippingQuote, selectedShipping]);
 
-  const handleMPBrickSuccess = (data) => {
-    setError('');
-    setResultOrderId(data.order_id);
-    const st = (data.order_status || '').toLowerCase();
-    const normalizedStatus = st === 'paid' ? 'paid' : st === 'payment_failed' ? 'payment_failed' : 'pending_payment';
-
-    if (data.order_id) {
-      saveTrackedOrder({
-        orderId: data.order_id,
-        paymentMethod: 'mercadopago',
-        total: grandTotal,
-        customerEmail: (form.email || '').trim() || null,
-        status: normalizedStatus,
-      });
-    }
-
-    if (st === 'paid') {
-      firePurchaseEvent(data.order_id);
-      setPaymentResult('success');
-      setTimeout(() => clearCart(), 500);
-    } else if (st === 'payment_failed') {
-      setPaymentResult('rejected');
-    } else {
-      setPaymentResult('pending');
-    }
-  };
-
-  const handleMPBrickError = (msg) => {
-    setError(typeof msg === 'string' ? msg : 'Error al procesar el pago.');
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (paymentMethod === 'mercadopago') return;
 
     const name = (form.name || '').trim();
     const email = (form.email || '').trim();
@@ -565,7 +533,7 @@ export default function Checkout() {
 
     setLoading(true);
     try {
-      const payload = {
+      const basePayload = {
         customer_name: name,
         customer_email: email,
         customer_phone: (form.phone || '').trim() || undefined,
@@ -578,14 +546,12 @@ export default function Checkout() {
         shipping_notes: (form.notes || '').trim() || undefined,
         shipping_method: 'standard',
         shipping_cost: shippingCost,
-        callback_url: `${window.location.origin}/checkout?order_id=PLACEHOLDER`,
         items: itemsWithProductId.map((item) => ({
           product_id: item.productId,
           quantity: item.quantity,
           unit_price: item.price,
           name: item.name || 'Producto',
         })),
-        // Datos del proveedor cotizado
         shipping_provider: selectedShipping?.provider || shippingQuote?.provider || undefined,
         shipping_mode: selectedShipping?.mode || undefined,
         shipping_service_type: selectedShipping?.serviceType || undefined,
@@ -599,7 +565,7 @@ export default function Checkout() {
         shipping_quote_response: shippingQuote || undefined,
       };
 
-      // Guardar snapshot para trackPurchase después del redirect
+      // Snapshot del carrito para trackPurchase post-redirect
       try {
         localStorage.setItem('purchase_snapshot', JSON.stringify({
           items: itemsWithProductId.map((i) => ({ id: i.productId || i.id, quantity: i.quantity })),
@@ -607,6 +573,42 @@ export default function Checkout() {
         }));
       } catch { /* ignore */ }
 
+      // ── Branch: Mercado Pago → Checkout Pro (redirect) ─────────────────
+      if (paymentMethod === 'mercadopago') {
+        setCheckoutPaymentProvider('mercadopago');
+        const mpData = await createMPPreference({
+          ...basePayload,
+          callback_url: `${window.location.origin}/checkout`,
+        });
+        if (!mpData?.init_point) {
+          setError('No se pudo preparar el pago con Mercado Pago. Intentá de nuevo.');
+          setLoading(false);
+          return;
+        }
+        if (mpData.order_id) {
+          saveTrackedOrder({
+            orderId: mpData.order_id,
+            paymentMethod: 'mercadopago',
+            total: grandTotal,
+            customerEmail: email,
+            status: 'payment_initiated',
+          });
+        }
+        // Backup adicional para que el callback recupere el carrito si el snapshot global se pisa
+        try {
+          const snap = JSON.stringify({
+            items: itemsWithProductId.map((i) => ({ id: i.productId || i.id, quantity: i.quantity })),
+            totalValue: grandTotal,
+          });
+          localStorage.setItem('mp_purchase_backup', snap);
+          sessionStorage.setItem('mp_purchase_backup', snap);
+        } catch { /* ignore */ }
+        window.location.assign(mpData.init_point);
+        return;
+      }
+
+      // ── Branch: Nave / Naranja X ─────────────────────────────────────
+      const payload = { ...basePayload, callback_url: `${window.location.origin}/checkout?order_id=PLACEHOLDER` };
       setCheckoutPaymentProvider('nave');
       const data = await createNavePayment(payload);
       setResultOrderId(data.order_id);
@@ -963,26 +965,37 @@ export default function Checkout() {
                   </div>
 
                   {paymentMethod === 'mercadopago' && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-[11px] uppercase tracking-widest">
-                        <span className="text-white/40">Procesado por Mercado Pago</span>
-                        <span className="text-[rgb(0,255,255)]">Total ${grandTotal.toLocaleString('es-AR')}</span>
+                    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-5 space-y-4">
+                      <div className="flex items-start gap-3">
+                        <div className="h-9 w-12 rounded-md flex-shrink-0" style={{ background: 'linear-gradient(135deg,#00b1ea,#009ee3)' }} />
+                        <div>
+                          <div className="text-sm text-white">Vas a continuar en Mercado Pago</div>
+                          <div className="text-[12px] text-white/45 mt-1 leading-relaxed">
+                            Al hacer click en <span className="text-white/70">"Pagar"</span> te abrimos el checkout seguro de Mercado Pago. Volvés a esta página al finalizar.
+                          </div>
+                        </div>
                       </div>
-                      <MercadoPagoBrick
-                        amount={grandTotal}
-                        disabled={isSubmitDisabled}
-                        getCheckoutPayload={getCheckoutPayload}
-                        onSuccess={handleMPBrickSuccess}
-                        onError={handleMPBrickError}
-                      />
+
+                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[12px] text-white/70">
+                        <li className="flex items-center gap-2">
+                          <span className="text-[rgb(0,255,255)]">✓</span> Tarjeta de crédito y débito
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="text-[rgb(0,255,255)]">✓</span> Cuotas con o sin interés
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="text-[rgb(0,255,255)]">✓</span> Dinero en cuenta de Mercado Pago
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="text-[rgb(0,255,255)]">✓</span> Rapipago, Pago Fácil y otros
+                        </li>
+                      </ul>
                     </div>
                   )}
 
                   {paymentMethod === 'nave' && (
                     <div className="rounded-lg border border-white/10 bg-white/[0.02] p-5 flex items-start gap-3">
-                      <svg className="text-[rgb(0,255,255)] flex-shrink-0 mt-0.5" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                        <path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6l-8-4Z" />
-                      </svg>
+                      <div className="h-9 w-12 rounded-md flex-shrink-0" style={{ background: 'linear-gradient(135deg,#ff7a00,#ff3d3d)' }} />
                       <div>
                         <div className="text-sm text-white">Vas a continuar en Nave · Naranja X</div>
                         <div className="text-[12px] text-white/45 mt-1 leading-relaxed">
@@ -996,7 +1009,7 @@ export default function Checkout() {
                 </div>
               </section>
 
-              {paymentMethod === 'nave' && (
+              {(paymentMethod === 'nave' || paymentMethod === 'mercadopago') && (
                 <button
                   type="submit"
                   disabled={isSubmitDisabled}
