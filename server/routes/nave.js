@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const { supabase } = require('../lib/supabase');
+const { applyTestMode } = require('../lib/testMode');
 const { sendPaymentConfirmationEmail } = require('../services/email');
 
 const router = express.Router();
@@ -138,8 +139,9 @@ router.post('/nave/create-payment', async (req, res) => {
     }));
   if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
 
-  const subtotal = cleanItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
-  const shipping = shippingCostNum;
+  const { items: tmItems, shipping: tmShipping } = applyTestMode(cleanItems, shippingCostNum, { tag: '[Nave]' });
+  const subtotal = tmItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
+  const shipping = tmShipping;
   const orderTotal = subtotal + shipping;
 
   try {
@@ -176,7 +178,7 @@ router.post('/nave/create-payment', async (req, res) => {
       .select('id, status, total, currency, created_at').single();
     if (orderErr) { console.error('[Nave] Error creando orden:', orderErr); return res.status(500).json({ error: 'Error al crear la orden' }); }
 
-    const rows = cleanItems.map((i) => ({ order_id: order.id, product_id: i.product_id, quantity: i.quantity, unit_price: i.unit_price }));
+    const rows = tmItems.map((i) => ({ order_id: order.id, product_id: i.product_id, quantity: i.quantity, unit_price: i.unit_price }));
     const { error: itemsErr } = await supabase.from('order_items').insert(rows);
     if (itemsErr) console.error('[Nave] Error guardando items:', itemsErr);
 
@@ -189,7 +191,7 @@ router.post('/nave/create-payment', async (req, res) => {
       seller: { pos_id: posId },
       transactions: [{
         amount: { currency: 'ARS', value: toDecimalString(orderTotal) },
-        products: cleanItems.map((i) => ({
+        products: tmItems.map((i) => ({
           name: i.name, description: i.description || i.name, quantity: i.quantity,
           unit_price: { currency: 'ARS', value: toDecimalString(i.unit_price) },
         })),

@@ -325,23 +325,6 @@ function PerfumeStoreImage({ perfume, accentColor, altView }) {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
           />
-
-          {/* Indicio premium de segunda vista */}
-          {hasAlt && (
-            <div className="pointer-events-none absolute bottom-4 right-4">
-              <div className="relative overflow-hidden rounded-[18px] border border-black bg-black/45 backdrop-blur-md shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
-                <div className="relative h-14 w-14">
-                  <img
-                    src={showAlt ? defaultSrc : altSrc}
-                    alt=""
-                    className="h-full w-full object-cover object-center opacity-90"
-                    draggable={false}
-                  />
-                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.06)_0%,rgba(0,0,0,0.26)_100%)]" />
-                </div>
-              </div>
-            </div>
-          )}
         </motion.div>
       </motion.div>
     </Link>

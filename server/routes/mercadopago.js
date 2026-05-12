@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const crypto = require('crypto');
 const { supabase } = require('../lib/supabase');
+const { applyTestMode } = require('../lib/testMode');
 const { sendPaymentConfirmationEmail } = require('../services/email');
 
 const router = express.Router();
@@ -401,8 +402,9 @@ router.post('/mercadopago/create-order', async (req, res) => {
     }));
   if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
 
-  const subtotal = cleanItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
-  const shipping = shippingCostNum;
+  const { items: tmItems, shipping: tmShipping } = applyTestMode(cleanItems, shippingCostNum, { tag: '[MP order]' });
+  const subtotal = tmItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
+  const shipping = tmShipping;
   const orderTotal = subtotal + shipping;
   const totalStr = toDecimalString(orderTotal);
 
@@ -446,7 +448,7 @@ router.post('/mercadopago/create-order', async (req, res) => {
     return res.status(500).json({ error: 'Error al crear la orden' });
   }
 
-  const rows = cleanItems.map((i) => ({
+  const rows = tmItems.map((i) => ({
     order_id: order.id,
     product_id: i.product_id,
     quantity: i.quantity,
@@ -606,8 +608,9 @@ router.post('/mercadopago/create-preference', async (req, res) => {
     }));
   if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
 
-  const subtotal = cleanItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
-  const shipping = shippingCostNum;
+  const { items: tmItems, shipping: tmShipping } = applyTestMode(cleanItems, shippingCostNum, { tag: '[MP wallet]' });
+  const subtotal = tmItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
+  const shipping = tmShipping;
   const orderTotal = subtotal + shipping;
 
   const orderPayload = {
@@ -650,7 +653,7 @@ router.post('/mercadopago/create-preference', async (req, res) => {
     return res.status(500).json({ error: 'Error al crear la orden' });
   }
 
-  const rows = cleanItems.map((i) => ({
+  const rows = tmItems.map((i) => ({
     order_id: order.id,
     product_id: i.product_id,
     quantity: i.quantity,
@@ -662,7 +665,7 @@ router.post('/mercadopago/create-preference', async (req, res) => {
   const baseCallbackUrl = (callback_url || '').trim() || 'https://solutionperfumes.com/checkout';
   const isLocalCallback = baseCallbackUrl.startsWith('http://localhost') || baseCallbackUrl.startsWith('http://127.0.0.1');
 
-  const prefItems = cleanItems.map((i) => ({
+  const prefItems = tmItems.map((i) => ({
     title: i.name,
     quantity: i.quantity,
     unit_price: i.unit_price,
@@ -794,8 +797,9 @@ router.post('/mercadopago/process-card-payment', async (req, res) => {
       }));
     if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
 
-    const subtotal = cleanItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
-    const orderTotal = subtotal + shippingCostNum;
+    const { items: tmItems, shipping: tmShipping } = applyTestMode(cleanItems, shippingCostNum, { tag: '[MP card]' });
+    const subtotal = tmItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
+    const orderTotal = subtotal + tmShipping;
 
     const orderPayload = {
       user_id: null,
@@ -814,7 +818,7 @@ router.post('/mercadopago/process-card-payment', async (req, res) => {
       shipping_country: (shipping_country || '').trim() || 'AR',
       shipping_notes: (shipping_notes || '').trim() || null,
       shipping_method: (shipping_method || '').trim() || 'standard',
-      shipping_cost: shippingCostNum,
+      shipping_cost: tmShipping,
       payment_method: 'mercadopago',
       shipping_provider: shippingProviderClean || null,
       shipping_mode: shippingModeClean || null,
@@ -837,7 +841,7 @@ router.post('/mercadopago/process-card-payment', async (req, res) => {
       return res.status(500).json({ error: 'Error al crear la orden' });
     }
 
-    const rows = cleanItems.map((i) => ({
+    const rows = tmItems.map((i) => ({
       order_id: newOrder.id,
       product_id: i.product_id,
       quantity: i.quantity,

@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { getCorreoConfig } = require('./correo.config');
 const { CorreoAuthError, CorreoApiError } = require('./correo.errors');
+const { retryOnTransient } = require('./correo.retry');
 
 let cachedToken = null;
 let cachedTokenExpiresAt = 0;
@@ -41,16 +42,19 @@ async function fetchToken() {
     const url = `${config.baseUrl}/token`;
 
     try {
-        const response = await axios.post(
-            url,
-            {},
-            {
-                timeout: config.timeoutMs,
-                headers: {
-                    Authorization: buildBasicAuthHeader(username, password),
-                    'Content-Type': 'application/json',
-                },
-            }
+        const response = await retryOnTransient(
+            () => axios.post(
+                url,
+                {},
+                {
+                    timeout: config.timeoutMs,
+                    headers: {
+                        Authorization: buildBasicAuthHeader(username, password),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            ),
+            { attempts: 3, baseDelayMs: 300, label: 'correo.auth' }
         );
 
         const token =

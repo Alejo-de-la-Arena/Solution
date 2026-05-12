@@ -101,6 +101,10 @@ app.use((req, res, _next) => {
 // Start server (0.0.0.0: evita "connection refused" detrás del proxy de Railway)
 app.listen(port, '0.0.0.0', () => {
   console.log(`Server listening on 0.0.0.0:${port}`);
+  if (process.env.TEST_MODE === 'true') {
+    const price = Number(process.env.TEST_MODE_UNIT_PRICE) || 150;
+    console.warn(`⚠️  TEST_MODE ACTIVO — pagos sobrescritos a $${price} por item, envío $0. NO USAR EN PRODUCCIÓN.`);
+  }
   startGestionarBatchScheduler();
 });
 
