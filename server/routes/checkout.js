@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../lib/supabase');
+const { applyTestMode } = require('../lib/testMode');
 const { sendOrderEmail } = require('../services/email');
 
 /**
@@ -61,8 +62,10 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'El carrito está vacío' });
   }
 
-  const subtotal = cleanItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
-  const shipping = shipping_cost != null ? Number(shipping_cost) : 0;
+  const shippingInput = shipping_cost != null ? Number(shipping_cost) : 0;
+  const { items: tmItems, shipping: tmShipping } = applyTestMode(cleanItems, shippingInput, { tag: '[Retail]' });
+  const subtotal = tmItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
+  const shipping = tmShipping;
   const orderTotal = subtotal + shipping;
 
   const orderPayload = {
@@ -106,7 +109,7 @@ router.post('/', async (req, res) => {
     return res.status(500).json({ error: 'Error al crear la orden' });
   }
 
-  const rows = cleanItems.map((i) => ({
+  const rows = tmItems.map((i) => ({
     order_id: order.id,
     product_id: i.product_id,
     quantity: i.quantity,
@@ -120,9 +123,9 @@ router.post('/', async (req, res) => {
   }
 
   // Enriquecer ítems con nombre de producto para el email.
-  let itemsWithMeta = cleanItems;
+  let itemsWithMeta = tmItems;
   try {
-    const productIds = [...new Set(cleanItems.map((i) => i.product_id))];
+    const productIds = [...new Set(tmItems.map((i) => i.product_id))];
     if (productIds.length > 0) {
       const { data: products, error: prodErr } = await supabase
         .from('products')
@@ -131,7 +134,7 @@ router.post('/', async (req, res) => {
 
       if (!prodErr && products) {
         const nameById = Object.fromEntries(products.map((p) => [p.id, p.name]));
-        itemsWithMeta = cleanItems.map((i) => ({
+        itemsWithMeta = tmItems.map((i) => ({
           ...i,
           product_name: nameById[i.product_id] || null,
         }));

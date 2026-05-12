@@ -373,3 +373,253 @@
     transform: none;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Checkout · estilos del rediseño cyberpunk (cards numeradas, sticky summary,
+   inputs con glow, trust badges). Usa font-heading (Montserrat) y font-mono
+   (monospace nativo) de Tailwind, sin importar fuentes nuevas.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Grilla sutil de fondo */
+.checkout-bg-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Input field con focus glow cyan — fondo zinc-900 para destacar del card */
+.field {
+  width: 100%;
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  padding: 0.85rem 0.95rem;
+  font-size: 0.9rem;
+  color: #fff;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.field::placeholder { color: rgba(255, 255, 255, 0.32); }
+.field:hover { border-color: rgba(255, 255, 255, 0.32); }
+.field:focus {
+  outline: none;
+  border-color: rgb(0, 255, 255);
+  background: #1a1f22;
+  box-shadow: 0 0 0 3px rgba(0, 255, 255, 0.15);
+}
+
+/* Label uppercase con asterisco cyan — usa la fuente body de la app (Inter) */
+.label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+.label .req { color: rgb(0, 255, 255); margin-left: 2px; }
+
+/* Card + section header */
+.card-section {
+  position: relative;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+}
+.card-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Step number 01/02/... — cyan ghost por default, sólido cuando done */
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: rgba(0, 255, 255, 0.08);
+  color: rgb(0, 255, 255);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border: 1px solid rgba(0, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+.step-num.done {
+  background: rgb(0, 255, 255);
+  color: #000;
+  border-color: rgb(0, 255, 255);
+}
+
+/* Radio dot custom para shipping y payment */
+.dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+  position: relative;
+  transition: all 0.15s;
+}
+.dot.on {
+  border-color: rgb(0, 255, 255);
+  background: rgb(0, 255, 255);
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.55);
+}
+.dot.on::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  background: #000;
+  border-radius: 999px;
+}
+
+/* Botón primario blanco → cyan en hover */
+.btn-primary-checkout {
+  position: relative;
+  width: 100%;
+  padding: 1.05rem 1.25rem;
+  background: #fff;
+  color: #000;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-size: 13px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+.btn-primary-checkout:hover:not(:disabled) {
+  background: rgb(0, 255, 255);
+  box-shadow: 0 0 0 1px rgba(0, 255, 255, 0.5), 0 0 32px -4px rgba(0, 255, 255, 0.55);
+}
+.btn-primary-checkout:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Shipping option card (radio compuesto) */
+.ship-opt {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.95rem 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.015);
+  border-radius: 8px;
+  transition: all 0.15s;
+  text-align: left;
+  cursor: pointer;
+}
+.ship-opt:hover { border-color: rgba(255, 255, 255, 0.2); }
+.ship-opt.on {
+  border-color: rgb(0, 255, 255);
+  background: rgba(0, 255, 255, 0.04);
+}
+
+/* Payment method tab */
+.pm-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.015);
+  border-radius: 8px;
+  text-align: left;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.pm-tab:hover { border-color: rgba(255, 255, 255, 0.18); }
+.pm-tab.on {
+  border-color: rgb(0, 255, 255);
+  background: rgba(0, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(0, 255, 255, 0.3);
+}
+
+/* Quantity stepper -/+ del order summary */
+.qty {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.qty button {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.15s;
+}
+.qty button:hover {
+  background: rgba(0, 255, 255, 0.08);
+  color: rgb(0, 255, 255);
+}
+.qty .v {
+  width: 28px;
+  text-align: center;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Trust badges 2x2 */
+.badge-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+.badge-trust {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.015);
+  border-radius: 8px;
+}
+
+/* Línea divisoria neón decorativa */
+.neon-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.45) 20%, rgba(255, 0, 255, 0.45) 80%, transparent);
+}
+
+/* Corner ticks (decoración cyberpunk en imágenes de producto) */
+.ticks { position: relative; }
+.ticks::before, .ticks::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 1px solid rgba(0, 255, 255, 0.6);
+}
+.ticks::before {
+  top: -1px; left: -1px;
+  border-right: none; border-bottom: none;
+}
+.ticks::after {
+  top: -1px; right: -1px;
+  border-left: none; border-bottom: none;
+}
+
+/* Pulse de "Conexión segura" */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+.pulse-dot { animation: pulse-dot 1.6s ease-in-out infinite; }

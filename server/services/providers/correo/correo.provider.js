@@ -81,6 +81,7 @@ function normalizeRatesResult(raw, { freeShipping }) {
 
         return {
             id: `correo-${mode}-${(row.productType || 'x').toLowerCase()}-${index}`,
+            provider: 'correo_argentino',
             label,
             mode,
             serviceType: row.productType || null,

@@ -28,9 +28,10 @@ router.post('/quote', async (req, res) => {
             return res.status(400).json({ error: 'address requerido', code: 'MISSING_ADDRESS' });
         }
 
-        // Normalizar: el form del checkout usa 'zip'/'state'; el shipping service usa 'postalCode'/'province'
+        // Normalizar: el form del checkout usa 'zip'/'state'; el shipping service usa 'postalCode'/'province'.
+        // El CP se reduce a 4 dígitos (acepta "C1414AAA", "1414-3", " 1414 " → "1414").
         const normalizedAddress = {
-            postalCode: String(address.postalCode || address.zip || '').trim(),
+            postalCode: String(address.postalCode || address.zip || '').replace(/\D/g, '').slice(0, 4),
             province: String(address.province || address.state || '').trim(),
             city: String(address.city || '').trim(),
             street: String(address.street || address.address || '').trim(),

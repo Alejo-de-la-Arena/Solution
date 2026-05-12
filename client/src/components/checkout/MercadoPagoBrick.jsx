@@ -1,6 +1,22 @@
-import { useEffect, useRef, useId, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { loadMercadoPago } from '@mercadopago/sdk-js';
 import { createMPPreference, processMPCardPayment, setCheckoutPaymentProvider } from '../../services/checkout';
+
+// ID estable del contenedor del Brick. Hay UNA sola instancia del Brick en la app
+// (Checkout), por lo que un ID fijo evita el bug clásico de useId cambiando entre
+// el primer y segundo mount de React StrictMode (que dejaba al Brick buscando un
+// container que ya no existía en el DOM).
+const BRICK_CONTAINER_ID = 'cardPaymentBrick';
+
+// Cadena de promesas a nivel módulo para serializar create/unmount del Brick.
+// useRef no sirve para esto porque se resetea cuando StrictMode desmonta el
+// componente; con un lock global garantizamos que dos efectos concurrentes no
+// estén creando o destruyendo el Brick a la vez sobre el mismo div.
+let brickLifecycleChain = Promise.resolve();
+function chainBrickLifecycle(work) {
+  brickLifecycleChain = brickLifecycleChain.catch(() => undefined).then(work);
+  return brickLifecycleChain;
+}
 
 /**
  * MercadoPago checkout:
@@ -18,8 +34,6 @@ export default function MercadoPagoBrick({
   onError,
   onBrickReady,
 }) {
-  const reactId = useId().replace(/:/g, '');
-  const containerId = `cardPaymentBrick_${reactId}`;
   const controllerRef = useRef(null);
   const publicKey = (import.meta.env.VITE_MP_PUBLIC_KEY || '').trim();
 
@@ -40,23 +54,32 @@ export default function MercadoPagoBrick({
 
     let cancelled = false;
 
-    (async () => {
+    chainBrickLifecycle(async () => {
+      if (cancelled) return;
+
       try {
         await loadMercadoPago();
       } catch (e) {
         console.error('[MP Brick] loadMercadoPago:', e);
-        onErrorRef.current?.('No se pudo cargar Mercado Pago.');
+        if (!cancelled) onErrorRef.current?.('No se pudo cargar Mercado Pago.');
         return;
       }
       if (cancelled) return;
 
+      // Desmontar controller previo (de un amount anterior o de un mount previo
+      // que sobrevivió a la cadena por timing).
+      if (controllerRef.current) {
+        try { await controllerRef.current.unmount(); } catch { /* ignore */ }
+        controllerRef.current = null;
+      }
+      if (cancelled) return;
+
+      // El div del Brick puede no estar en el DOM si el componente se desmontó
+      // entre que entramos a la cadena y que llegamos acá.
+      if (!document.getElementById(BRICK_CONTAINER_ID)) return;
+
       const mp = new window.MercadoPago(publicKey, { locale: 'es-AR' });
       const bricksBuilder = mp.bricks();
-
-      try {
-        controllerRef.current?.unmount?.();
-        controllerRef.current = null;
-      } catch { /* ignore */ }
 
       const settings = {
         initialization: {
@@ -142,24 +165,31 @@ export default function MercadoPagoBrick({
       };
 
       try {
-        const ctrl = await bricksBuilder.create('cardPayment', containerId, settings);
+        const ctrl = await bricksBuilder.create('cardPayment', BRICK_CONTAINER_ID, settings);
         if (cancelled) {
-          ctrl?.unmount?.();
+          try { await ctrl?.unmount?.(); } catch { /* ignore */ }
           return;
         }
         controllerRef.current = ctrl;
       } catch (e) {
+        if (cancelled) return;
         console.error('[MP Brick] create:', e);
         onErrorRef.current?.('No se pudo iniciar el checkout de Mercado Pago.');
       }
-    })();
+    });
 
     return () => {
       cancelled = true;
-      try { controllerRef.current?.unmount?.(); } catch { /* ignore */ }
-      controllerRef.current = null;
+      // Encolá el unmount al final de la cadena para que corra después de
+      // cualquier create en vuelo (de StrictMode o de un amount anterior).
+      chainBrickLifecycle(async () => {
+        if (controllerRef.current) {
+          try { await controllerRef.current.unmount(); } catch { /* ignore */ }
+          controllerRef.current = null;
+        }
+      });
     };
-  }, [publicKey, disabled, amount, containerId]);
+  }, [publicKey, disabled, amount]);
 
   // ── Handler para wallet redirect: crea orden + preferencia on-demand ────
   const handleWalletRedirect = async () => {
@@ -230,7 +260,7 @@ export default function MercadoPagoBrick({
     <div className="space-y-4">
       {/* Card Payment Brick — tarjeta crédito/débito */}
       <div className="rounded-md overflow-hidden border border-white/10 bg-[#1a1a1a] p-2 sm:p-3">
-        <div id={containerId} className="min-h-[340px]" />
+        <div id={BRICK_CONTAINER_ID} className="min-h-[340px]" />
       </div>
 
       {/* Separador */}

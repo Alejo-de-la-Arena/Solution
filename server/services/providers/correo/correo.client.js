@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { getCorreoConfig } = require('./correo.config');
 const { getToken, invalidateToken } = require('./correo.auth');
+const { retryOnTransient } = require('./correo.retry');
 const {
     CorreoApiError,
     CorreoAuthError,
@@ -25,16 +26,19 @@ async function requestWithBearer(method, url, { params, data, headers } = {}, re
     const token = await getToken();
 
     try {
-        const response = await http.request({
-            method,
-            url,
-            params,
-            data,
-            headers: {
-                Authorization: `Bearer ${token}`,
-                ...(headers || {}),
-            },
-        });
+        const response = await retryOnTransient(
+            () => http.request({
+                method,
+                url,
+                params,
+                data,
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    ...(headers || {}),
+                },
+            }),
+            { attempts: 3, baseDelayMs: 300, label: `correo.${method.toLowerCase()} ${url}` }
+        );
 
         return response.data;
     } catch (error) {

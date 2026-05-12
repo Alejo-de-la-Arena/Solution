@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getProductBySlug, productToPerfume } from '../services/products';
@@ -13,6 +13,8 @@ export default function Producto() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [videoMuted, setVideoMuted] = useState(false);
+  const videoRef = useRef(null);
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -49,19 +51,20 @@ export default function Producto() {
     });
   }, [perfume?.slug]);
 
-  // Auto-advance suave de la galería
+  // Auto-advance suave de la galería (pausado si el video tiene sonido activo)
   useEffect(() => {
     if (!perfume) return undefined;
     const items = getProductGalleryMedia(perfume, perfume.image);
     const length = items.length;
     if (length <= 1) return undefined;
+    if (!videoMuted) return undefined;
 
     const id = window.setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % length);
     }, 9000);
 
     return () => window.clearInterval(id);
-  }, [perfume?.slug, perfume?.image]);
+  }, [perfume?.slug, perfume?.image, videoMuted]);
 
   if (loading) {
     return (
@@ -202,6 +205,7 @@ export default function Producto() {
                     {activeItem && activeItem.kind === 'video' ? (
                       <motion.video
                         key={activeItem.path}
+                        ref={videoRef}
                         src={activeItem.path.startsWith('http') ? activeItem.path : mediaUrl(activeItem.path)}
                         poster={activeItem.poster ? (activeItem.poster.startsWith('http') ? activeItem.poster : mediaUrl(activeItem.poster)) : undefined}
                         className="absolute inset-0 h-full w-full object-contain object-center"
@@ -210,9 +214,23 @@ export default function Producto() {
                         exit={{ opacity: 0, scale: 0.98, y: -8, filter: 'blur(6px)' }}
                         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                         autoPlay
-                        muted
+                        muted={videoMuted}
                         loop
                         playsInline
+                        onLoadedMetadata={(e) => {
+                          const el = e.currentTarget;
+                          if (videoMuted) return;
+                          el.muted = false;
+                          const p = el.play();
+                          if (p && typeof p.catch === 'function') {
+                            p.catch(() => {
+                              el.muted = true;
+                              setVideoMuted(true);
+                              const retry = el.play();
+                              if (retry && typeof retry.catch === 'function') retry.catch(() => {});
+                            });
+                          }
+                        }}
                       />
                     ) : activeItem && (
                       <motion.img
@@ -239,6 +257,41 @@ export default function Producto() {
                       Colección Solution
                     </p>
                   </div>
+
+                  {/* Botón sonido (solo cuando el slide activo es video) */}
+                  {activeItem && activeItem.kind === 'video' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVideoMuted((prev) => {
+                          const next = !prev;
+                          const el = videoRef.current;
+                          if (el) {
+                            el.muted = next;
+                            if (!next) {
+                              const playPromise = el.play();
+                              if (playPromise && typeof playPromise.catch === 'function') {
+                                playPromise.catch(() => {});
+                              }
+                            }
+                          }
+                          return next;
+                        });
+                      }}
+                      aria-label={videoMuted ? 'Activar sonido' : 'Silenciar'}
+                      className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white backdrop-blur-md transition hover:bg-black/65"
+                    >
+                      {videoMuted ? (
+                        <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
+                          <path d="M3 10v4h4l5 4V6L7 10H3zm13.59 2L19 14.41 20.41 13 18 10.59 20.41 8.17 19 6.76 16.59 9.17 14.17 6.76 12.76 8.17 15.17 10.59 12.76 13 14.17 14.41 16.59 12z" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
+                          <path d="M3 10v4h4l5 4V6L7 10H3zm13.5 2a4.5 4.5 0 0 0-2.5-4.03v8.06A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
 
                   {/* Indicador numerado */}
                   {galleryItems.length > 1 && (

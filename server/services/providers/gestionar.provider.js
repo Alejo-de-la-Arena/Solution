@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { hasFreeShipping } = require('../shipping.rules');
+const { lookupCP } = require('../../data/amba-zones');
 
 const GESTIONAR_API_URL =
     process.env.GESTIONAR_API_URL || 'https://apiv1.gestionarlogistica.com.ar';
@@ -60,60 +61,56 @@ async function request({ method, path, params, body, multipart = false }) {
 // ============================================================================
 
 /**
- * Cotiza envío Gestionar para CABA/GBA.
+ * Cotiza envío Gestionar para CABA/AMBA con tarifa fija por zona.
  *
- * Gestionar (modo fullfilment) no expone API pública de tarifas, así que
- * espejamos el precio que cobraría Correo Argentino (Clásico Domicilio) para
- * la misma dirección. Mantenemos la regla de envío gratis (≥2 perfumes) y la
- * presentación de Gestionar (eta, label).
+ * La cobertura y los precios se definen en `server/data/amba-zones.js`:
+ *   - Zona 1 (CABA, CP 1000–1499): $5.000
+ *   - Zona 2 (Primer cordón):       $7.000
+ *   - Zona 3 (Segundo/Tercer):      $8.900
+ *   - Zona 4 (Cuarto cordón):       $10.300
  *
- * `GESTIONAR_FLAT_RATE_HOME` actúa como switch binario en `shipping.rules.js`:
- * cualquier valor activa Gestionar para CABA/GBA, vacío lo deshabilita. El
- * valor numérico ya no se usa.
+ * Si el CP no está cubierto, el provider lanza `OUT_OF_COVERAGE` y el orquestador
+ * (`shipping.service.js`) cae a Correo Argentino. Si `items.length ≥ 2`, aplica
+ * envío gratis (regla compartida con Correo en `shipping.rules.js`).
  */
 async function quote({ items, address } = {}) {
-    // Lazy-require para evitar ciclo (correo.provider no depende de gestionar).
-    const correoProvider = require('./correo/correo.provider');
-
-    let correoQuote;
-    try {
-        correoQuote = await correoProvider.quote({ items, address });
-    } catch (err) {
+    const coverage = lookupCP(address?.postalCode);
+    if (!coverage) {
         throw new GestionarError(
-            `No se pudo obtener tarifa de referencia (Correo): ${err.message || err}`,
-            err.status || 502,
-            err.raw || null,
-        );
-    }
-
-    const homeOptions = (correoQuote?.options || []).filter((o) => o.mode === 'home');
-    // Preferimos Clásico (CP); fallback a Expreso (EP) si Correo no devolvió CP.
-    const reference = homeOptions.find((o) => o.serviceType === 'CP') || homeOptions[0];
-    if (!reference) {
-        throw new GestionarError(
-            'Correo Argentino no devolvió cotización a domicilio para esta dirección.',
-            422,
+            `CP "${address?.postalCode || ''}" no está cubierto por Gestionar (AMBA).`,
+            404,
+            { reason: 'OUT_OF_COVERAGE' },
         );
     }
 
     const free = hasFreeShipping(items || []);
     const eta = process.env.GESTIONAR_ETA_HOME || '1 a 3 días hábiles';
-    const originalPrice = Number(reference.originalPrice ?? reference.price ?? 0) || 0;
+    const originalPrice = coverage.price;
 
     return {
         provider: 'gestionar',
         freeShipping: free,
+        coverage: {
+            partido: coverage.partido,
+            zona: coverage.zona,
+            zoneName: coverage.zoneName,
+        },
         options: [
             {
                 id: 'gestionar-home',
-                label: 'Envío a domicilio (CABA / GBA)',
+                provider: 'gestionar',
+                label: `Envío a domicilio · ${coverage.partido}`,
                 mode: 'home',
                 serviceType: 'GESTIONAR_HOME',
                 price: free ? 0 : originalPrice,
                 originalPrice,
                 currency: 'ARS',
                 eta,
-                raw: { correoReference: reference.serviceType, correoRaw: reference.raw || null },
+                raw: {
+                    zone: coverage.zona,
+                    zoneName: coverage.zoneName,
+                    partido: coverage.partido,
+                },
             },
         ],
         raw: null,
