@@ -37,6 +37,7 @@ export default function TickerBanner() {
               style={{
                 display: 'inline-block',
                 fontSize: '10px',
+                fontWeight: 700,
                 letterSpacing: '0.28em',
                 textTransform: 'uppercase',
                 color: 'rgba(0,0,0,0.82)',
@@ -47,7 +48,7 @@ export default function TickerBanner() {
             </span>
             <span
               className="font-jmono"
-              style={{ color: 'rgba(0,0,0,0.28)', fontSize: '8px', padding: '0 4px' }}
+              style={{ color: 'rgba(0,0,0,0.80)', fontSize: '8px', padding: '0 4px' }}
               aria-hidden
             >
               ◆

@@ -55,7 +55,7 @@ export default function TestimonialsSection() {
           <div className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
             Voces reales
           </div>
-          <h2 className="font-jost" style={{ fontWeight: 300, fontSize: '30px', lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--sol-ink)', marginTop: '12px' }}>
+          <h2 className="font-jost" style={{ fontWeight: 400, fontSize: 'clamp(26px, 5vw, 40px)', lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--sol-ink)', marginTop: '12px' }}>
             Lo que dicen<br />
             <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>quienes lo usan</em>.
           </h2>
@@ -106,7 +106,7 @@ export default function TestimonialsSection() {
             {/* Quote */}
             <p
               className="font-jakarta"
-              style={{ fontSize: '14px', lineHeight: 1.65, color: 'var(--sol-ink)', fontWeight: 400, marginBottom: '28px', flex: 1 }}
+              style={{ fontSize: '14px', lineHeight: 1.65, color: 'var(--sol-ink)', fontWeight: 500, marginBottom: '28px', flex: 1 }}
             >
               {t.quote}
             </p>
@@ -144,7 +144,7 @@ export default function TestimonialsSection() {
                 <div style={{ minWidth: 0 }}>
                   <div
                     className="font-jost"
-                    style={{ fontSize: '13px', fontWeight: 500, color: 'var(--sol-ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                    style={{ fontSize: '13px', fontWeight: 600, color: 'var(--sol-ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                   >
                     {t.name}
                   </div>

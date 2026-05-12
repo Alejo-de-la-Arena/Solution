@@ -43,10 +43,11 @@ export default function FinalCtaSection() {
             className="font-jost"
             style={{
               fontWeight: 300,
-              fontSize: 'clamp(38px, 11vw, 52px)',
+              fontSize: 'clamp(40px, 11vw, 60px)',
               lineHeight: 1.02,
               letterSpacing: '-0.03em',
               color: 'var(--sol-ink)',
+              fontWeight: 400,
               marginBottom: '24px',
             }}
           >

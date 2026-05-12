@@ -68,8 +68,8 @@ export default function HeroSection() {
             ref={headlineRef}
             className="font-jost sol-hero-head sol-reveal"
             style={{
-              fontWeight: 300,
-              fontSize: 'clamp(32px, 9vw, 56px)',
+              fontWeight: 400,
+              fontSize: 'clamp(34px, 9vw, 64px)',
               lineHeight: 1.02,
               letterSpacing: '-0.025em',
               color: 'var(--sol-ink)',

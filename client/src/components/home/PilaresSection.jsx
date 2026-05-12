@@ -82,7 +82,7 @@ export default function PilaresSection() {
             </div>
             <h2
               className="font-jost"
-              style={{ fontWeight: 300, fontSize: '30px', lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--sol-ink)', marginTop: '12px' }}
+              style={{ fontWeight: 400, fontSize: 'clamp(26px, 5vw, 40px)', lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--sol-ink)', marginTop: '12px' }}
             >
               Tres ideas que<br />
               <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>nos sostienen</em>.
@@ -138,8 +138,8 @@ export default function PilaresSection() {
                 <div
                   className="font-jost"
                   style={{
-                    fontSize: '19px',
-                    fontWeight: 400,
+                    fontSize: 'clamp(18px, 3vw, 22px)',
+                    fontWeight: 500,
                     letterSpacing: '-0.005em',
                     color: isOpen ? 'var(--sol-green)' : 'var(--sol-ink)',
                     flex: 1,

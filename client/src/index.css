@@ -28,7 +28,7 @@
 }
 .sol-ticker-track {
   display: inline-block;
-  animation: sol-ticker 32s linear infinite;
+  animation: sol-ticker 10s linear infinite;
   will-change: transform;
   white-space: nowrap;
 }
@@ -229,8 +229,20 @@
 
 /* ── Layout heights ── */
 :root {
-  --sol-ticker-h: 40px;
-  --sol-nav-h:    56px;
+  --sol-ticker-h:   40px;
+  --sol-nav-h:      56px;
+  /* Navbar element sizes */
+  --sol-nav-logo-fs: 12px;
+  --sol-nav-icon-sz: 18px;
+  --sol-ham-w:       20px;
+}
+@media (min-width: 1024px) {
+  :root {
+    --sol-nav-h:       68px;
+    --sol-nav-logo-fs: 15px;
+    --sol-nav-icon-sz: 22px;
+    --sol-ham-w:       26px;
+  }
 }
 
 /* ── Responsive spacing tokens ── */

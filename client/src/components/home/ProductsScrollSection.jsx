@@ -194,7 +194,7 @@ function ProductCard({ product }) {
           gap: '4px',
         }}
       >
-        <div className="font-jost" style={{ fontSize: '17px', fontWeight: 500, color: 'var(--sol-ink)', letterSpacing: '-0.005em' }}>
+        <div className="font-jost" style={{ fontSize: '17px', fontWeight: 600, color: 'var(--sol-ink)', letterSpacing: '-0.005em' }}>
           {product.name}
         </div>
         <div
@@ -298,90 +298,79 @@ export default function ProductsScrollSection() {
         color: 'var(--sol-ink)',
       }}
     >
-      {/* Section head */}
-      <div
-        ref={headRef}
-        className="sol-reveal"
-        style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '40px', padding: '0 var(--sol-section-px)', maxWidth: 1280, marginLeft: 'auto', marginRight: 'auto' }}
-      >
-        <div>
-          <div className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
-            La colección
-          </div>
-          <h2 className="font-jost" style={{ fontWeight: 300, fontSize: '30px', lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--sol-ink)', marginTop: '12px' }}>
-            Cinco fragancias.<br />
-            <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>Cinco momentos.</em>
-          </h2>
-        </div>
-        <div className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-muted)' }}>§ 02</div>
-      </div>
-
-      {/* Horizontal scroll */}
-      <div
-        ref={scrollRef}
-        className="sol-scroll"
-        style={{
-          display: 'flex',
-          gap: `${CARD_GAP}px`,
-          overflowX: 'auto',
-          scrollSnapType: 'x mandatory',
-          padding: '0 var(--sol-section-px) 8px',
-          WebkitOverflowScrolling: 'touch',
-        }}
-      >
-        {products.length === 0
-          ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
-          : products.map((p) => <ProductCard key={p.slug} product={p} />)}
-      </div>
-
-      {/* Scroll dots */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '24px' }}>
-        {Array.from({ length: dotCount }).map((_, i) => (
-          <span
-            key={i}
-            style={{
-              width: '16px',
-              height: '0.5px',
-              background: i === activeIdx ? 'var(--sol-green)' : 'var(--sol-line-mid)',
-              transition: 'background 0.3s var(--sol-ease)',
-              display: 'block',
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Footer row */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginTop: '24px',
-          padding: '0 var(--sol-section-px)',
-          maxWidth: 1280, marginLeft: 'auto', marginRight: 'auto',
-        }}
-      >
-        <span className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
-          Deslizá →
-        </span>
-        <Link
-          to="/tienda"
-          className="font-jmono"
-          style={{
-            fontSize: '10px',
-            letterSpacing: '0.22em',
-            textTransform: 'uppercase',
-            color: 'var(--sol-ink)',
-            textDecoration: 'none',
-            borderBottom: '0.5px solid var(--sol-line-mid)',
-            paddingBottom: '4px',
-            transition: 'color 0.3s var(--sol-ease), border-color 0.3s var(--sol-ease)',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--sol-green)'; e.currentTarget.style.borderColor = 'var(--sol-green)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--sol-ink)'; e.currentTarget.style.borderColor = 'var(--sol-line-mid)'; }}
+      {/* All content inside container so nothing overflows */}
+      <div className="sol-container" style={{ padding: '0 var(--sol-section-px)' }}>
+        {/* Section head */}
+        <div
+          ref={headRef}
+          className="sol-reveal"
+          style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '40px' }}
         >
-          Ver la colección completa
-        </Link>
+          <div>
+            <div className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
+              La colección
+            </div>
+            <h2 className="font-jost" style={{ fontWeight: 400, fontSize: 'clamp(26px, 5vw, 40px)', lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--sol-ink)', marginTop: '12px' }}>
+              Cinco fragancias.<br />
+              <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>Cinco momentos.</em>
+            </h2>
+          </div>
+          <div className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-muted)' }}>§ 02</div>
+        </div>
+
+        {/* Horizontal scroll — contained */}
+        <div
+          ref={scrollRef}
+          className="sol-scroll"
+          style={{
+            display: 'flex',
+            gap: `${CARD_GAP}px`,
+            overflowX: 'auto',
+            scrollSnapType: 'x mandatory',
+            paddingBottom: '8px',
+            marginLeft: 'calc(-1 * var(--sol-section-px))',
+            marginRight: 'calc(-1 * var(--sol-section-px))',
+            paddingLeft: 'var(--sol-section-px)',
+            paddingRight: 'var(--sol-section-px)',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
+          {products.length === 0
+            ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
+            : products.map((p) => <ProductCard key={p.slug} product={p} />)}
+        </div>
+
+        {/* Scroll dots */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '24px' }}>
+          {Array.from({ length: dotCount }).map((_, i) => (
+            <span key={i} style={{
+              width: '16px', height: '0.5px',
+              background: i === activeIdx ? 'var(--sol-green)' : 'var(--sol-line-mid)',
+              transition: 'background 0.3s var(--sol-ease)', display: 'block',
+            }} />
+          ))}
+        </div>
+
+        {/* Footer row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '24px' }}>
+          <span className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
+            Deslizá →
+          </span>
+          <Link
+            to="/tienda"
+            className="font-jmono"
+            style={{
+              fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase',
+              color: 'var(--sol-ink)', textDecoration: 'none',
+              borderBottom: '0.5px solid var(--sol-line-mid)', paddingBottom: '4px',
+              transition: 'color 0.3s var(--sol-ease), border-color 0.3s var(--sol-ease)',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--sol-green)'; e.currentTarget.style.borderColor = 'var(--sol-green)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--sol-ink)'; e.currentTarget.style.borderColor = 'var(--sol-line-mid)'; }}
+          >
+            Ver la colección completa
+          </Link>
+        </div>
       </div>
     </section>
   );
