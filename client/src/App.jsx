@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import { CartProvider } from './contexts/CartContext';
 import { RoleRoute } from './guards/RoleRoute';
@@ -7,7 +7,6 @@ import { WholesaleRoute } from './guards/WholesaleRoute';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import ScrollToTop from './components/layout/ScrollToTop';
-import TickerBanner from './components/home/TickerBanner';
 import Home from './pages/Home';
 import Acceso from './pages/Acceso';
 
@@ -34,12 +33,10 @@ import { usePageTracking } from "./hooks/usePageTracking";
 
 function AppRoutes() {
   usePageTracking(); // Analytics de usuarios
-  const location = useLocation();
 
   return (
     <>
       <ScrollToTop />
-      {location.pathname === '/' && <TickerBanner />}
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />

@@ -60,7 +60,7 @@ export default function Footer() {
 
           <div>
             <h4 className="text-xs uppercase tracking-[0.28em] opacity-60 mb-4">Contacto</h4>
-            <p className="text-sm opacity-70 mb-4">
+            <p className="text-sm opacity-70">
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
                 className="inline-flex items-center gap-2 hover:text-white transition-colors duration-200"
@@ -71,6 +71,21 @@ export default function Footer() {
                 </span>
               </a>
             </p>
+            <div className="h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent mt-8" aria-hidden />
+          </div>
+
+          <div>
+            <h4 className="text-xs uppercase tracking-[0.28em] opacity-60 mb-4">Navegación</h4>
+            <div className="space-y-1">
+              {NAV_LINKS.map((l) => (
+                <FooterRowLink key={l.to} to={l.to}>
+                  {l.label}
+                </FooterRowLink>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start sm:items-end md:items-start">
             <div className="inline-flex items-center gap-2.5">
               <a
                 href={INSTAGRAM_URL}
@@ -93,19 +108,6 @@ export default function Footer() {
             </div>
             <div className="h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent mt-8" aria-hidden />
           </div>
-
-          <div>
-            <h4 className="text-xs uppercase tracking-[0.28em] opacity-60 mb-4">Navegación</h4>
-            <div className="space-y-1">
-              {NAV_LINKS.map((l) => (
-                <FooterRowLink key={l.to} to={l.to}>
-                  {l.label}
-                </FooterRowLink>
-              ))}
-            </div>
-          </div>
-
-          <div />
         </div>
 
         <div className="mt-12 pt-8 border-t border-white/10 text-center sm:text-left">
