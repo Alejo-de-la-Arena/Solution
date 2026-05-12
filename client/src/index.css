@@ -687,3 +687,40 @@
     transform: none;
   }
 }
+
+/* ─────────────  PRODUCT PAGE LAYOUT  ─────────────────────────────────────── */
+
+/* Mobile: single column (default) */
+.sol-prod-main {
+  display: block;
+}
+.sol-prod-img-panel {
+  width: 100%;
+}
+.sol-prod-info-panel {
+  width: 100%;
+}
+
+/* Desktop: 2-col sticky layout */
+@media (min-width: 1024px) {
+  .sol-prod-main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  .sol-prod-img-panel {
+    position: sticky;
+    top: calc(var(--sol-nav-h, 56px) + 1px);
+    border-right: 0.5px solid var(--sol-line);
+  }
+  .sol-prod-info-panel {
+    /* scrolls normally */
+  }
+}
+
+/* Spin keyframe for loading screen */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
