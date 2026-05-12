@@ -291,7 +291,8 @@ export default function ProductsScrollSection() {
   return (
     <section
       style={{
-        padding: '64px 0',
+        paddingTop: 'var(--sol-section-py)',
+        paddingBottom: 'var(--sol-section-py)',
         borderBottom: '0.5px solid var(--sol-line)',
         background: 'var(--sol-bg)',
         color: 'var(--sol-ink)',
@@ -301,7 +302,7 @@ export default function ProductsScrollSection() {
       <div
         ref={headRef}
         className="sol-reveal"
-        style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '40px', padding: '0 22px' }}
+        style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '40px', padding: '0 var(--sol-section-px)', maxWidth: 1280, marginLeft: 'auto', marginRight: 'auto' }}
       >
         <div>
           <div className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
@@ -324,7 +325,7 @@ export default function ProductsScrollSection() {
           gap: `${CARD_GAP}px`,
           overflowX: 'auto',
           scrollSnapType: 'x mandatory',
-          padding: '0 22px 8px',
+          padding: '0 var(--sol-section-px) 8px',
           WebkitOverflowScrolling: 'touch',
         }}
       >
@@ -356,7 +357,8 @@ export default function ProductsScrollSection() {
           alignItems: 'center',
           justifyContent: 'space-between',
           marginTop: '24px',
-          padding: '0 22px',
+          padding: '0 var(--sol-section-px)',
+          maxWidth: 1280, marginLeft: 'auto', marginRight: 'auto',
         }}
       >
         <span className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>

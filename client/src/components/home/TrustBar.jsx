@@ -35,36 +35,43 @@ export default function TrustBar() {
   return (
     <div
       style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3,1fr)',
         borderBottom: '0.5px solid var(--sol-line)',
         background: 'var(--sol-bg)',
       }}
     >
-      {ITEMS.map((item, i) => (
+      <div className="sol-container">
         <div
-          key={item.title}
           style={{
-            padding: '22px 14px',
-            borderRight: i < ITEMS.length - 1 ? '0.5px solid var(--sol-line)' : 'none',
-            textAlign: 'center',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3,1fr)',
           }}
         >
-          {item.icon}
-          <div
-            className="font-jost"
-            style={{ fontSize: '12px', fontWeight: 500, letterSpacing: '0.04em', color: 'var(--sol-ink)', marginBottom: '4px' }}
-          >
-            {item.title}
-          </div>
-          <div
-            className="font-jmono"
-            style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-muted)', lineHeight: 1.5, whiteSpace: 'pre-line' }}
-          >
-            {item.sub}
-          </div>
+          {ITEMS.map((item, i) => (
+            <div
+              key={item.title}
+              style={{
+                padding: '22px 14px',
+                borderRight: i < ITEMS.length - 1 ? '0.5px solid var(--sol-line)' : 'none',
+                textAlign: 'center',
+              }}
+            >
+              {item.icon}
+              <div
+                className="font-jost"
+                style={{ fontSize: '12px', fontWeight: 500, letterSpacing: '0.04em', color: 'var(--sol-ink)', marginBottom: '4px' }}
+              >
+                {item.title}
+              </div>
+              <div
+                className="font-jmono"
+                style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-muted)', lineHeight: 1.5, whiteSpace: 'pre-line' }}
+              >
+                {item.sub}
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
     </div>
   );
 }

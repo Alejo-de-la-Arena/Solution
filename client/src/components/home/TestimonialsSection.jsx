@@ -33,17 +33,23 @@ export default function TestimonialsSection() {
   return (
     <section
       style={{
-        padding: '64px 22px',
         borderBottom: '0.5px solid var(--sol-line)',
         background: 'var(--sol-bg)',
         color: 'var(--sol-ink)',
+        paddingTop: 'var(--sol-section-py)',
+        paddingBottom: 'var(--sol-section-py)',
       }}
     >
       {/* Section head */}
       <div
         ref={headRef}
         className="sol-reveal"
-        style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '40px' }}
+        style={{
+          display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+          marginBottom: '40px',
+          padding: '0 var(--sol-section-px)',
+          maxWidth: 1280, marginLeft: 'auto', marginRight: 'auto',
+        }}
       >
         <div>
           <div className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
@@ -65,16 +71,16 @@ export default function TestimonialsSection() {
           gap: '12px',
           overflowX: 'auto',
           scrollSnapType: 'x mandatory',
-          padding: '0 0 8px',
-          margin: '0 -22px',
-          paddingLeft: '22px',
-          paddingRight: '22px',
+          paddingLeft: 'var(--sol-section-px)',
+          paddingRight: 'var(--sol-section-px)',
+          paddingBottom: '8px',
           WebkitOverflowScrolling: 'touch',
         }}
       >
         {TESTIMONIALS.map((t) => (
           <div
             key={t.name}
+            className="sol-test-card"
             style={{
               flex: '0 0 280px',
               scrollSnapAlign: 'start',

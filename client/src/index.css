@@ -227,6 +227,66 @@
   .sol-reveal            { opacity: 1 !important; transform: none !important; }
 }
 
+/* ── Responsive spacing tokens ── */
+:root {
+  --sol-section-px: 22px;
+  --sol-section-py: 64px;
+}
+@media (min-width: 768px) {
+  :root { --sol-section-px: 40px; }
+}
+@media (min-width: 1024px) {
+  :root {
+    --sol-section-px: 72px;
+    --sol-section-py: 96px;
+  }
+}
+
+/* ── Max-width container ── */
+.sol-container {
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+/* ── Navbar: responsive visibility ── */
+.sol-nav-desktop   { display: none; }
+.sol-nav-mob-icons { display: flex; }
+@media (min-width: 768px) {
+  .sol-nav-desktop   { display: flex; }
+  .sol-nav-mob-icons { display: none; }
+}
+
+/* ── Hero: 2-col grid on desktop ── */
+@media (min-width: 1024px) {
+  .sol-hero-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas:
+      "meta  video"
+      "head  video"
+      "ctas  video";
+    column-gap: 80px;
+    align-items: start;
+  }
+  .sol-hero-meta  { grid-area: meta; }
+  .sol-hero-head  { grid-area: head; }
+  .sol-hero-video { grid-area: video; margin-bottom: 0 !important; aspect-ratio: 3/4 !important; }
+  .sol-hero-ctas  { grid-area: ctas; padding-top: 40px; }
+}
+
+/* ── Products: wider cards on desktop ── */
+@media (min-width: 1024px) {
+  .sol-prod-card { flex-basis: 300px !important; }
+}
+
+/* ── Testimonials: wider cards on desktop ── */
+@media (min-width: 1024px) {
+  .sol-test-card { flex-basis: 340px !important; }
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

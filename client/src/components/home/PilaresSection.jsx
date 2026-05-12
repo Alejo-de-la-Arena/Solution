@@ -58,118 +58,121 @@ export default function PilaresSection() {
   return (
     <section
       style={{
-        padding: '64px 22px',
         borderBottom: '0.5px solid var(--sol-line)',
         background: 'var(--sol-bg)',
         color: 'var(--sol-ink)',
       }}
     >
-      {/* Section head */}
       <div
-        ref={headRef}
-        className="sol-reveal"
-        style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '40px' }}
+        className="sol-container"
+        style={{ padding: 'var(--sol-section-py) var(--sol-section-px)' }}
       >
-        <div>
-          <div
-            className="font-jmono"
-            style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}
-          >
-            Por qué Solution
-          </div>
-          <h2
-            className="font-jost"
-            style={{ fontWeight: 300, fontSize: '30px', lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--sol-ink)', marginTop: '12px' }}
-          >
-            Tres ideas que<br />
-            <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>nos sostienen</em>.
-          </h2>
-        </div>
-        <div className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-muted)' }}>
-          § 01
-        </div>
-      </div>
-
-      {/* Accordion */}
-      {PILARES.map((p, i) => {
-        const isOpen = open === i;
-        return (
-          <div
-            key={p.num}
-            className={`sol-pilar${isOpen ? ' sol-open' : ''}`}
-            style={{
-              borderTop: '0.5px solid var(--sol-line)',
-              ...(i === PILARES.length - 1 ? { borderBottom: '0.5px solid var(--sol-line)' } : {}),
-              position: 'relative',
-              cursor: 'pointer',
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => toggle(i)}
-              aria-expanded={isOpen}
-              className="w-full text-left"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '18px',
-                padding: '22px 0',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                width: '100%',
-              }}
-            >
-              <div
-                className="font-jmono"
-                style={{
-                  fontSize: '10px',
-                  letterSpacing: '0.22em',
-                  color: isOpen ? 'var(--sol-green)' : 'var(--sol-muted)',
-                  flexShrink: 0,
-                  width: '22px',
-                  transition: 'color 0.4s var(--sol-ease)',
-                }}
-              >
-                {p.num}
-              </div>
-              <div
-                className="font-jost"
-                style={{
-                  fontSize: '19px',
-                  fontWeight: 400,
-                  letterSpacing: '-0.005em',
-                  color: isOpen ? 'var(--sol-green)' : 'var(--sol-ink)',
-                  flex: 1,
-                  textAlign: 'left',
-                  transition: 'color 0.4s var(--sol-ease)',
-                }}
-              >
-                {p.title}
-              </div>
-              <div className="sol-pilar-toggle" aria-hidden />
-            </button>
-
-            {/* Body */}
+        {/* Section head */}
+        <div
+          ref={headRef}
+          className="sol-reveal"
+          style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '40px' }}
+        >
+          <div>
             <div
+              className="font-jmono"
+              style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}
+            >
+              Por qué Solution
+            </div>
+            <h2
+              className="font-jost"
+              style={{ fontWeight: 300, fontSize: '30px', lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--sol-ink)', marginTop: '12px' }}
+            >
+              Tres ideas que<br />
+              <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>nos sostienen</em>.
+            </h2>
+          </div>
+          <div className="font-jmono" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-muted)' }}>
+            § 01
+          </div>
+        </div>
+
+        {/* Accordion */}
+        {PILARES.map((p, i) => {
+          const isOpen = open === i;
+          return (
+            <div
+              key={p.num}
+              className={`sol-pilar${isOpen ? ' sol-open' : ''}`}
               style={{
-                maxHeight: isOpen ? '320px' : '0',
-                overflow: 'hidden',
-                opacity: isOpen ? 1 : 0,
-                transition: 'max-height 0.5s var(--sol-ease), opacity 0.4s var(--sol-ease)',
-                paddingLeft: '40px',
-                paddingRight: '4px',
-                ...(isOpen ? { paddingBottom: '28px' } : {}),
+                borderTop: '0.5px solid var(--sol-line)',
+                ...(i === PILARES.length - 1 ? { borderBottom: '0.5px solid var(--sol-line)' } : {}),
+                position: 'relative',
+                cursor: 'pointer',
               }}
             >
-              {p.body}
-            </div>
+              <button
+                type="button"
+                onClick={() => toggle(i)}
+                aria-expanded={isOpen}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '18px',
+                  padding: '22px 0',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  width: '100%',
+                }}
+              >
+                <div
+                  className="font-jmono"
+                  style={{
+                    fontSize: '10px',
+                    letterSpacing: '0.22em',
+                    color: isOpen ? 'var(--sol-green)' : 'var(--sol-muted)',
+                    flexShrink: 0,
+                    width: '22px',
+                    transition: 'color 0.4s var(--sol-ease)',
+                  }}
+                >
+                  {p.num}
+                </div>
+                <div
+                  className="font-jost"
+                  style={{
+                    fontSize: '19px',
+                    fontWeight: 400,
+                    letterSpacing: '-0.005em',
+                    color: isOpen ? 'var(--sol-green)' : 'var(--sol-ink)',
+                    flex: 1,
+                    textAlign: 'left',
+                    transition: 'color 0.4s var(--sol-ease)',
+                  }}
+                >
+                  {p.title}
+                </div>
+                <div className="sol-pilar-toggle" aria-hidden />
+              </button>
 
-            {/* Green bottom line */}
-            <div className="sol-pilar-line" aria-hidden />
-          </div>
-        );
-      })}
+              {/* Body */}
+              <div
+                style={{
+                  maxHeight: isOpen ? '320px' : '0',
+                  overflow: 'hidden',
+                  opacity: isOpen ? 1 : 0,
+                  transition: 'max-height 0.5s var(--sol-ease), opacity 0.4s var(--sol-ease)',
+                  paddingLeft: '40px',
+                  paddingRight: '4px',
+                  ...(isOpen ? { paddingBottom: '28px' } : {}),
+                }}
+              >
+                {p.body}
+              </div>
+
+              {/* Green bottom line */}
+              <div className="sol-pilar-line" aria-hidden />
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 }
