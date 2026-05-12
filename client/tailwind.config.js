@@ -20,6 +20,9 @@ export default {
       fontFamily: {
         heading: ['Montserrat', 'sans-serif'],
         body: ['Inter', 'sans-serif'],
+        jost: ['Jost', 'sans-serif'],
+        jakarta: ['Plus Jakarta Sans', 'sans-serif'],
+        jmono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       fontSize: {
         'hero-title': ['4rem', { lineHeight: '1.1', letterSpacing: '0.04em' }],

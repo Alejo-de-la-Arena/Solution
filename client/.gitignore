@@ -15,6 +15,9 @@ dist-ssr
 .env.local
 .env.*.local
 
+# Unused components (archived, not deleted)
+src/components/home/_unused/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
