@@ -55,12 +55,6 @@ export default function HeroSection() {
               />
               New Era
             </div>
-            <div
-              className="font-jakarta"
-              style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-muted)' }}
-            >
-              MMXXVI
-            </div>
           </div>
 
           {/* ── Headline ── */}

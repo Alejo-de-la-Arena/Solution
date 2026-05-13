@@ -215,6 +215,32 @@
 .sol-scroll::-webkit-scrollbar { display: none; }
 .sol-scroll { scrollbar-width: none; }
 
+/* ── Product scroll: forced padding so Tailwind reset can't strip it ── */
+.sol-prod-scroll {
+  padding-left: var(--sol-section-px) !important;
+  box-sizing: border-box !important;
+}
+@media (min-width: 1281px) {
+  /* Align first card with the sol-container left edge on wide viewports */
+  .sol-prod-scroll {
+    padding-left: calc((100vw - 1280px) / 2 + var(--sol-section-px)) !important;
+  }
+}
+
+/* ── TrustBar responsive ── */
+.sol-trust-item   { padding: 22px 14px; }
+.sol-trust-title  { font-size: 12px; }
+.sol-trust-sub    { font-size: 9px; }
+.sol-trust-icon   { display: block; }
+.sol-trust-icon-lg { display: none !important; }
+@media (min-width: 768px) {
+  .sol-trust-item    { padding: 36px 28px; }
+  .sol-trust-title   { font-size: 18px !important; }
+  .sol-trust-sub     { font-size: 11px !important; }
+  .sol-trust-icon    { display: none !important; }
+  .sol-trust-icon-lg { display: block !important; }
+}
+
 /* ── Btn hover arrow nudge ── */
 .sol-btn:hover .sol-arrow { transform: translateX(4px); }
 .sol-arrow { display: inline-block; transition: transform 0.4s var(--sol-ease); }
@@ -681,22 +707,40 @@
 
 /* ─────────────  PRODUCT PAGE LAYOUT  ─────────────────────────────────────── */
 
-/* Always single column */
-.sol-prod-main {
-  display: block;
+/* Hero container — single col mobile, 2-col desktop */
+.sol-prod-hero {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+@media (min-width: 1024px) {
+  .sol-prod-hero {
+    display: grid;
+    grid-template-columns: 55fr 45fr;
+    align-items: start;
+    border-bottom: 0.5px solid var(--sol-line);
+  }
+  .sol-prod-img-panel {
+    position: sticky;
+    top: calc(var(--sol-nav-h, 56px) + var(--sol-ticker-h, 40px));
+    border-right: 0.5px solid var(--sol-line);
+  }
+}
+
+/* Stage: portrait always (good for narrow column too) */
+.sol-prod-stage {
+  aspect-ratio: 4 / 5;
+  max-height: 85vh;
+}
+
+/* Product page full-width sections container */
+.sol-prod-below {
   max-width: 1280px;
   margin: 0 auto;
 }
 
-/* Stage: portrait on mobile, landscape on desktop */
-.sol-prod-stage {
-  aspect-ratio: 4 / 5;
-}
-@media (min-width: 1024px) {
-  .sol-prod-stage {
-    aspect-ratio: 16 / 9;
-    max-height: 80vh;
-  }
+/* h1 always left-aligned on product page */
+.sol-prod-h1 {
+  text-align: left !important;
 }
 
 /* Spin keyframe for loading screen */

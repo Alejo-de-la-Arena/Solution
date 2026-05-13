@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+﻿import { useEffect, useRef } from 'react';
 
 const ITEMS = [
   'Envío a todo el país',
@@ -51,7 +51,7 @@ export default function TickerBanner() {
               style={{ color: 'rgba(0,0,0,0.80)', fontSize: '8px', padding: '0 4px' }}
               aria-hidden
             >
-              â—†
+              .
             </span>
           </span>
         ))}

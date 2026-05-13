@@ -89,7 +89,7 @@ export default function PilaresSection() {
             </h2>
           </div>
           <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-muted)' }}>
-            Â§ 01
+            § 01
           </div>
         </div>
 

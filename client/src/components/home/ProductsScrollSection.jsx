@@ -290,10 +290,7 @@ export default function ProductsScrollSection() {
 
   const dotCount = products.length || 5;
 
-  // CSS custom property for the left offset that aligns the first card with the title
-  // On viewports <= 1280px: var(--sol-section-px)
-  // On viewports > 1280px:  (100vw - 1280px) / 2 + var(--sol-section-px)
-  const scrollPaddingLeft = 'max(var(--sol-section-px), calc((100vw - 1280px) / 2 + var(--sol-section-px)))';
+  // padding-left is handled by .sol-prod-scroll CSS class (with !important to beat Tailwind reset)
 
   return (
     <section
@@ -335,13 +332,12 @@ export default function ProductsScrollSection() {
       {/* Horizontal scroll track — full-bleed, first card aligns with title */}
       <div
         ref={scrollRef}
-        className="sol-scroll"
+        className="sol-scroll sol-prod-scroll"
         style={{
           display: 'flex',
           gap: `${CARD_GAP}px`,
           overflowX: 'auto',
           scrollSnapType: 'x mandatory',
-          paddingLeft: scrollPaddingLeft,
           paddingRight: 'var(--sol-section-px)',
           paddingBottom: '8px',
           WebkitOverflowScrolling: 'touch',

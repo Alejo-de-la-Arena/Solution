@@ -393,10 +393,10 @@ export default function Producto() {
       </div>
 
       {/* ── HERO: 2-col on desktop ──────────────────────────────────── */}
-      <div className="sol-prod-main">
+      <div className="sol-prod-hero">
 
-        {/* ── Image panel ── */}
-        <div >
+        {/* ── Image panel (left col on desktop) ── */}
+        <div className="sol-prod-img-panel">
 
           {/* Stage */}
           <div className="sol-prod-stage" style={{
@@ -423,7 +423,7 @@ export default function Producto() {
               N°/{data.code || '??'} · Solution
             </span>
             <span className="font-jakarta" style={{ position: 'absolute', top: 16, right: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--accent)', zIndex: 2 }}>
-              â— En stock
+              ● En stock
             </span>
             <span className="font-jakarta" style={{ position: 'absolute', bottom: 16, left: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', zIndex: 2 }}>
               EDP · 100ML
@@ -531,8 +531,8 @@ export default function Producto() {
           )}
         </div>
 
-        {/* ── Info panel ── */}
-        <div >
+        {/* ── Info panel (right col on desktop) ── */}
+        <div>
 
           {/* Product head */}
           <div style={{ padding: '32px 22px 28px', ...SEC }}>
@@ -544,7 +544,7 @@ export default function Producto() {
               <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block', flexShrink: 0 }} />
               Colección Solution · N°/{data.code || '??'}
             </div>
-            <h1 className="font-jost" style={{
+            <h1 className="font-jost sol-prod-h1" style={{
               fontWeight: 300, fontSize: 'clamp(38px, 10vw, 52px)',
               lineHeight: 1, letterSpacing: '-0.03em',
               color: 'var(--sol-ink)', marginBottom: '8px',
@@ -636,6 +636,12 @@ export default function Producto() {
             </div>
           )}
 
+        </div>{/* end info panel (right col) */}
+      </div>{/* end sol-prod-hero */}
+
+      {/* ── Below hero: olfactory pyramid, family, buy block ─────────── */}
+      <div className="sol-prod-below">
+
           {/* Olfactory notes */}
           {(notes.top.length > 0 || notes.heart.length > 0 || notes.base.length > 0) && (
             <div style={{ padding: '48px 22px 40px', ...SEC }}>
@@ -696,7 +702,7 @@ export default function Producto() {
                 <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
                   Familia olfativa
                 </div>
-                <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', color: 'var(--accent)' }}>Â§ 04</div>
+                <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', color: 'var(--accent)' }}>§ 04</div>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {family.map(f => (
@@ -772,8 +778,7 @@ export default function Producto() {
             </button>
           </div>
 
-        </div>{/* end info panel */}
-      </div>{/* end hero grid */}
+      </div>{/* end sol-prod-below */}
 
       {/* ── TESTIMONIALS ───────────────────────────────────────────── */}
       {data.testimonials?.length > 0 && (
@@ -789,7 +794,7 @@ export default function Producto() {
                   <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>quienes lo usan</em>.
                 </h2>
               </div>
-              <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', color: 'var(--sol-muted)' }}>Â§ 05</div>
+              <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', color: 'var(--sol-muted)' }}>§ 05</div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {data.testimonials.map((t, i) => (
@@ -803,7 +808,7 @@ export default function Producto() {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <div style={{ display: 'flex', gap: '2px', color: 'var(--accent)', fontSize: '13px', letterSpacing: '0.1em' }}>
-                      {'â˜…'.repeat(t.stars)}{'â˜†'.repeat(5 - t.stars)}
+                      {'★'.repeat(t.stars)}{'☆'.repeat(5 - t.stars)}
                     </div>
                     <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
                       <span style={{ width: 5, height: 5, background: 'var(--accent)', borderRadius: '50%', display: 'inline-block' }} />

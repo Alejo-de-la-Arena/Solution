@@ -125,7 +125,7 @@ export default function FinalCtaSection() {
               onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--sol-ink-dim)'; e.currentTarget.style.borderColor = 'var(--sol-line-mid)'; }}
             >
               <span>Ser punto de venta</span>
-              <span className="sol-arrow">â†—</span>
+              <span className="sol-arrow">↗</span>
             </Link>
           </div>
 
