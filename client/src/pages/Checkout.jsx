@@ -812,15 +812,15 @@ export default function Checkout() {
                 <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field id="email" label="Email" required span={2}>
                     <input id="email" type="email" className="field" placeholder="tu@email.com"
-                           value={form.email} onChange={handleChange} required />
+                      value={form.email} onChange={handleChange} required />
                   </Field>
                   <Field id="name" label="Nombre y apellido" required>
                     <input id="name" className="field" placeholder="Nombre Apellido"
-                           value={form.name} onChange={handleChange} required />
+                      value={form.name} onChange={handleChange} required />
                   </Field>
                   <Field id="phone" label="Teléfono" hint="Para coordinar envío">
                     <input id="phone" type="tel" className="field" placeholder="11 1234-5678"
-                           value={form.phone} onChange={handleChange} />
+                      value={form.phone} onChange={handleChange} />
                   </Field>
                 </div>
               </section>
@@ -836,29 +836,29 @@ export default function Checkout() {
                 <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field id="address" label="Calle y número" span={2}>
                     <input id="address" className="field" placeholder="Av. Siempre Viva 742"
-                           value={form.address} onChange={handleChange} />
+                      value={form.address} onChange={handleChange} />
                   </Field>
                   <Field id="address2" label="Piso / Depto" hint="Opcional" span={2}>
                     <input id="address2" className="field" placeholder="Piso 2, Depto B"
-                           value={form.address2} onChange={handleChange} />
+                      value={form.address2} onChange={handleChange} />
                   </Field>
                   <Field id="city" label="Ciudad" required>
                     <input id="city" className="field" value={form.city} onChange={handleChange} />
                   </Field>
                   <Field id="zip" label="Código postal" required>
                     <input id="zip" className="field" placeholder="1414"
-                           value={form.zip} onChange={handleChange} />
+                      value={form.zip} onChange={handleChange} />
                   </Field>
                   <Field id="state" label="Provincia" required span={2}>
                     <select id="state" className="field appearance-none cursor-pointer"
-                            value={form.state} onChange={handleChange}>
+                      value={form.state} onChange={handleChange}>
                       <option value="">Seleccioná una provincia</option>
                       {PROVINCIAS.map((p) => <option key={p} value={p}>{p}</option>)}
                     </select>
                   </Field>
                   <Field id="notes" label="Comentarios para la entrega" hint="Opcional" span={2}>
                     <input id="notes" className="field" placeholder="Horario preferido, referencias..."
-                           value={form.notes} onChange={handleChange} />
+                      value={form.notes} onChange={handleChange} />
                   </Field>
                 </div>
               </section>
