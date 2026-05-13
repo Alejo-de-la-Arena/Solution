@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../../hooks/useAuth';
@@ -7,7 +7,7 @@ import { useTrackedOrders } from '../../hooks/useTrackedOrders';
 import CartDrawer from '../cart/CartDrawer';
 import { CONTACT_EMAIL, WHATSAPP_NUMBER, INSTAGRAM_URL } from '../../lib/contact';
 
-// â”€â”€â”€ Tracked order dot â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Tracked order dot ────────────────────────────────────────────────────────
 function trackedOrderDotColor(status) {
   const s = (status || '').toLowerCase();
   if (s === 'paid') return 'var(--sol-green)';
@@ -39,7 +39,7 @@ function TrackedOrderIcon({ latest, onClick }) {
   );
 }
 
-// â”€â”€â”€ Cart button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Cart button ─────────────────────────────────────────────────────────────
 function CartBtn({ totalItems, toggleCart, isCheckoutPage }) {
   return (
     <button
@@ -121,7 +121,7 @@ export default function Navbar() {
 
   return (
     <>
-      {/* â”€â”€ Fixed bar â”€â”€ */}
+      {/* ── Fixed bar ── */}
       <motion.nav
         initial={{ y: -16, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -147,12 +147,12 @@ export default function Navbar() {
             alignItems: 'center',
           }}
         >
-          {/* Left â€” Hamburger */}
+          {/* Left — Hamburger */}
           <div>
             <button
               type="button"
               onClick={() => setMenuOpen((o) => !o)}
-              aria-label={menuOpen ? 'Cerrar menÃº' : 'Abrir menÃº'}
+              aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
               aria-expanded={menuOpen}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}
             >
@@ -174,7 +174,7 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* Center â€” Logo */}
+          {/* Center — Logo */}
           <Link
             to="/"
             onClick={close}
@@ -192,7 +192,7 @@ export default function Navbar() {
             SOLUTION<span style={{ color: 'var(--sol-green)' }}>.</span>
           </Link>
 
-          {/* Right â€” Tracked + Cart */}
+          {/* Right — Tracked + Cart */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 20 }}>
             <TrackedOrderIcon latest={latestTrackedOrder} onClick={close} />
             <CartBtn totalItems={totalItems} toggleCart={toggleCart} isCheckoutPage={isCheckoutPage} />
@@ -200,7 +200,7 @@ export default function Navbar() {
         </div>
       </motion.nav>
 
-      {/* â”€â”€ Side panel â”€â”€ */}
+      {/* ── Side panel ── */}
       <AnimatePresence>
         {menuOpen && (
           <>
@@ -246,7 +246,7 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={close}
-                  aria-label="Cerrar menÃº"
+                  aria-label="Cerrar menú"
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--sol-muted)', padding: 4, display: 'flex', alignItems: 'center', transition: 'color 0.3s var(--sol-ease)' }}
                   onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--sol-ink)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--sol-muted)'; }}
@@ -257,7 +257,7 @@ export default function Navbar() {
                 </button>
               </div>
 
-              {/* â”€â”€ Nav links â”€â”€ */}
+              {/* ── Nav links ── */}
               <nav style={{ flex: 1 }}>
                 {/* Main links */}
                 {[
@@ -285,7 +285,7 @@ export default function Navbar() {
                   </Link>
                 ))}
 
-                {/* Secondary: Â¿Ya sos mayorista? */}
+                {/* Secondary: ¿Ya sos mayorista? */}
                 {!loading && !user && (
                   <Link
                     to="/acceso"
@@ -301,7 +301,7 @@ export default function Navbar() {
                     onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--sol-ink-dim)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--sol-muted)'; }}
                   >
-                    Â¿Ya sos mayorista? IngresÃ¡
+                    ¿Ya sos mayorista? Ingresá
                   </Link>
                 )}
 
@@ -341,13 +341,13 @@ export default function Navbar() {
                       onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--sol-ink)'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--sol-muted)'; }}
                     >
-                      Cerrar sesiÃ³n
+                      Cerrar sesión
                     </button>
                   </div>
                 )}
               </nav>
 
-              {/* â”€â”€ Contact footer â”€â”€ */}
+              {/* ── Contact footer ── */}
               <div style={{ padding: '24px', borderTop: '0.5px solid var(--sol-line)', flexShrink: 0 }}>
                 <div className="font-jakarta" style={{ fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: 16 }}>
                   Contacto

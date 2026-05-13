@@ -1,10 +1,10 @@
-﻿import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 const ITEMS = [
-  'EnvÃ­o a todo el paÃ­s',
+  'Envío a todo el país',
   'Hasta 12 cuotas con Mercado Pago',
-  'GarantÃ­a 30 dÃ­as',
-  'ProducciÃ³n argentina',
+  'Garantía 30 días',
+  'Producción argentina',
 ];
 
 export default function TickerBanner() {

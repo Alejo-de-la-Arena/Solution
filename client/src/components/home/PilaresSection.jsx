@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useReveal } from '../../hooks/useReveal';
 
 const PILARES = [
@@ -8,11 +8,11 @@ const PILARES = [
     body: (
       <>
         <p style={{ fontSize: '13.5px', lineHeight: 1.65, color: 'var(--sol-ink-dim)', marginBottom: '16px' }}>
-          Cada fragancia sigue la lÃ­nea de una <strong style={{ color: 'var(--sol-ink)', fontWeight: 500 }}>referencia reconocida del mercado de nicho</strong>. SabÃ©s exactamente quÃ© estÃ¡s eligiendo antes de comprarlo â€” sin rodeos, sin marketing vacÃ­o.
+          Cada fragancia sigue la línea de una <strong style={{ color: 'var(--sol-ink)', fontWeight: 500 }}>referencia reconocida del mercado de nicho</strong>. Sabés exactamente qué estás eligiendo antes de comprarlo — sin rodeos, sin marketing vacío.
         </p>
         <span className="font-jakarta" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-ink-dim)', border: '0.5px solid var(--sol-line-mid)', padding: '7px 11px' }}>
           <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--sol-green)', display: 'inline-block', flexShrink: 0 }} aria-hidden />
-          Black Code â†’ Creed Aventus
+          Black Code → Creed Aventus
         </span>
       </>
     ),
@@ -23,7 +23,7 @@ const PILARES = [
     body: (
       <>
         <p style={{ fontSize: '13.5px', lineHeight: 1.65, color: 'var(--sol-ink-dim)', marginBottom: '16px' }}>
-          Trabajo, gimnasio, salida, dÃ­a a dÃ­a, noche. <strong style={{ color: 'var(--sol-ink)', fontWeight: 500 }}>No necesitÃ¡s saber de perfumerÃ­a</strong>. Solo elegÃ­s tu momento y nosotros te decimos cuÃ¡l usar.
+          Trabajo, gimnasio, salida, día a día, noche. <strong style={{ color: 'var(--sol-ink)', fontWeight: 500 }}>No necesitás saber de perfumería</strong>. Solo elegís tu momento y nosotros te decimos cuál usar.
         </p>
         <span className="font-jakarta" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-ink-dim)', border: '0.5px solid var(--sol-line-mid)', padding: '7px 11px' }}>
           <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--sol-green)', display: 'inline-block', flexShrink: 0 }} aria-hidden />
@@ -38,7 +38,7 @@ const PILARES = [
     body: (
       <>
         <p style={{ fontSize: '13.5px', lineHeight: 1.65, color: 'var(--sol-ink-dim)', marginBottom: '16px' }}>
-          No somos baratos. Somos <strong style={{ color: 'var(--sol-ink)', fontWeight: 500 }}>justos</strong>. PagÃ¡s por la fragancia, no por el logo en la caja ni por la campaÃ±a de medios. Lujo sin barreras.
+          No somos baratos. Somos <strong style={{ color: 'var(--sol-ink)', fontWeight: 500 }}>justos</strong>. Pagás por la fragancia, no por el logo en la caja ni por la campaña de medios. Lujo sin barreras.
         </p>
         <span className="font-jakarta" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-ink-dim)', border: '0.5px solid var(--sol-line-mid)', padding: '7px 11px' }}>
           <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--sol-green)', display: 'inline-block', flexShrink: 0 }} aria-hidden />
@@ -78,7 +78,7 @@ export default function PilaresSection() {
               className="font-jakarta"
               style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}
             >
-              Por quÃ© Solution
+              Por qué Solution
             </div>
             <h2
               className="font-jost"

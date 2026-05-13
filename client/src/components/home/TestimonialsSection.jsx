@@ -35,10 +35,11 @@ function TestCard({ t }) {
     <div
       className="sol-test-card"
       style={{
-        flex: '0 0 280px',
+        flex: '0 0 320px',
+        minHeight: '220px',
         background: 'var(--sol-bg-card)',
         border: '0.5px solid var(--sol-line)',
-        padding: '26px 22px',
+        padding: '32px 26px',
         display: 'flex',
         flexDirection: 'column',
       }}

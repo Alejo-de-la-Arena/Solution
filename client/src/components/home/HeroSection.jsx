@@ -1,7 +1,7 @@
-﻿import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useReveal } from '../../hooks/useReveal';
 
-// â”€â”€â”€ ReemplazÃ¡ esta constante con la URL del video cuando estÃ© disponible â”€â”€â”€
+// ─── Reemplazá esta constante con la URL del video cuando esté disponible ───
 const VSL_VIDEO_URL = '';
 
 export default function HeroSection() {
@@ -26,7 +26,7 @@ export default function HeroSection() {
         {/* sol-hero-inner: on desktop becomes a 2-col grid via CSS */}
         <div className="sol-hero-inner">
 
-          {/* â”€â”€ Meta row â”€â”€ */}
+          {/* ── Meta row ── */}
           <div
             ref={metaRef}
             className="sol-hero-meta sol-reveal"
@@ -41,7 +41,7 @@ export default function HeroSection() {
               className="font-jakarta"
               style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}
             >
-              NÂ°/01{' '}
+              N°/01{' '}
               <span
                 style={{
                   display: 'inline-block',
@@ -63,7 +63,7 @@ export default function HeroSection() {
             </div>
           </div>
 
-          {/* â”€â”€ Headline â”€â”€ */}
+          {/* ── Headline ── */}
           <h1
             ref={headlineRef}
             className="font-jost sol-hero-head sol-reveal"
@@ -88,12 +88,12 @@ export default function HeroSection() {
                 marginTop: '4px',
               }}
             >
-              <span style={{ color: 'var(--sol-green)', fontStyle: 'normal' }}>â€” </span>
+              <span style={{ color: 'var(--sol-green)', fontStyle: 'normal' }}>— </span>
               Competimos con<br />la costumbre de<br />no usar perfume.
             </em>
           </h1>
 
-          {/* â”€â”€ Video VSL â”€â”€ */}
+          {/* ── Video VSL ── */}
           <div
             ref={videoRef}
             className="sol-video sol-hero-video sol-reveal"
@@ -109,7 +109,7 @@ export default function HeroSection() {
               transition: 'border-color 0.4s var(--sol-ease)',
             }}
             role="img"
-            aria-label="Video de presentaciÃ³n Solution"
+            aria-label="Video de presentación Solution"
           >
             {VSL_VIDEO_URL ? (
               <video
@@ -124,7 +124,7 @@ export default function HeroSection() {
                   className="font-jakarta"
                   style={{ position: 'absolute', top: '14px', left: '16px', fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted-2)', zIndex: 2 }}
                 >
-                  FILM Â· 01
+                  FILM · 01
                 </span>
                 <span
                   className="font-jakarta sol-video-live"
@@ -161,13 +161,13 @@ export default function HeroSection() {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  Reproducir presentaciÃ³n â€”
+                  Reproducir presentación —
                 </div>
               </>
             )}
           </div>
 
-          {/* â”€â”€ CTAs â”€â”€ */}
+          {/* ── CTAs ── */}
           <div
             ref={ctasRef}
             className="sol-hero-ctas sol-reveal"
@@ -198,7 +198,7 @@ export default function HeroSection() {
               onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--sol-ink)'; e.currentTarget.style.color = 'var(--sol-bg)'; }}
             >
               <span>Elegir mi fragancia</span>
-              <span className="sol-arrow">â†’</span>
+              <span className="sol-arrow">→</span>
             </Link>
 
             <Link
@@ -227,7 +227,7 @@ export default function HeroSection() {
               onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--sol-ink-dim)'; e.currentTarget.style.borderColor = 'var(--sol-line-mid)'; }}
             >
               <span>Ver las 5 fragancias</span>
-              <span className="sol-arrow">â†“</span>
+              <span className="sol-arrow">↓</span>
             </Link>
           </div>
 

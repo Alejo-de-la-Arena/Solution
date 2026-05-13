@@ -28,7 +28,7 @@
 }
 .sol-ticker-track {
   display: inline-block;
-  animation: sol-ticker 10s linear infinite;
+  animation: sol-ticker 15s linear infinite;
   will-change: transform;
   white-space: nowrap;
 }
@@ -297,21 +297,12 @@
 
 /* ── Products: wider cards on desktop ── */
 @media (min-width: 1024px) {
-  .sol-prod-card { flex-basis: 300px !important; }
+  .sol-prod-card { width: 300px !important; }
 }
 
-/* ── Testimonials: 3-col grid on desktop ── */
+/* ── Testimonials: wider cards on desktop ── */
 @media (min-width: 1024px) {
-  .sol-test-scroll {
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    overflow-x: visible !important;
-    scroll-snap-type: none !important;
-  }
-  .sol-test-card {
-    flex: none !important;
-  }
+  .sol-test-card { flex-basis: 380px !important; min-width: 380px !important; }
 }
 
 @tailwind base;
@@ -738,7 +729,7 @@
 }
 .sol-test-track {
   display: flex;
-  gap: 12px;
+  gap: 20px;
   width: max-content;
   animation: sol-test-autoscroll 42s linear infinite;
   will-change: transform;

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getProductBySlug, productToPerfume } from '../services/products';
@@ -7,11 +7,11 @@ import { mediaUrl } from '../lib/mediaUrl';
 import { getProductGalleryMedia } from '../lib/productGalleryMedia';
 import { trackViewContent } from '../lib/metaPixel';
 
-// â”€â”€â”€ Per-slug static content (copy, badges, reference, testimonials) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Per-slug static content (copy, badges, reference, testimonials) ──────────
 const SLUG_DATA = {
   'red-desire': {
     code: '01',
-    subtitle: 'PasiÃ³n y seducciÃ³n',
+    subtitle: 'Pasión y seducción',
     accent: '#c0392b',
     accentGlow: 'rgba(192,57,43,0.25)',
     accentSoft: 'rgba(192,57,43,0.09)',
@@ -19,29 +19,29 @@ const SLUG_DATA = {
     btl1: '#3a1612', btl2: '#1a0907',
     badges: [
       { icon: 'moon',  label: 'Momento', value: 'Noche' },
-      { icon: 'flame', label: 'OcasiÃ³n', value: 'Citas' },
+      { icon: 'flame', label: 'Ocasión', value: 'Citas' },
       { icon: 'glass', label: 'Salidas', value: 'Nocturnas' },
     ],
     leadPre: 'Hay noches', leadEm: 'que no se explican.', leadPost: 'Se sienten.',
     body: [
-      'Red Desire nace para ese momento exacto en el que la energÃ­a cambia. La dulzura inicial envuelve, la lavanda marca carÃ¡cter y el fondo cÃ¡lido y ahumado deja una estela que no pasa desapercibida.',
-      'Es intensidad controlada. Es la cercanÃ­a que se vuelve fuego. Es el perfume del hombre que no necesita levantar la voz para dominar la escena.',
+      'Red Desire nace para ese momento exacto en el que la energía cambia. La dulzura inicial envuelve, la lavanda marca carácter y el fondo cálido y ahumado deja una estela que no pasa desapercibida.',
+      'Es intensidad controlada. Es la cercanía que se vuelve fuego. Es el perfume del hombre que no necesita levantar la voz para dominar la escena.',
     ],
-    closingLine: 'Red Desire no acompaÃ±a la noche.',
+    closingLine: 'Red Desire no acompaña la noche.',
     closingEm: 'La enciende.',
-    reference: 'Stronger With You â€” Armani',
-    referenceDesc: 'Va por la misma lÃ­nea olfativa â€” calidez especiada con fondo dulce. Ideal para otoÃ±o e invierno. Intenso y memorable para cerrar el dÃ­a.',
-    notes: { top: ['CastaÃ±a', 'AzÃºcar'], heart: ['Lavanda', 'Salvia'], base: ['Vainilla', 'Humo'] },
-    family: ['Oriental', 'Dulce', 'Especiado', 'Amaderado', 'CÃ¡lido'],
-    stock: 'MÃ¡s vendido Â· Stock limitado',
+    reference: 'Stronger With You — Armani',
+    referenceDesc: 'Va por la misma línea olfativa — calidez especiada con fondo dulce. Ideal para otoño e invierno. Intenso y memorable para cerrar el día.',
+    notes: { top: ['Castaña', 'Azúcar'], heart: ['Lavanda', 'Salvia'], base: ['Vainilla', 'Humo'] },
+    family: ['Oriental', 'Dulce', 'Especiado', 'Amaderado', 'Cálido'],
+    stock: 'Más vendido · Stock limitado',
     testimonials: [
-      { stars: 5, text: 'Si te gustan los perfumes dulces recomiendo el Red Desire, tiene un parecido al Stronger With You.', name: 'Juan PÃ©rez', city: 'Buenos Aires', initial: 'J' },
-      { stars: 5, text: 'ProbÃ© el Red Desire y el Black Code â€” los dos son un 10. Antes vendÃ­an equivalencias y ya eran buenos, ahora con perfume propio subieron el nivel.', name: 'Patricia Montone', city: 'Mar del Plata', initial: 'P' },
+      { stars: 5, text: 'Si te gustan los perfumes dulces recomiendo el Red Desire, tiene un parecido al Stronger With You.', name: 'Juan Pérez', city: 'Buenos Aires', initial: 'J' },
+      { stars: 5, text: 'Probé el Red Desire y el Black Code — los dos son un 10. Antes vendían equivalencias y ya eran buenos, ahora con perfume propio subieron el nivel.', name: 'Patricia Montone', city: 'Mar del Plata', initial: 'P' },
     ],
   },
   'black-code': {
     code: '02',
-    subtitle: 'Presencia y carÃ¡cter masculino',
+    subtitle: 'Presencia y carácter masculino',
     accent: '#9a8060',
     accentGlow: 'rgba(154,128,96,0.22)',
     accentSoft: 'rgba(154,128,96,0.08)',
@@ -49,84 +49,84 @@ const SLUG_DATA = {
     btl1: '#1a1a1c', btl2: '#070708',
     badges: [
       { icon: 'moon',      label: 'Momento', value: 'Noche' },
-      { icon: 'handshake', label: 'OcasiÃ³n', value: 'Reuniones' },
+      { icon: 'handshake', label: 'Ocasión', value: 'Reuniones' },
       { icon: 'sparkle',   label: 'Salidas', value: 'Eventos' },
     ],
     leadPre: 'Hay presencias', leadEm: 'que no se anuncian.', leadPost: 'Se imponen.',
     body: [
-      'Black Code nace para el hombre que entra sin hacer ruido y se va dejando marca. La apertura vibrante despierta la atenciÃ³n, el corazÃ³n elegante sostiene la mirada y el fondo amaderado profundo construye una identidad firme y segura.',
-      'Es liderazgo natural. Es ambiciÃ³n silenciosa. Es seguridad que no necesita demostrarse.',
+      'Black Code nace para el hombre que entra sin hacer ruido y se va dejando marca. La apertura vibrante despierta la atención, el corazón elegante sostiene la mirada y el fondo amaderado profundo construye una identidad firme y segura.',
+      'Es liderazgo natural. Es ambición silenciosa. Es seguridad que no necesita demostrarse.',
     ],
-    closingLine: 'Black Code no busca aprobaciÃ³n.',
+    closingLine: 'Black Code no busca aprobación.',
     closingEm: 'La genera.',
     reference: 'Creed Aventus',
-    referenceDesc: 'Va por la misma lÃ­nea olfativa â€” elegancia frutal con base amaderada. Ideal para otoÃ±o e invierno, funciona muy bien en primavera. Presencia que se recuerda.',
-    notes: { top: ['Bergamota', 'Manzana', 'Grosellas', 'Lima', 'P. Rosa'], heart: ['PiÃ±a', 'Pachuli', 'JazmÃ­n'], base: ['Musgo', 'Abedul', 'Cedro', 'Almizcles'] },
-    family: ['AromÃ¡tico', 'Amaderado', 'Afrutado', 'CÃ­trico', 'Elegante'],
-    stock: 'En stock Â· EnvÃ­o inmediato',
+    referenceDesc: 'Va por la misma línea olfativa — elegancia frutal con base amaderada. Ideal para otoño e invierno, funciona muy bien en primavera. Presencia que se recuerda.',
+    notes: { top: ['Bergamota', 'Manzana', 'Grosellas', 'Lima', 'P. Rosa'], heart: ['Piña', 'Pachuli', 'Jazmín'], base: ['Musgo', 'Abedul', 'Cedro', 'Almizcles'] },
+    family: ['Aromático', 'Amaderado', 'Afrutado', 'Cítrico', 'Elegante'],
+    stock: 'En stock · Envío inmediato',
     testimonials: [
-      { stars: 5, text: 'ComprÃ© el Black Code y cumple con la descripciÃ³n, super elegante para usar en eventos.', name: 'Ezequiel Zotto', city: 'Mendoza', initial: 'E' },
-      { stars: 5, text: 'ComprÃ© el combo de 2 para regalarle a mi hijo, estÃ¡n bÃ¡rbaros, recomiendo.', name: 'Patricia Montone', city: 'Mar del Plata', initial: 'P' },
+      { stars: 5, text: 'Compré el Black Code y cumple con la descripción, super elegante para usar en eventos.', name: 'Ezequiel Zotto', city: 'Mendoza', initial: 'E' },
+      { stars: 5, text: 'Compré el combo de 2 para regalarle a mi hijo, están bárbaros, recomiendo.', name: 'Patricia Montone', city: 'Mar del Plata', initial: 'P' },
     ],
   },
   'yellow-bloom': {
     code: '03',
-    subtitle: 'Una explosiÃ³n frutal que destaca',
+    subtitle: 'Una explosión frutal que destaca',
     accent: '#ef9f27',
     accentGlow: 'rgba(239,159,39,0.22)',
     accentSoft: 'rgba(239,159,39,0.08)',
     accentDim: 'rgba(239,159,39,0.4)',
     btl1: '#3a2e10', btl2: '#1a1207',
     badges: [
-      { icon: 'suncloud', label: 'Momento', value: 'DÃ­a y noche' },
-      { icon: 'leaf',     label: 'OcasiÃ³n', value: 'Aire libre' },
+      { icon: 'suncloud', label: 'Momento', value: 'Día y noche' },
+      { icon: 'leaf',     label: 'Ocasión', value: 'Aire libre' },
       { icon: 'confetti', label: 'Eventos', value: 'Sociales' },
     ],
-    leadPre: 'Hay dÃ­as', leadEm: 'que se sienten mÃ¡s intensos.', leadPost: 'MÃ¡s vivos.',
+    leadPre: 'Hay días', leadEm: 'que se sienten más intensos.', leadPost: 'Más vivos.',
     body: [
-      'Yellow Bloom nace en ese instante donde la energÃ­a se expande. La explosiÃ³n frutal despierta los sentidos, la dulzura envuelve con naturalidad y el fondo cÃ¡lido deja una estela luminosa que permanece.',
-      'Es alegrÃ­a que se vuelve presencia. Es frescura que se transforma en atracciÃ³n. Es el perfume de quien no teme brillar.',
+      'Yellow Bloom nace en ese instante donde la energía se expande. La explosión frutal despierta los sentidos, la dulzura envuelve con naturalidad y el fondo cálido deja una estela luminosa que permanece.',
+      'Es alegría que se vuelve presencia. Es frescura que se transforma en atracción. Es el perfume de quien no teme brillar.',
     ],
     closingLine: 'Yellow Bloom no sigue la luz.',
     closingEm: 'La crea.',
-    reference: 'Erba Pura â€” Sospiro',
-    referenceDesc: 'Va por la misma lÃ­nea olfativa â€” frescura luminosa y frutal. Ideal para primavera y verano, destaca en noches templadas. El compaÃ±ero ideal para el dÃ­a a dÃ­a.',
-    notes: { top: ['Naranja', 'Bergamota', 'LimÃ³n'], heart: ['Cocktail frutal', 'Musco'], base: ['Vainilla', 'Ãmbar', 'Almizcles'] },
+    reference: 'Erba Pura — Sospiro',
+    referenceDesc: 'Va por la misma línea olfativa — frescura luminosa y frutal. Ideal para primavera y verano, destaca en noches templadas. El compañero ideal para el día a día.',
+    notes: { top: ['Naranja', 'Bergamota', 'Limón'], heart: ['Cocktail frutal', 'Musco'], base: ['Vainilla', 'Ámbar', 'Almizcles'] },
     family: ['Frutal', 'Dulce', 'Ambarado', 'Oriental'],
-    stock: 'En stock Â· EnvÃ­o inmediato',
+    stock: 'En stock · Envío inmediato',
     testimonials: [
-      { stars: 5, text: 'Yellow Bloom es un acierto. Tiene un parecido muy fiel al Erba Pura, y a una fracciÃ³n del precio. Lo uso todos los dÃ­as.', name: 'SebastiÃ¡n Carmona', city: 'Rosario', initial: 'SC' },
-      { stars: 5, text: 'Si te gustan los perfumes dulces y frutales, el Yellow Bloom es ideal. Una estela que dura todo el dÃ­a.', name: 'NicolÃ¡s MÃ©ndez', city: 'Buenos Aires', initial: 'N' },
+      { stars: 5, text: 'Yellow Bloom es un acierto. Tiene un parecido muy fiel al Erba Pura, y a una fracción del precio. Lo uso todos los días.', name: 'Sebastián Carmona', city: 'Rosario', initial: 'SC' },
+      { stars: 5, text: 'Si te gustan los perfumes dulces y frutales, el Yellow Bloom es ideal. Una estela que dura todo el día.', name: 'Nicolás Méndez', city: 'Buenos Aires', initial: 'N' },
     ],
   },
   'deep-blue': {
     code: '04',
-    subtitle: 'Elegancia clÃ¡sica',
+    subtitle: 'Elegancia clásica',
     accent: '#378add',
     accentGlow: 'rgba(55,138,221,0.22)',
     accentSoft: 'rgba(55,138,221,0.08)',
     accentDim: 'rgba(55,138,221,0.4)',
     btl1: '#0f2236', btl2: '#060c14',
     badges: [
-      { icon: 'sun',       label: 'Momento', value: 'DÃ­a' },
-      { icon: 'briefcase', label: 'OcasiÃ³n', value: 'Trabajo' },
+      { icon: 'sun',       label: 'Momento', value: 'Día' },
+      { icon: 'briefcase', label: 'Ocasión', value: 'Trabajo' },
       { icon: 'handshake', label: 'Negocios', value: 'Reuniones' },
     ],
     leadPre: 'Hay espacios donde', leadEm: 'cada detalle importa.', leadPost: 'Y cada gesto construye presencia.',
     body: [
-      'Deep Blue se abre con una frescura limpia y precisa. Las notas aromÃ¡ticas aportan claridad, mientras el fondo amaderado sostiene una estela elegante, equilibrada y segura.',
-      'Es enfoque que se percibe. Es serenidad con carÃ¡cter. Es el perfume de quien avanza con decisiÃ³n, sin necesidad de exagerar.',
+      'Deep Blue se abre con una frescura limpia y precisa. Las notas aromáticas aportan claridad, mientras el fondo amaderado sostiene una estela elegante, equilibrada y segura.',
+      'Es enfoque que se percibe. Es serenidad con carácter. Es el perfume de quien avanza con decisión, sin necesidad de exagerar.',
     ],
     closingLine: 'Deep Blue no busca impresionar.',
     closingEm: 'Inspira confianza.',
     reference: 'Bleu de Chanel',
-    referenceDesc: 'Va por la misma lÃ­nea olfativa â€” fresco, limpio y sofisticado. Apto para todo el aÃ±o. Transmite profesionalismo y elegancia.',
-    notes: { top: ['LimÃ³n', 'Pomelo', 'Menta', 'P. Rosa'], heart: ['N. Moscada', 'Jengibre', 'JazmÃ­n'], base: ['Cedro', 'SÃ¡ndalo', 'Vetiver', 'Incienso', 'Almizcles'] },
+    referenceDesc: 'Va por la misma línea olfativa — fresco, limpio y sofisticado. Apto para todo el año. Transmite profesionalismo y elegancia.',
+    notes: { top: ['Limón', 'Pomelo', 'Menta', 'P. Rosa'], heart: ['N. Moscada', 'Jengibre', 'Jazmín'], base: ['Cedro', 'Sándalo', 'Vetiver', 'Incienso', 'Almizcles'] },
     family: ['Amaderado', 'Fresco', 'Elegante', 'Intenso'],
-    stock: 'En stock Â· EnvÃ­o en 24/48hs',
+    stock: 'En stock · Envío en 24/48hs',
     testimonials: [
-      { stars: 5, text: 'ElegÃ­ el Deep Blue y cumpliÃ³ 100%. Lo que me terminÃ³ de convencer fue el frasco â€” original y prÃ¡ctico para llevarlo a donde sea.', name: 'Ezequiel Zotto', city: 'Mendoza', initial: 'E' },
-      { stars: 5, text: 'Buena atenciÃ³n, buen producto. Lo uso todos los dÃ­as para trabajar.', name: 'NicolÃ¡s MÃ©ndez', city: 'Buenos Aires', initial: 'N' },
+      { stars: 5, text: 'Elegí el Deep Blue y cumplió 100%. Lo que me terminó de convencer fue el frasco — original y práctico para llevarlo a donde sea.', name: 'Ezequiel Zotto', city: 'Mendoza', initial: 'E' },
+      { stars: 5, text: 'Buena atención, buen producto. Lo uso todos los días para trabajar.', name: 'Nicolás Méndez', city: 'Buenos Aires', initial: 'N' },
     ],
   },
   'white-ice': {
@@ -139,29 +139,29 @@ const SLUG_DATA = {
     btl1: '#1a2624', btl2: '#080d0c',
     badges: [
       { icon: 'sunrise', label: 'Momento', value: 'Uso diario' },
-      { icon: 'compass', label: 'OcasiÃ³n', value: 'Rutina' },
+      { icon: 'compass', label: 'Ocasión', value: 'Rutina' },
       { icon: 'dumbbell', label: 'Deporte', value: 'Movimiento' },
     ],
     leadPre: 'Hay momentos', leadEm: 'que no necesitan intensidad.', leadPost: 'Necesitan claridad.',
     body: [
       'White Ice aparece cuando todo se vuelve liviano. La frescura inicial despierta los sentidos, las notas marinas limpian el aire y el fondo suave y elegante deja una estela pura que transmite calma y seguridad.',
-      'Es frescura que ordena. Es limpieza que atrae. Es el perfume de quien se siente cÃ³modo siendo autÃ©ntico.',
+      'Es frescura que ordena. Es limpieza que atrae. Es el perfume de quien se siente cómodo siendo auténtico.',
     ],
     closingLine: 'White Ice no invade.',
     closingEm: 'Refresca.',
-    reference: 'Acqua di GiÃ² â€” Armani',
-    referenceDesc: 'Va por la misma lÃ­nea olfativa â€” acuÃ¡tico y energizante. Ideal para primavera y verano. Liviano para el movimiento, fresco para el esfuerzo.',
-    notes: { top: ['Bergamota', 'Lima', 'LimÃ³n', 'Mandarina', 'Naranja'], heart: ['Marino', 'JazmÃ­n', 'Romero', 'Fresia'], base: ['Ãmbar', 'Cedro', 'Musgo', 'PachulÃ­', 'Almizcles'] },
-    family: ['Fresco', 'AcuÃ¡tico', 'CÃ­trico', 'Limpio'],
-    stock: 'En stock Â· EnvÃ­o en 24/48hs',
+    reference: 'Acqua di Giò — Armani',
+    referenceDesc: 'Va por la misma línea olfativa — acuático y energizante. Ideal para primavera y verano. Liviano para el movimiento, fresco para el esfuerzo.',
+    notes: { top: ['Bergamota', 'Lima', 'Limón', 'Mandarina', 'Naranja'], heart: ['Marino', 'Jazmín', 'Romero', 'Fresia'], base: ['Ámbar', 'Cedro', 'Musgo', 'Pachulí', 'Almizcles'] },
+    family: ['Fresco', 'Acuático', 'Cítrico', 'Limpio'],
+    stock: 'En stock · Envío en 24/48hs',
     testimonials: [
-      { stars: 5, text: 'El White Ice es ideal para el dÃ­a a dÃ­a, muy fresco y liviano. Lo uso para ir al gym y a la oficina.', name: 'NicolÃ¡s MÃ©ndez', city: 'Buenos Aires', initial: 'N' },
-      { stars: 5, text: 'Buena atenciÃ³n, buen producto. Me lo recomendaron y no me defraudÃ³.', name: 'JonÃ¡s Castro', city: 'CÃ³rdoba', initial: 'J' },
+      { stars: 5, text: 'El White Ice es ideal para el día a día, muy fresco y liviano. Lo uso para ir al gym y a la oficina.', name: 'Nicolás Méndez', city: 'Buenos Aires', initial: 'N' },
+      { stars: 5, text: 'Buena atención, buen producto. Me lo recomendaron y no me defraudó.', name: 'Jonás Castro', city: 'Córdoba', initial: 'J' },
     ],
   },
 };
 
-// â”€â”€â”€ SVG badge icons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SVG badge icons ───────────────────────────────────────────────────────────
 function BadgeIcon({ type, style }) {
   const paths = {
     moon:      <path d="M20 14.5a8 8 0 1 1-10.5-10.5 7 7 0 0 0 10.5 10.5Z" />,
@@ -185,7 +185,7 @@ function BadgeIcon({ type, style }) {
   );
 }
 
-// â”€â”€â”€ Registration corner marks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Registration corner marks ─────────────────────────────────────────────────
 function RegMarks({ size = 14 }) {
   const base = { position: 'absolute', width: size, height: size, borderColor: 'var(--sol-muted-2)', borderStyle: 'solid' };
   const pad = size + 4;
@@ -199,7 +199,7 @@ function RegMarks({ size = 14 }) {
   );
 }
 
-// â”€â”€â”€ CSS Bottle large â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── CSS Bottle large ──────────────────────────────────────────────────────────
 function CSSBottle({ name, btl1, btl2 }) {
   return (
     <div style={{
@@ -242,7 +242,7 @@ function CSSBottle({ name, btl1, btl2 }) {
           <div style={{ width: 30, height: '0.5px', background: 'var(--accent)', margin: '0 auto 8px' }} />
           {name}
           <small className="font-jakarta" style={{ display: 'block', fontSize: '7px', letterSpacing: '0.24em', color: 'var(--sol-ink-dim)', marginTop: '6px', fontWeight: 400, opacity: 0.7 }}>
-            EDP Â· 100ML
+            EDP · 100ML
           </small>
           {/* Accent line below */}
           <div style={{ width: 30, height: '0.5px', background: 'var(--accent)', margin: '6px auto 0' }} />
@@ -252,7 +252,7 @@ function CSSBottle({ name, btl1, btl2 }) {
   );
 }
 
-// â”€â”€â”€ Screens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Screens ───────────────────────────────────────────────────────────────────
 function LoadingScreen() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--sol-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -276,14 +276,14 @@ function NotFoundScreen() {
           className="font-jakarta"
           style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-ink)', textDecoration: 'none', borderBottom: '0.5px solid var(--sol-line-mid)', paddingBottom: 4 }}
         >
-          Volver a la tienda â†’
+          Volver a la tienda →
         </Link>
       </div>
     </div>
   );
 }
 
-// â”€â”€â”€ Main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Main component ────────────────────────────────────────────────────────────
 export default function Producto() {
   const { id: slug } = useParams();
   const [perfume, setPerfume]   = useState(null);
@@ -372,7 +372,7 @@ export default function Producto() {
   return (
     <div style={{ background: 'var(--sol-bg)', color: 'var(--sol-ink)', minHeight: '100vh', overflowX: 'hidden' }}>
 
-      {/* â”€â”€ Breadcrumb nav â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Breadcrumb nav ─────────────────────────────────────────── */}
       <div style={{ borderBottom: '0.5px solid var(--sol-line)', padding: '14px 22px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         <Link
           to="/tienda"
@@ -392,10 +392,10 @@ export default function Producto() {
         </span>
       </div>
 
-      {/* â”€â”€ HERO: 2-col on desktop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── HERO: 2-col on desktop ──────────────────────────────────── */}
       <div className="sol-prod-main">
 
-        {/* â”€â”€ Image panel â”€â”€ */}
+        {/* ── Image panel ── */}
         <div >
 
           {/* Stage */}
@@ -420,13 +420,13 @@ export default function Producto() {
 
             {/* Stage labels */}
             <span className="font-jakarta" style={{ position: 'absolute', top: 16, left: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', zIndex: 2 }}>
-              NÂ°/{data.code || '??'} Â· Solution
+              N°/{data.code || '??'} · Solution
             </span>
             <span className="font-jakarta" style={{ position: 'absolute', top: 16, right: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--accent)', zIndex: 2 }}>
               â— En stock
             </span>
             <span className="font-jakarta" style={{ position: 'absolute', bottom: 16, left: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', zIndex: 2 }}>
-              EDP Â· 100ML
+              EDP · 100ML
             </span>
             <span className="font-jakarta" style={{ position: 'absolute', bottom: 16, right: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', zIndex: 2 }}>
               Origen AR
@@ -531,7 +531,7 @@ export default function Producto() {
           )}
         </div>
 
-        {/* â”€â”€ Info panel â”€â”€ */}
+        {/* ── Info panel ── */}
         <div >
 
           {/* Product head */}
@@ -542,7 +542,7 @@ export default function Producto() {
               display: 'flex', alignItems: 'center', gap: '8px',
             }}>
               <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block', flexShrink: 0 }} />
-              ColecciÃ³n Solution Â· NÂ°/{data.code || '??'}
+              Colección Solution · N°/{data.code || '??'}
             </div>
             <h1 className="font-jost" style={{
               fontWeight: 300, fontSize: 'clamp(38px, 10vw, 52px)',
@@ -641,7 +641,7 @@ export default function Producto() {
             <div style={{ padding: '48px 22px 40px', ...SEC }}>
               <div style={{ textAlign: 'center', marginBottom: '36px' }}>
                 <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '10px' }}>
-                  PirÃ¡mide olfativa
+                  Pirámide olfativa
                 </div>
                 <h2 className="font-jost" style={{ fontWeight: 300, fontSize: '26px', letterSpacing: '-0.02em', color: 'var(--sol-ink)' }}>
                   Tres tiempos.<br />
@@ -651,14 +651,14 @@ export default function Producto() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
                 {[
                   { num: '01', name: 'Salida',   items: notes.top },
-                  { num: '02', name: 'CorazÃ³n',  items: notes.heart },
+                  { num: '02', name: 'Corazón',  items: notes.heart },
                   { num: '03', name: 'Fondo',    items: notes.base },
                 ].map(col => col.items.length > 0 && (
                   <div key={col.name} style={{ display: 'flex', flexDirection: 'column' }}>
                     {/* Column head */}
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '14px' }}>
                       <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', color: 'var(--accent)', marginBottom: '4px' }}>
-                        NÂ°/{col.num}
+                        N°/{col.num}
                       </div>
                       <div className="font-jost" style={{ fontSize: '12px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--sol-ink)' }}>
                         {col.name}
@@ -730,15 +730,15 @@ export default function Producto() {
             </div>
             <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '22px', position: 'relative' }}>
               <strong style={{ color: 'var(--sol-ink-dim)', fontWeight: 400 }}>{data.stock || 'En stock'}</strong>
-              {' Â· '}Hasta 12 cuotas
+              {' · '}Hasta 12 cuotas
             </div>
 
             {/* Trust row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', padding: '18px 0', marginBottom: '22px', borderTop: '0.5px solid var(--sol-line)', borderBottom: '0.5px solid var(--sol-line)' }}>
               {[
-                { icon: <path d="M3 7h13v9H3z M16 11h4l1 2v3h-5z" />, label: 'EnvÃ­o\n24/48hs' },
-                { icon: <path d="M12 3l8 3v6c0 4.5-3.5 8-8 9-4.5-1-8-4.5-8-9V6l8-3Z M9 12l2.2 2.2L15 10" />, label: 'GarantÃ­a\n30 dÃ­as' },
-                { icon: <><rect x="3" y="6" width="18" height="13" rx="1"/><path d="M3 10h18"/></>, label: 'Cuotas\nsin interÃ©s' },
+                { icon: <path d="M3 7h13v9H3z M16 11h4l1 2v3h-5z" />, label: 'Envío\n24/48hs' },
+                { icon: <path d="M12 3l8 3v6c0 4.5-3.5 8-8 9-4.5-1-8-4.5-8-9V6l8-3Z M9 12l2.2 2.2L15 10" />, label: 'Garantía\n30 días' },
+                { icon: <><rect x="3" y="6" width="18" height="13" rx="1"/><path d="M3 10h18"/></>, label: 'Cuotas\nsin interés' },
               ].map((t, i) => (
                 <div key={i} style={{ textAlign: 'center', borderRight: i < 2 ? '0.5px solid var(--sol-line)' : 'none', padding: '0 6px' }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="var(--sol-ink-dim)" strokeWidth="1.2" aria-hidden style={{ width: 16, height: 16, display: 'block', margin: '0 auto 8px' }}>
@@ -768,14 +768,14 @@ export default function Producto() {
               onMouseLeave={e => e.currentTarget.style.opacity = '1'}
             >
               <span>Agregar al carrito</span>
-              <span style={{ display: 'inline-block', transition: 'transform 0.3s' }}>â†’</span>
+              <span style={{ display: 'inline-block', transition: 'transform 0.3s' }}>→</span>
             </button>
           </div>
 
         </div>{/* end info panel */}
       </div>{/* end hero grid */}
 
-      {/* â”€â”€ TESTIMONIALS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── TESTIMONIALS ───────────────────────────────────────────── */}
       {data.testimonials?.length > 0 && (
         <section style={{ padding: 'var(--sol-section-py) 0', ...SEC }}>
           <div className="sol-container" style={{ padding: '0 var(--sol-section-px)' }}>
@@ -835,22 +835,22 @@ export default function Producto() {
         </section>
       )}
 
-      {/* â”€â”€ VIDEO REELS (placeholder) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── VIDEO REELS (placeholder) ───────────────────────────────── */}
       <section style={{ padding: 'var(--sol-section-py) 0', ...SEC }}>
         <div className="sol-container" style={{ padding: '0 var(--sol-section-px)' }}>
           <div style={{ marginBottom: '28px' }}>
             <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '8px' }}>
-              ReseÃ±as en video
+              Reseñas en video
             </div>
             <h2 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(22px, 5vw, 28px)', letterSpacing: '-0.02em', color: 'var(--sol-ink)', marginBottom: '6px' }}>
               Lo probaron <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)' }}>y lo contaron</em>.
             </h2>
             <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 5, height: 5, background: 'var(--accent)', borderRadius: '50%', display: 'inline-block' }} />
-              Clientes reales Â· Sin filtros
+              Clientes reales · Sin filtros
             </div>
           </div>
-          {/* 2Ã—2 grid of video placeholders */}
+          {/* 2×2 grid of video placeholders */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             {[
               { num: '01', handle: 'andresf.ok',  dur: '0:24', likes: '1.2K' },
@@ -870,7 +870,7 @@ export default function Producto() {
                   pointerEvents: 'none',
                 }} />
                 <span className="font-jakarta" style={{ position: 'absolute', top: 10, left: 12, fontSize: '8px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
-                  NÂ°/{r.num}
+                  N°/{r.num}
                 </span>
                 <span className="font-jakarta" style={{ position: 'absolute', top: 10, right: 12, fontSize: '8px', letterSpacing: '0.2em', color: 'var(--sol-ink-dim)', background: 'rgba(0,0,0,0.55)', padding: '2px 6px' }}>
                   {r.dur}
@@ -899,14 +899,14 @@ export default function Producto() {
         </div>
       </section>
 
-      {/* â”€â”€ FINAL CTA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── FINAL CTA ──────────────────────────────────────────────── */}
       <section style={{ padding: 'var(--sol-section-py) 0 calc(var(--sol-section-py) * 1.5)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         {/* Accent glow */}
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(80% 80% at 50% 100%, var(--accent-soft) 0%, transparent 65%)', pointerEvents: 'none' }} />
         <div className="sol-container" style={{ padding: '0 var(--sol-section-px)', position: 'relative' }}>
           <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
             <span style={{ display: 'inline-block', width: 18, height: '0.5px', background: 'var(--sol-line-mid)', verticalAlign: 'middle' }} />
-            Â¿Listo?
+            ¿Listo?
             <span style={{ display: 'inline-block', width: 18, height: '0.5px', background: 'var(--sol-line-mid)', verticalAlign: 'middle' }} />
           </div>
           <h2 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(32px, 9vw, 48px)', lineHeight: 1.05, letterSpacing: '-0.025em', marginBottom: '28px' }}>
@@ -927,8 +927,8 @@ export default function Producto() {
             onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
             onMouseLeave={e => e.currentTarget.style.opacity = '1'}
           >
-            <span>Agregar al carrito Â· {price}</span>
-            <span>â†’</span>
+            <span>Agregar al carrito · {price}</span>
+            <span>→</span>
           </button>
         </div>
       </section>

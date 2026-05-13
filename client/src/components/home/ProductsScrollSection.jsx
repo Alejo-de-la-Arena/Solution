@@ -1,9 +1,9 @@
-﻿import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getPublicProducts, productToPerfume } from '../../services/products';
 import { useReveal } from '../../hooks/useReveal';
 
-// â”€â”€â”€ Hardcoded por decisiÃ³n del cliente â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Hardcoded por decisión del cliente ───────────────────────────────────────
 const REFERENCIAS = {
   'red-desire':   'Stronger with you',
   'black-code':   'Creed Aventus',
@@ -15,16 +15,16 @@ const REFERENCIAS = {
 const PRODUCT_META = {
   'red-desire':   { momento: 'Noche',   dotColor: '#c0392b', btl1: '#3a1612', btl2: '#1a0907' },
   'black-code':   { momento: 'Salida',  dotColor: '#888888', btl1: '#1a1a1c', btl2: '#070708' },
-  'yellow-bloom': { momento: 'DÃ­a',     dotColor: '#e6a72f', btl1: '#3a2e10', btl2: '#1a1207' },
+  'yellow-bloom': { momento: 'Día',     dotColor: '#e6a72f', btl1: '#3a2e10', btl2: '#1a1207' },
   'deep-blue':    { momento: 'Trabajo', dotColor: '#378add', btl1: '#0f2236', btl2: '#060c14' },
   'white-ice':    { momento: 'Gym',     dotColor: '#0dd3b8', btl1: '#1a2624', btl2: '#080d0c' },
 };
 
-const BADGE_SLUG   = 'red-desire';
-const CARD_WIDTH   = 260;
-const CARD_GAP     = 12;
+const BADGE_SLUG = 'red-desire';
+const CARD_WIDTH = 260;   // mobile base
+const CARD_GAP   = 14;
 
-// â”€â”€â”€ Registration corner marks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Registration corner marks ───────────────────────────────────────────────
 function RegMarks() {
   const base = { position: 'absolute', width: '10px', height: '10px', borderColor: 'var(--sol-muted-2)', borderStyle: 'solid' };
   return (
@@ -37,7 +37,7 @@ function RegMarks() {
   );
 }
 
-// â”€â”€â”€ CSS bottle placeholder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── CSS bottle placeholder ───────────────────────────────────────────────────
 function CSSBottle({ name, btl1, btl2 }) {
   return (
     <div
@@ -91,7 +91,7 @@ function CSSBottle({ name, btl1, btl2 }) {
             className="font-jakarta"
             style={{ display: 'block', fontSize: '7px', letterSpacing: '0.22em', color: 'var(--sol-ink-dim)', marginTop: '3px', opacity: 0.7 }}
           >
-            EDP Â· 100ML
+            EDP · 100ML
           </small>
         </div>
       </div>
@@ -99,7 +99,7 @@ function CSSBottle({ name, btl1, btl2 }) {
   );
 }
 
-// â”€â”€â”€ Single product card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Single product card ──────────────────────────────────────────────────────
 function ProductCard({ product }) {
   const meta = PRODUCT_META[product.slug] || { momento: product.usage || '', dotColor: product.accent_color || '#888', btl1: '#1a1a1a', btl2: '#0a0a0a' };
   const referencia = REFERENCIAS[product.slug] || '';
@@ -111,7 +111,8 @@ function ProductCard({ product }) {
       to={`/producto/${product.slug}`}
       className="sol-prod-card"
       style={{
-        flex: `0 0 ${CARD_WIDTH}px`,
+        flexShrink: 0,
+        width: `${CARD_WIDTH}px`,
         scrollSnapAlign: 'start',
         background: 'var(--sol-bg-card)',
         border: `0.5px solid ${isFeatured ? 'var(--sol-green-dim)' : 'var(--sol-line)'}`,
@@ -136,7 +137,7 @@ function ProductCard({ product }) {
             padding: '4px 8px', fontWeight: 500, zIndex: 2,
           }}
         >
-          MÃ¡s vendido
+          Más vendido
         </span>
       )}
 
@@ -201,7 +202,7 @@ function ProductCard({ product }) {
           className="font-jakarta"
           style={{ fontSize: '9.5px', letterSpacing: '0.18em', color: 'var(--sol-muted)', textTransform: 'uppercase', marginBottom: '14px' }}
         >
-          {referencia ? `â†’ ${referencia}` : ''}
+          {referencia ? `→ ${referencia}` : ''}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '14px', borderTop: '0.5px solid var(--sol-line)' }}>
@@ -231,12 +232,13 @@ function ProductCard({ product }) {
   );
 }
 
-// â”€â”€â”€ Skeleton card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Skeleton card ────────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
     <div
       style={{
-        flex: `0 0 ${CARD_WIDTH}px`,
+        flexShrink: 0,
+        width: `${CARD_WIDTH}px`,
         background: 'var(--sol-bg-card)',
         border: '0.5px solid var(--sol-line)',
         display: 'flex',
@@ -253,7 +255,7 @@ function SkeletonCard() {
   );
 }
 
-// â”€â”€â”€ Main section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Main section ─────────────────────────────────────────────────────────────
 export default function ProductsScrollSection() {
   const [products, setProducts] = useState([]);
   const [activeIdx, setActiveIdx] = useState(0);
@@ -271,7 +273,7 @@ export default function ProductsScrollSection() {
     return () => { cancelled = true; };
   }, []);
 
-  // Scroll dots
+  // Update active dot on scroll
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -288,6 +290,11 @@ export default function ProductsScrollSection() {
 
   const dotCount = products.length || 5;
 
+  // CSS custom property for the left offset that aligns the first card with the title
+  // On viewports <= 1280px: var(--sol-section-px)
+  // On viewports > 1280px:  (100vw - 1280px) / 2 + var(--sol-section-px)
+  const scrollPaddingLeft = 'max(var(--sol-section-px), calc((100vw - 1280px) / 2 + var(--sol-section-px)))';
+
   return (
     <section
       style={{
@@ -298,48 +305,55 @@ export default function ProductsScrollSection() {
         color: 'var(--sol-ink)',
       }}
     >
-      {/* All content inside container so nothing overflows */}
-      <div className="sol-container" style={{ padding: '0 var(--sol-section-px)' }}>
-        {/* Section head */}
+      {/* Section head — inside max-width container */}
+      <div
+        style={{
+          maxWidth: 1280,
+          margin: '0 auto',
+          padding: '0 var(--sol-section-px)',
+          marginBottom: '40px',
+        }}
+      >
         <div
           ref={headRef}
           className="sol-reveal sol-section-head"
-          style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '40px' }}
+          style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}
         >
           <div>
             <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
-              La colecciÃ³n
+              La colección
             </div>
             <h2 className="font-jost" style={{ fontWeight: 400, fontSize: 'clamp(26px, 5vw, 40px)', lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--sol-ink)', marginTop: '12px' }}>
               Cinco fragancias.<br />
               <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>Cinco momentos.</em>
             </h2>
           </div>
-          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-muted)' }}>Â§ 02</div>
+          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-muted)' }}>§ 02</div>
         </div>
+      </div>
 
-        {/* Horizontal scroll â€” contained */}
-        <div
-          ref={scrollRef}
-          className="sol-scroll"
-          style={{
-            display: 'flex',
-            gap: `${CARD_GAP}px`,
-            overflowX: 'auto',
-            scrollSnapType: 'x mandatory',
-            paddingBottom: '8px',
-            marginLeft: 'calc(-1 * var(--sol-section-px))',
-            marginRight: 'calc(-1 * var(--sol-section-px))',
-            paddingLeft: 'var(--sol-section-px)',
-            paddingRight: 'var(--sol-section-px)',
-            WebkitOverflowScrolling: 'touch',
-          }}
-        >
-          {products.length === 0
-            ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
-            : products.map((p) => <ProductCard key={p.slug} product={p} />)}
-        </div>
+      {/* Horizontal scroll track — full-bleed, first card aligns with title */}
+      <div
+        ref={scrollRef}
+        className="sol-scroll"
+        style={{
+          display: 'flex',
+          gap: `${CARD_GAP}px`,
+          overflowX: 'auto',
+          scrollSnapType: 'x mandatory',
+          paddingLeft: scrollPaddingLeft,
+          paddingRight: 'var(--sol-section-px)',
+          paddingBottom: '8px',
+          WebkitOverflowScrolling: 'touch',
+        }}
+      >
+        {products.length === 0
+          ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
+          : products.map((p) => <ProductCard key={p.slug} product={p} />)}
+      </div>
 
+      {/* Dots + footer row — inside max-width container */}
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)' }}>
         {/* Scroll dots */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '24px' }}>
           {Array.from({ length: dotCount }).map((_, i) => (
@@ -354,7 +368,7 @@ export default function ProductsScrollSection() {
         {/* Footer row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '24px' }}>
           <span className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
-            DeslizÃ¡ â†’
+            Deslizá →
           </span>
           <Link
             to="/tienda"
@@ -368,11 +382,10 @@ export default function ProductsScrollSection() {
             onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--sol-green)'; e.currentTarget.style.borderColor = 'var(--sol-green)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--sol-ink)'; e.currentTarget.style.borderColor = 'var(--sol-line-mid)'; }}
           >
-            Ver la colecciÃ³n completa
+            Ver la colección completa
           </Link>
         </div>
       </div>
     </section>
   );
 }
-
