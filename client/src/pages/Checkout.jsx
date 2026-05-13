@@ -739,7 +739,7 @@ export default function Checkout() {
       {/* Global loading overlay while calling Nave API */}
       <LoadingOverlay visible={loading} />
 
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-8 py-12 sm:py-16">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-8 py-24">
         {/* Title block */}
         <div className="mb-8 sm:mb-10 flex items-end justify-between gap-6 flex-wrap">
           <div>
