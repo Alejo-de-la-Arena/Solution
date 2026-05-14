@@ -11,7 +11,7 @@ import {
 } from '../services/checkout';
 import { quoteShipping } from '../services/shipping';
 import NaveEmbed from '../components/checkout/NaveEmbed';
-import { trackInitiateCheckout, trackPurchase } from '../lib/metaPixel';
+import { trackInitiateCheckout, captureAttributionData } from '../lib/metaPixel';
 import { getTrackedOrder, saveTrackedOrder, updateTrackedOrderStatus } from '../services/orderTracking';
 import { firePurchaseEvent } from '../lib/firePurchaseEvent';
 
@@ -447,6 +447,42 @@ export default function Checkout() {
     return () => clearInterval(interval);
   }, [paymentResult, resultOrderId, clearCart]);
 
+  // ── Polling para Nave embed ──────────────────────────────────────────────
+  // El modal de Nave embebido no hace redirect de vuelta, así que no hay
+  // orderIdFromUrl que dispare la verificación. Necesitamos polear activamente
+  // mientras el modal esté abierto para detectar APPROVED / REJECTED.
+  useEffect(() => {
+    if (!showNaveModal || !resultOrderId) return;
+
+    let stopped = false;
+    let count = 0;
+    const MAX_POLLS = 72; // 6 minutos a 5s
+
+    const interval = setInterval(async () => {
+      count += 1;
+      if (count > MAX_POLLS) { clearInterval(interval); return; }
+      try {
+        const data = await fetchOrderPaymentStatus(resultOrderId);
+        if (stopped) return;
+        if (isCheckoutPaid(data)) {
+          clearInterval(interval);
+          firePurchaseEvent(resultOrderId);
+          setShowNaveModal(false);
+          setPaymentResult('success');
+          updateTrackedOrderStatus(resultOrderId, 'paid');
+          setTimeout(() => clearCart(), 500);
+        } else if (data.order_status === 'payment_failed' || data.order_status === 'cancelled') {
+          clearInterval(interval);
+          setShowNaveModal(false);
+          setPaymentResult('rejected');
+          updateTrackedOrderStatus(resultOrderId, 'payment_failed');
+        }
+      } catch { /* ignorar errores transitorios, seguir poeleando */ }
+    }, 5000);
+
+    return () => { stopped = true; clearInterval(interval); };
+  }, [showNaveModal, resultOrderId, clearCart]);
+
   useEffect(() => {
     if (paymentMethod === 'mercadopago') {
       clearNavePendingStorage();
@@ -603,6 +639,9 @@ export default function Checkout() {
           localStorage.setItem('mp_purchase_backup', snap);
           sessionStorage.setItem('mp_purchase_backup', snap);
         } catch { /* ignore */ }
+        // Guardar fbclid/_fbc/_fbp ANTES de salir del sitio: si iOS ITP las elimina durante
+        // la sesión en MP, las restauramos cuando el usuario vuelve (ver firePurchaseEvent.js).
+        captureAttributionData();
         window.location.assign(mpData.init_point);
         return;
       }
@@ -632,6 +671,7 @@ export default function Checkout() {
       }
       // Fallback robusto: si falta SDK config o payment_request_id, redirigimos al hosted checkout.
       if (data.checkout_url) {
+        captureAttributionData();
         window.location.assign(data.checkout_url);
         return;
       }

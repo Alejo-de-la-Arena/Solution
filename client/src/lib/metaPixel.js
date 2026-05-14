@@ -10,6 +10,73 @@
  * Mejor un evento perdido que uno con value=0 (que Meta marcaría como error).
  */
 
+// ── Atribución: persistencia de fbclid / _fbc / _fbp ─────────────────────
+const ATTR_FBCLID = 'meta_attr_fbclid';
+const ATTR_FBCLID_TS = 'meta_attr_fbclid_ts';
+const ATTR_FBC = 'meta_attr_fbc';
+const ATTR_FBP = 'meta_attr_fbp';
+
+function _getCookie(name) {
+    try {
+        const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const m = document.cookie.match(new RegExp('(?:^|;\\s*)' + escaped + '=([^;]*)'));
+        return m ? decodeURIComponent(m[1]) : null;
+    } catch { return null; }
+}
+
+function _setCookieLax(name, value, days) {
+    try {
+        const exp = new Date(Date.now() + days * 864e5).toUTCString();
+        document.cookie = `${name}=${encodeURIComponent(value)}; expires=${exp}; path=/; SameSite=Lax`;
+    } catch { /* ignore */ }
+}
+
+/**
+ * Captura fbclid de la URL actual y _fbc/_fbp de las cookies, y los guarda en
+ * localStorage como respaldo.
+ * Llamar en cada cambio de ruta (usePageTracking) y antes de cualquier redirect externo.
+ */
+export function captureAttributionData() {
+    if (typeof window === 'undefined') return;
+    try {
+        const url = new URL(window.location.href);
+        const fbclid = url.searchParams.get('fbclid');
+        if (fbclid) {
+            localStorage.setItem(ATTR_FBCLID, fbclid);
+            localStorage.setItem(ATTR_FBCLID_TS, String(Date.now()));
+        }
+        const fbc = _getCookie('_fbc');
+        if (fbc) localStorage.setItem(ATTR_FBC, fbc);
+        const fbp = _getCookie('_fbp');
+        if (fbp) localStorage.setItem(ATTR_FBP, fbp);
+    } catch { /* ignore */ }
+}
+
+/**
+ * Restaura las cookies _fbc y _fbp desde localStorage si fueron eliminadas
+ * (iOS ITP, navegación incógnito, etc.).
+ * Llamar ANTES de disparar cualquier evento Purchase.
+ */
+export function restoreAttributionCookies() {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    try {
+        if (!_getCookie('_fbc')) {
+            const saved = localStorage.getItem(ATTR_FBC);
+            if (saved) {
+                _setCookieLax('_fbc', saved, 90);
+            } else {
+                const fbclid = localStorage.getItem(ATTR_FBCLID);
+                const ts = localStorage.getItem(ATTR_FBCLID_TS);
+                if (fbclid && ts) _setCookieLax('_fbc', `fb.1.${ts}.${fbclid}`, 90);
+            }
+        }
+        if (!_getCookie('_fbp')) {
+            const saved = localStorage.getItem(ATTR_FBP);
+            if (saved) _setCookieLax('_fbp', saved, 90);
+        }
+    } catch { /* ignore */ }
+}
+
 function fbq(eventType, eventName, params, options) {
     if (typeof window === "undefined" || typeof window.fbq !== "function") return;
     if (import.meta.env.DEV) {

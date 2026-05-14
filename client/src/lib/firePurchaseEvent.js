@@ -1,12 +1,14 @@
 /**
  * firePurchaseEvent.js
- * 
+ *
  * Módulo dedicado a disparar el evento Purchase de Meta Pixel.
  * Lee los datos de la orden directamente del servidor (endpoint /api/checkout/track/:orderId)
  * para no depender de localStorage/sessionStorage que se pierden en redirects de MP.
  *
  * Se llama UNA sola vez por orderId gracias a un Set en memoria + localStorage flag.
  */
+
+import { restoreAttributionCookies } from './metaPixel';
 
 const BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 const firedOrders = new Set();
@@ -53,6 +55,9 @@ export async function firePurchaseEvent(orderId) {
 
         if (!order || !items || items.length === 0) return false;
 
+        // Solo disparar para órdenes efectivamente pagadas.
+        if ((order.status || '').toLowerCase() !== 'paid') return false;
+
         const totalValue = Number(order.total) || 0;
         if (totalValue <= 0) return false;
 
@@ -65,6 +70,10 @@ export async function firePurchaseEvent(orderId) {
 
         // Marcar como disparado ANTES de llamar a fbq para evitar duplicados
         markFired(orderId);
+
+        // Restaurar _fbc/_fbp desde localStorage si las cookies fueron eliminadas
+        // durante la sesión en el gateway externo (MP, Nave). Asegura atribución correcta.
+        restoreAttributionCookies();
 
         window.fbq('track', 'Purchase', {
             content_ids: contentIds,
