@@ -326,6 +326,20 @@
   .sol-prod-card { width: 300px !important; }
 }
 
+/* ── Tienda product card: 2-col on desktop ── */
+.sol-prod-tienda-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+}
+@media (min-width: 1024px) {
+  .sol-prod-tienda-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: start;
+  }
+}
+
 /* ── Testimonials: wider cards on desktop ── */
 @media (min-width: 1024px) {
   .sol-test-card { flex-basis: 380px !important; min-width: 380px !important; }

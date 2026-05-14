@@ -3,6 +3,7 @@ import { useCart } from '../contexts/CartContext';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   createNavePayment,
+  createMPPreference,
   getPaymentStatus,
   getMPOrderStatus,
   getCheckoutPaymentProvider,
@@ -10,13 +11,22 @@ import {
 } from '../services/checkout';
 import { quoteShipping } from '../services/shipping';
 import NaveEmbed from '../components/checkout/NaveEmbed';
-import MercadoPagoBrick from '../components/checkout/MercadoPagoBrick';
 import { trackInitiateCheckout, trackPurchase } from '../lib/metaPixel';
 import { getTrackedOrder, saveTrackedOrder, updateTrackedOrderStatus } from '../services/orderTracking';
 import { firePurchaseEvent } from '../lib/firePurchaseEvent';
 
-const inputClass =
-  'w-full bg-zinc-900 border-white/10 border rounded-sm p-3 focus:ring-1 focus:ring-[rgb(0,255,255)] focus:border-[rgb(0,255,255)] transition-colors';
+const PROVINCIAS = [
+  'CABA', 'Buenos Aires', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba',
+  'Corrientes', 'Entre Ríos', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja',
+  'Mendoza', 'Misiones', 'Neuquén', 'Río Negro', 'Salta', 'San Juan',
+  'San Luis', 'Santa Cruz', 'Santa Fe', 'Santiago del Estero',
+  'Tierra del Fuego', 'Tucumán',
+];
+
+const PROVIDER_LABELS = {
+  correo_argentino: 'Correo Argentino',
+  gestionar: 'Gestionar',
+};
 
 const NAVE_ORDER_KEY = 'nave_pending_order';
 function clearNavePendingStorage() {
@@ -42,50 +52,217 @@ async function fetchOrderPaymentStatus(orderId, paymentId) {
 // ── Shipping option card ──────────────────────────────────────────────────
 function ShippingOptionCard({ option, selected, onSelect }) {
   const isSelected = selected?.id === option.id;
-  const icon = option.mode === 'branch' ? '🏪' : '📦';
   return (
     <button
       type="button"
       onClick={() => onSelect(option)}
-      className={`w-full flex items-center justify-between p-4 bg-zinc-900 rounded-sm border transition-colors text-left ${isSelected ? 'border-[rgb(0,255,255)] bg-cyan-900/10' : 'border-white/10 hover:border-white/30'
-        }`}
+      className={`ship-opt ${isSelected ? 'on' : ''}`}
     >
       <div className="flex items-center gap-3 min-w-0">
-        <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 transition-colors ${isSelected ? 'border-[rgb(0,255,255)] bg-[rgb(0,255,255)]' : 'border-white/30'
-          }`} />
+        <span className={`dot ${isSelected ? 'on' : ''}`} />
         <div className="min-w-0">
-          <p className="text-sm font-medium text-white">{icon} {option.label}</p>
-          {option.eta && <p className="text-xs text-white/50 mt-0.5 truncate">{option.eta}</p>}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-white text-sm">{option.label}</span>
+            {option.mode === 'branch' && (
+              <span className="text-[9px] uppercase tracking-widest bg-white/5 border border-white/10 px-1.5 py-0.5 rounded">
+                Retiro
+              </span>
+            )}
+          </div>
+          {option.eta && <div className="text-[11px] text-white/45 mt-0.5">{option.eta}</div>}
         </div>
       </div>
-      <div className="flex-shrink-0 ml-4">
+      <div className="flex-shrink-0 text-right">
         {option.price === 0
           ? <span className="text-[rgb(0,255,255)] text-sm font-medium">Gratis</span>
-          : <span className="text-white text-sm font-medium">${option.price.toLocaleString('es-AR')}</span>
-        }
+          : <span className="text-white text-sm tabular-nums">${option.price.toLocaleString('es-AR')}</span>}
       </div>
     </button>
   );
 }
 
-function PaymentMethodCard({ id, title, subtitle, selected, onSelect }) {
+function PaymentMethodCard({ id, title, subtitle, logoGradient, logoLabel, selected, onSelect }) {
   const isSelected = selected === id;
   return (
     <button
       type="button"
       onClick={() => onSelect(id)}
-      className={`w-full flex items-center justify-between p-4 bg-zinc-900 rounded-sm border transition-colors text-left ${isSelected ? 'border-[rgb(0,255,255)] bg-cyan-900/10' : 'border-white/10 hover:border-white/30'
-        }`}
+      className={`pm-tab ${isSelected ? 'on' : ''}`}
     >
-      <div className="flex items-center gap-3 min-w-0">
-        <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 transition-colors ${isSelected ? 'border-[rgb(0,255,255)] bg-[rgb(0,255,255)]' : 'border-white/30'
-          }`} />
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-white">{title}</p>
-          {subtitle && <p className="text-xs text-white/50 mt-0.5">{subtitle}</p>}
+      <div className="flex w-full items-center justify-between">
+        <span className={`dot ${isSelected ? 'on' : ''}`} />
+        <div className="flex items-center gap-2">
+          <div className="h-4 w-7 rounded-sm" style={{ background: logoGradient }} />
+          <span className="text-[11px] uppercase tracking-widest text-white/50">{logoLabel}</span>
         </div>
       </div>
+      <div className="mt-3 text-sm text-white">{title}</div>
+      {subtitle && <div className="text-[11px] text-white/45 leading-snug">{subtitle}</div>}
     </button>
+  );
+}
+
+// ── Section header (01/02/...) ────────────────────────────────────────────
+function SectionHeader({ n, title, status, right }) {
+  return (
+    <div className="card-h">
+      <div className="flex items-center gap-3">
+        <span className={`step-num ${status === 'done' ? 'done' : ''}`}>{n}</span>
+        <h2 className="font-heading text-[13px] uppercase tracking-[0.18em]">{title}</h2>
+      </div>
+      <div className="flex items-center gap-2 min-w-0">{right}</div>
+    </div>
+  );
+}
+
+// ── Field wrapper: label monoespaciado uppercase + asterisco cyan ─────────
+function Field({ id, label, required, hint, span = 1, children }) {
+  return (
+    <div style={{ gridColumn: `span ${span} / span ${span}` }}>
+      <label className="label" htmlFor={id}>
+        {label}{required && <span className="req">*</span>}
+        {hint && (
+          <span className="ml-auto text-[10px] text-white/30 normal-case tracking-normal">
+            {hint}
+          </span>
+        )}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+// ── Trust badges 2x2 (decorativos) ────────────────────────────────────────
+function TrustBadges() {
+  const badges = [
+    {
+      t: 'Pago 100% seguro', s: 'SSL · PCI-DSS',
+      icon: (
+        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24"><path strokeLinecap="round" d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6l-8-4Z" /><path strokeLinecap="round" strokeLinejoin="round" d="m9 12 2 2 4-4" /></svg>
+      ),
+    },
+    {
+      t: 'Envío a todo el país', s: 'Correo Argentino',
+      icon: (
+        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24"><rect x="2" y="7" width="13" height="10" rx="1" /><path d="M15 10h4l3 3v4h-7" /><circle cx="6.5" cy="18" r="1.6" /><circle cx="17.5" cy="18" r="1.6" /></svg>
+      ),
+    },
+    {
+      t: 'Cambios y devoluciones', s: 'Hasta 30 días',
+      icon: (
+        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></svg>
+      ),
+    },
+    {
+      t: 'Atención humana', s: 'Lun a Vie · 10-18hs',
+      icon: (
+        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 0-3 6.7L21 21l-1.5-4" /><circle cx="9" cy="12" r="1" /><circle cx="13" cy="12" r="1" /><circle cx="17" cy="12" r="1" /></svg>
+      ),
+    },
+  ];
+  return (
+    <div className="badge-row">
+      {badges.map((b, i) => (
+        <div key={i} className="badge-trust">
+          <span className="text-[rgb(0,255,255)] mt-0.5">{b.icon}</span>
+          <div>
+            <div className="text-[12px] text-white leading-tight">{b.t}</div>
+            <div className="text-[10px] text-white/40 mt-0.5 uppercase tracking-widest">{b.s}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Order summary card (sticky a la derecha en desktop, colapsable en mobile) ─
+function OrderSummaryCard({
+  cart, totalPrice, shippingCost, total, providerLabel, shippingLoading,
+  updateQuantity, removeFromCart,
+}) {
+  return (
+    <div className="card-section overflow-hidden">
+      <div className="card-h">
+        <div className="flex items-center gap-3">
+          <span className="step-num">↦</span>
+          <h2 className="font-heading text-[13px] uppercase tracking-[0.18em]">Tu pedido</h2>
+        </div>
+        <span className="text-[10px] text-white/40 uppercase tracking-widest">
+          {cart.length} {cart.length === 1 ? 'item' : 'items'}
+        </span>
+      </div>
+
+      <div className="p-5 space-y-5">
+        {cart.length === 0 && (
+          <p className="text-white/40 text-sm py-6 text-center">Tu carrito está vacío.</p>
+        )}
+        {cart.map((item) => (
+          <div key={item.id} className="flex gap-4">
+            <div className="relative ticks w-[88px] h-[112px] rounded-md overflow-hidden flex-shrink-0 bg-zinc-900">
+              {item.image && (
+                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+              <div>
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-heading text-[13px] tracking-[0.12em] text-white pr-2 leading-snug">
+                    {item.name}
+                  </h3>
+                  <p className="text-sm text-white whitespace-nowrap tabular-nums">
+                    ${(item.price * item.quantity).toLocaleString('es-AR')}
+                  </p>
+                </div>
+                <p className="text-[11px] text-white/45 mt-0.5">60ml · Eau de Parfum</p>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="qty">
+                  <button type="button" onClick={() => updateQuantity(item.id, item.quantity - 1)} aria-label="Restar uno">−</button>
+                  <span className="v">{item.quantity}</span>
+                  <button type="button" onClick={() => updateQuantity(item.id, item.quantity + 1)} aria-label="Sumar uno">+</button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeFromCart(item.id)}
+                  className="text-[10px] text-white/35 hover:text-[rgb(255,0,255)] uppercase tracking-[0.18em] transition-colors"
+                >
+                  Quitar
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="border-t border-white/[0.06] px-5 py-4 space-y-1.5 bg-white/[0.012]">
+        <div className="flex justify-between text-[13px] text-white/55">
+          <span>Subtotal</span>
+          <span className="tabular-nums">${totalPrice.toLocaleString('es-AR')}</span>
+        </div>
+        <div className="flex justify-between text-[13px] text-white/55">
+          <span>
+            Envío
+            {providerLabel && (
+              <span className="text-white/35 ml-1">· {providerLabel}</span>
+            )}
+          </span>
+          {shippingLoading
+            ? <span className="text-white/40 text-[11px]">Calculando...</span>
+            : shippingCost === 0
+              ? <span className="text-[rgb(0,255,255)]">Gratis</span>
+              : <span className="tabular-nums">${shippingCost.toLocaleString('es-AR')}</span>}
+        </div>
+        <div className="pt-3 mt-2 border-t border-white/[0.07] flex justify-between items-end">
+          <span className="font-heading text-[12px] uppercase text-white/70 tracking-[0.18em]">Total</span>
+          <div className="text-right">
+            <div className="text-[9px] text-white/35 uppercase tracking-[0.22em]">ARS</div>
+            <div className="text-2xl text-white font-light tabular-nums leading-none">
+              ${total.toLocaleString('es-AR')}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -114,6 +291,7 @@ export default function Checkout() {
   const [showNaveModal, setShowNaveModal] = useState(false);
   const [paymentRequestId, setPaymentRequestId] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('mercadopago');
+  const [showMobileSummary, setShowMobileSummary] = useState(false);
 
   // Shipping quote state
   const [shippingQuote, setShippingQuote] = useState(null);
@@ -327,7 +505,7 @@ export default function Checkout() {
         unit_price: item.price,
         name: item.name || 'Producto',
       })),
-      shipping_provider: shippingQuote?.provider || undefined,
+      shipping_provider: selectedShipping?.provider || shippingQuote?.provider || undefined,
       shipping_mode: selectedShipping?.mode || undefined,
       shipping_service_type: selectedShipping?.serviceType || undefined,
       shipping_is_free: shippingQuote?.freeShipping || shippingCost === 0,
@@ -341,41 +519,9 @@ export default function Checkout() {
     };
   }, [cart, form, shippingCost, shippingQuote, selectedShipping]);
 
-  const handleMPBrickSuccess = (data) => {
-    setError('');
-    setResultOrderId(data.order_id);
-    const st = (data.order_status || '').toLowerCase();
-    const normalizedStatus = st === 'paid' ? 'paid' : st === 'payment_failed' ? 'payment_failed' : 'pending_payment';
-
-    if (data.order_id) {
-      saveTrackedOrder({
-        orderId: data.order_id,
-        paymentMethod: 'mercadopago',
-        total: grandTotal,
-        customerEmail: (form.email || '').trim() || null,
-        status: normalizedStatus,
-      });
-    }
-
-    if (st === 'paid') {
-      firePurchaseEvent(data.order_id);
-      setPaymentResult('success');
-      setTimeout(() => clearCart(), 500);
-    } else if (st === 'payment_failed') {
-      setPaymentResult('rejected');
-    } else {
-      setPaymentResult('pending');
-    }
-  };
-
-  const handleMPBrickError = (msg) => {
-    setError(typeof msg === 'string' ? msg : 'Error al procesar el pago.');
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (paymentMethod === 'mercadopago') return;
 
     const name = (form.name || '').trim();
     const email = (form.email || '').trim();
@@ -387,7 +533,7 @@ export default function Checkout() {
 
     setLoading(true);
     try {
-      const payload = {
+      const basePayload = {
         customer_name: name,
         customer_email: email,
         customer_phone: (form.phone || '').trim() || undefined,
@@ -400,15 +546,13 @@ export default function Checkout() {
         shipping_notes: (form.notes || '').trim() || undefined,
         shipping_method: 'standard',
         shipping_cost: shippingCost,
-        callback_url: `${window.location.origin}/checkout?order_id=PLACEHOLDER`,
         items: itemsWithProductId.map((item) => ({
           product_id: item.productId,
           quantity: item.quantity,
           unit_price: item.price,
           name: item.name || 'Producto',
         })),
-        // Datos del proveedor cotizado
-        shipping_provider: shippingQuote?.provider || undefined,
+        shipping_provider: selectedShipping?.provider || shippingQuote?.provider || undefined,
         shipping_mode: selectedShipping?.mode || undefined,
         shipping_service_type: selectedShipping?.serviceType || undefined,
         shipping_is_free: shippingQuote?.freeShipping || shippingCost === 0,
@@ -421,7 +565,7 @@ export default function Checkout() {
         shipping_quote_response: shippingQuote || undefined,
       };
 
-      // Guardar snapshot para trackPurchase después del redirect
+      // Snapshot del carrito para trackPurchase post-redirect
       try {
         localStorage.setItem('purchase_snapshot', JSON.stringify({
           items: itemsWithProductId.map((i) => ({ id: i.productId || i.id, quantity: i.quantity })),
@@ -429,6 +573,42 @@ export default function Checkout() {
         }));
       } catch { /* ignore */ }
 
+      // ── Branch: Mercado Pago → Checkout Pro (redirect) ─────────────────
+      if (paymentMethod === 'mercadopago') {
+        setCheckoutPaymentProvider('mercadopago');
+        const mpData = await createMPPreference({
+          ...basePayload,
+          callback_url: `${window.location.origin}/checkout`,
+        });
+        if (!mpData?.init_point) {
+          setError('No se pudo preparar el pago con Mercado Pago. Intentá de nuevo.');
+          setLoading(false);
+          return;
+        }
+        if (mpData.order_id) {
+          saveTrackedOrder({
+            orderId: mpData.order_id,
+            paymentMethod: 'mercadopago',
+            total: grandTotal,
+            customerEmail: email,
+            status: 'payment_initiated',
+          });
+        }
+        // Backup adicional para que el callback recupere el carrito si el snapshot global se pisa
+        try {
+          const snap = JSON.stringify({
+            items: itemsWithProductId.map((i) => ({ id: i.productId || i.id, quantity: i.quantity })),
+            totalValue: grandTotal,
+          });
+          localStorage.setItem('mp_purchase_backup', snap);
+          sessionStorage.setItem('mp_purchase_backup', snap);
+        } catch { /* ignore */ }
+        window.location.assign(mpData.init_point);
+        return;
+      }
+
+      // ── Branch: Nave / Naranja X ─────────────────────────────────────
+      const payload = { ...basePayload, callback_url: `${window.location.origin}/checkout?order_id=PLACEHOLDER` };
       setCheckoutPaymentProvider('nave');
       const data = await createNavePayment(payload);
       setResultOrderId(data.order_id);
@@ -541,162 +721,299 @@ export default function Checkout() {
 
   // ── Main checkout form ────────────────────────────────────────────────
   const showShippingSection = form.zip.trim().length >= 4 && form.state.trim().length >= 3;
-  const correoOptions = shippingQuote?.provider === 'correo_argentino' ? (shippingQuote.options || []) : [];
+  const contactDone = !!form.email.trim() && !!form.name.trim();
+  const addressDone = !!form.city.trim() && !!form.state.trim() && form.zip.trim().length >= 4;
+  const shippingDone = showShippingSection && !!selectedShipping?.mode;
+  // El provider efectivo viene de la opción elegida (cuando hay AMBA, Gestionar y Correo
+  // conviven en la misma lista de opciones, cada una con su provider).
+  const activeProvider = selectedShipping?.provider || shippingQuote?.provider || null;
+  const providerLabel = activeProvider ? PROVIDER_LABELS[activeProvider] : null;
+  const shippingOptions = shippingQuote?.options || [];
+  const freeShippingProviderLabel = activeProvider === 'gestionar'
+    ? 'Gestionar'
+    : 'Correo Argentino Clásico';
 
   return (
-    <div className="bg-black text-white min-h-screen">
+    <div className="bg-black text-white min-h-screen checkout-bg-grid">
 
       {/* Global loading overlay while calling Nave API */}
       <LoadingOverlay visible={loading} />
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-24">
-        <div className="text-center mb-12 sm:mb-16">
-          <h1 className="text-3xl sm:text-4xl font-heading tracking-widest">FINALIZAR COMPRA</h1>
-          <Link to="/tienda" className="text-sm text-white/50 hover:text-white transition-colors tracking-widest mt-4 inline-block">
-            &larr; o volver a la tienda
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-8 py-24">
+        {/* Title block */}
+        <div className="mb-8 sm:mb-10 flex items-end justify-between gap-6 flex-wrap">
+          <div>
+            <h1 className="font-heading text-3xl sm:text-[40px] tracking-[0.08em] leading-none">
+              FINALIZAR <span className="text-white/40">COMPRA</span>
+            </h1>
+            <p className="text-white/45 text-sm mt-3 max-w-md">
+              Completá tus datos, elegí el envío y pagá. Demora menos de dos minutos.
+            </p>
+          </div>
+          <Link
+            to="/tienda"
+            className="text-[11px] text-white/45 hover:text-[rgb(0,255,255)] uppercase tracking-[0.2em] border-b border-white/15 pb-0.5 transition-colors"
+          >
+            ← Volver a la tienda
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-16">
+        {/* Pulse "Conexión segura" */}
+        <div className="hidden md:flex items-center gap-2 text-[10px] text-white/40 uppercase tracking-[0.2em] mb-8">
+          <span className="w-1.5 h-1.5 rounded-full bg-[rgb(0,255,255)] pulse-dot" />
+          Conexión segura
+        </div>
 
-          {/* Left: Form */}
-          <div className="space-y-8 lg:order-2">
-            <form onSubmit={handleSubmit} className="space-y-8">
-
-              {/* INFORMACIÓN DE ENVÍO */}
-              <div>
-                <h2 className="text-lg font-heading tracking-widest border-b border-white/10 pb-4 mb-6">INFORMACIÓN DE ENVÍO</h2>
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="email" className="block text-sm text-white/60 mb-2">Email de contacto</label>
-                    <input type="email" id="email" className={inputClass} placeholder="tu@email.com" value={form.email} onChange={handleChange} required />
-                  </div>
-                  <div>
-                    <label htmlFor="name" className="block text-sm text-white/60 mb-2">Nombre y apellido</label>
-                    <input type="text" id="name" className={inputClass} placeholder="Nombre Apellido" value={form.name} onChange={handleChange} required />
-                  </div>
-                  <div>
-                    <label htmlFor="phone" className="block text-sm text-white/60 mb-2">Teléfono</label>
-                    <input type="tel" id="phone" className={inputClass} placeholder="11 1234-5678" value={form.phone} onChange={handleChange} />
-                  </div>
-                  <div>
-                    <label htmlFor="address" className="block text-sm text-white/60 mb-2">Dirección de envío (calle y número)</label>
-                    <input type="text" id="address" className={inputClass} placeholder="Av. Siempre Viva 742" value={form.address} onChange={handleChange} />
-                  </div>
-                  <div>
-                    <label htmlFor="address2" className="block text-sm text-white/60 mb-2">Piso / Depto (opcional)</label>
-                    <input type="text" id="address2" className={inputClass} placeholder="Piso 2, Depto B" value={form.address2} onChange={handleChange} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="city" className="block text-sm text-white/60 mb-2">Ciudad</label>
-                      <input type="text" id="city" className={inputClass} value={form.city} onChange={handleChange} />
-                    </div>
-                    <div>
-                      <label htmlFor="zip" className="block text-sm text-white/60 mb-2">Código Postal</label>
-                      <input type="text" id="zip" className={inputClass} value={form.zip} onChange={handleChange} />
-                    </div>
-                  </div>
-                  <div>
-                    <label htmlFor="state" className="block text-sm text-white/60 mb-2">Provincia</label>
-                    <input type="text" id="state" className={inputClass} placeholder="Buenos Aires" value={form.state} onChange={handleChange} />
-                  </div>
-                  <div>
-                    <label htmlFor="notes" className="block text-sm text-white/60 mb-2">Comentarios para la entrega (opcional)</label>
-                    <input type="text" id="notes" className={inputClass} placeholder="Horario preferido, referencias..." value={form.notes} onChange={handleChange} />
-                  </div>
+        {/* Mobile summary toggle */}
+        <div className="lg:hidden mb-6">
+          <button
+            type="button"
+            onClick={() => setShowMobileSummary((v) => !v)}
+            className="w-full flex items-center justify-between p-4 card-section"
+          >
+            <div className="flex items-center gap-3">
+              <span className="step-num">↦</span>
+              <div className="text-left">
+                <div className="font-heading text-[12px] uppercase tracking-[0.18em]">Resumen del pedido</div>
+                <div className="text-[10px] text-white/45 mt-0.5">
+                  {cart.length} {cart.length === 1 ? 'item' : 'items'} · Total ${grandTotal.toLocaleString('es-AR')}
                 </div>
               </div>
+            </div>
+            <span className="text-[rgb(0,255,255)] text-xs">
+              {showMobileSummary ? '− CERRAR' : '+ VER'}
+            </span>
+          </button>
+          {showMobileSummary && (
+            <div className="mt-4">
+              <OrderSummaryCard
+                cart={cart}
+                totalPrice={totalPrice}
+                shippingCost={shippingCost}
+                total={grandTotal}
+                providerLabel={providerLabel}
+                shippingLoading={shippingLoading}
+                updateQuantity={updateQuantity}
+                removeFromCart={removeFromCart}
+              />
+            </div>
+          )}
+        </div>
 
-              {/* MÉTODO DE ENVÍO */}
-              {showShippingSection && (
-                <div>
-                  <h2 className="text-lg font-heading tracking-widest border-b border-white/10 pb-4 mb-6">MÉTODO DE ENVÍO</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-                  {shippingLoading && (
-                    <div className="flex items-center gap-3 p-4 bg-zinc-900 rounded-sm border border-white/10">
+          {/* Left: 4 cards numeradas */}
+          <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+
+              {/* 01 — CONTACTO */}
+              <section className="card-section">
+                <SectionHeader n="01" title="Contacto" status={contactDone ? 'done' : ''} />
+                <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field id="email" label="Email" required span={2}>
+                    <input id="email" type="email" className="field" placeholder="tu@email.com"
+                      value={form.email} onChange={handleChange} required />
+                  </Field>
+                  <Field id="name" label="Nombre y apellido" required>
+                    <input id="name" className="field" placeholder="Nombre Apellido"
+                      value={form.name} onChange={handleChange} required />
+                  </Field>
+                  <Field id="phone" label="Teléfono" hint="Para coordinar envío">
+                    <input id="phone" type="tel" className="field" placeholder="11 1234-5678"
+                      value={form.phone} onChange={handleChange} />
+                  </Field>
+                </div>
+              </section>
+
+              {/* 02 — DIRECCIÓN */}
+              <section className="card-section">
+                <SectionHeader
+                  n="02"
+                  title="Dirección de envío"
+                  status={addressDone ? 'done' : ''}
+                  right={<span className="text-[10px] text-[rgb(0,255,255)] uppercase tracking-widest">🇦🇷 ARG</span>}
+                />
+                <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field id="address" label="Calle y número" span={2}>
+                    <input id="address" className="field" placeholder="Av. Siempre Viva 742"
+                      value={form.address} onChange={handleChange} />
+                  </Field>
+                  <Field id="address2" label="Piso / Depto" hint="Opcional" span={2}>
+                    <input id="address2" className="field" placeholder="Piso 2, Depto B"
+                      value={form.address2} onChange={handleChange} />
+                  </Field>
+                  <Field id="city" label="Ciudad" required>
+                    <input id="city" className="field" value={form.city} onChange={handleChange} />
+                  </Field>
+                  <Field id="zip" label="Código postal" required>
+                    <input id="zip" className="field" placeholder="1414"
+                      value={form.zip} onChange={handleChange} />
+                  </Field>
+                  <Field id="state" label="Provincia" required span={2}>
+                    <select id="state" className="field appearance-none cursor-pointer"
+                      value={form.state} onChange={handleChange}>
+                      <option value="">Seleccioná una provincia</option>
+                      {PROVINCIAS.map((p) => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </Field>
+                  <Field id="notes" label="Comentarios para la entrega" hint="Opcional" span={2}>
+                    <input id="notes" className="field" placeholder="Horario preferido, referencias..."
+                      value={form.notes} onChange={handleChange} />
+                  </Field>
+                </div>
+              </section>
+
+              {/* 03 — MÉTODO DE ENVÍO */}
+              <section className="card-section">
+                <SectionHeader
+                  n="03"
+                  title="Método de envío"
+                  status={shippingDone ? 'done' : ''}
+                  right={showShippingSection
+                    ? <span className="text-[10px] text-white/40 uppercase tracking-widest truncate">{form.state} · {form.zip}</span>
+                    : <span className="text-[10px] text-white/30 uppercase tracking-widest">Completá tu dirección</span>}
+                />
+                <div className="p-5">
+                  {!showShippingSection && (
+                    <div className="flex items-center gap-3 text-[13px] text-white/40 py-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/20" />
+                      Ingresá provincia y código postal para ver opciones disponibles.
+                    </div>
+                  )}
+
+                  {showShippingSection && shippingLoading && (
+                    <div className="flex items-center gap-3 p-4 bg-zinc-900/40 rounded-md border border-white/10">
                       <div className="w-4 h-4 border border-[rgb(0,255,255)] border-t-transparent rounded-full animate-spin flex-shrink-0" />
                       <span className="text-sm text-white/60">Calculando opciones de envío...</span>
                     </div>
                   )}
 
-                  {!shippingLoading && shippingError && (
-                    <div className="p-4 bg-amber-900/20 border border-amber-500/30 rounded-sm text-sm text-amber-200">
+                  {showShippingSection && !shippingLoading && shippingError && (
+                    <div className="p-4 bg-amber-900/20 border border-amber-500/30 rounded-md text-sm text-amber-200">
                       No se pudo calcular el costo de envío. Se coordinará con el pedido.
                     </div>
                   )}
 
-                  {!shippingLoading && !shippingError && correoOptions.length > 0 && (
-                    <div className="space-y-2">
-                      {shippingQuote.freeShipping && (
-                        <p className="text-xs text-[rgb(0,255,255)] mb-3">
-                          🎉 ¡Envío gratis en Correo Argentino Clásico por comprar 2 o más perfumes!
-                        </p>
+                  {showShippingSection && !shippingLoading && !shippingError && shippingOptions.length > 0 && (
+                    <>
+                      {shippingQuote?.coverage && (
+                        <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-md bg-[rgb(0,255,255)]/5 border border-[rgb(0,255,255)]/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[rgb(0,255,255)]" />
+                          <span className="text-[12px] text-white/75">
+                            CP <span className="text-white">{form.zip.replace(/\D/g, '').slice(0, 4)}</span>
+                            {' → '}
+                            <span className="text-white">{shippingQuote.coverage.partido}</span>
+                            {' · '}
+                            <span className="text-[rgb(0,255,255)]">{shippingQuote.coverage.zoneName}</span>
+                          </span>
+                        </div>
                       )}
-                      {correoOptions.map((option) => (
-                        <ShippingOptionCard
-                          key={option.id}
-                          option={option}
-                          selected={selectedShipping}
-                          onSelect={setSelectedShipping}
-                        />
-                      ))}
-                    </div>
+                      {shippingQuote.freeShipping && (
+                        <div className="flex items-center gap-2 mb-4 text-[11px] uppercase tracking-widest text-[rgb(0,255,255)]/90">
+                          <span className="w-1 h-1 rounded-full bg-[rgb(0,255,255)]" />
+                          Envío gratis en {freeShippingProviderLabel} por comprar 2+ perfumes
+                        </div>
+                      )}
+                      <div className="space-y-2">
+                        {shippingOptions.map((option) => (
+                          <ShippingOptionCard
+                            key={option.id}
+                            option={option}
+                            selected={selectedShipping}
+                            onSelect={setSelectedShipping}
+                          />
+                        ))}
+                      </div>
+                    </>
                   )}
 
-                  {!shippingLoading && !shippingError && shippingQuote?.provider === 'correo_argentino' && correoOptions.length === 0 && (
-                    <div className="p-4 bg-zinc-900 border border-white/10 rounded-sm text-sm text-white/60">
+                  {showShippingSection && !shippingLoading && !shippingError && shippingOptions.length === 0 && shippingQuote && (
+                    <div className="p-4 bg-zinc-900/40 border border-white/10 rounded-md text-sm text-white/60">
                       No encontramos opciones de envío para esa dirección. Se coordinará con el pedido.
                     </div>
                   )}
                 </div>
-              )}
+              </section>
 
-              {/* MÉTODO DE PAGO */}
-              <div>
-                <h2 className="text-lg font-heading tracking-widest border-b border-white/10 pb-4 mb-6">MÉTODO DE PAGO</h2>
-                <div className="space-y-2 mb-6">
-                  <PaymentMethodCard
-                    id="mercadopago"
-                    title="Mercado Pago"
-                    subtitle="Tarjeta, débito, cuotas o dinero en cuenta"
-                    selected={paymentMethod}
-                    onSelect={setPaymentMethod}
-                  />
-                  <PaymentMethodCard
-                    id="nave"
-                    title="Nave / Naranja X"
-                    subtitle="Checkout embebido o redirección"
-                    selected={paymentMethod}
-                    onSelect={setPaymentMethod}
-                  />
-                </div>
-
-                {paymentMethod === 'mercadopago' && (
-                  <div className="space-y-3">
-                    <p className="text-xs text-white/50">
-                      Total a pagar:{' '}
-                      <span className="text-[rgb(0,255,255)] font-medium">${grandTotal.toLocaleString('es-AR')}</span>
-                      . Elegí tu medio de pago abajo.
-                    </p>
-                    <MercadoPagoBrick
-                      amount={grandTotal}
-                      disabled={isSubmitDisabled}
-                      getCheckoutPayload={getCheckoutPayload}
-                      onSuccess={handleMPBrickSuccess}
-                      onError={handleMPBrickError}
+              {/* 04 — MÉTODO DE PAGO */}
+              <section className="card-section">
+                <SectionHeader
+                  n="04"
+                  title="Pago"
+                  right={<span className="text-[10px] text-white/35 uppercase tracking-widest hidden sm:inline">Encriptado · No almacenamos tarjeta</span>}
+                />
+                <div className="p-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+                    <PaymentMethodCard
+                      id="mercadopago"
+                      title="Mercado Pago"
+                      subtitle="Tarjeta, débito, cuotas o dinero en cuenta"
+                      logoGradient="linear-gradient(135deg,#00b1ea,#009ee3)"
+                      logoLabel="MP"
+                      selected={paymentMethod}
+                      onSelect={setPaymentMethod}
+                    />
+                    <PaymentMethodCard
+                      id="nave"
+                      title="Nave · Naranja X"
+                      subtitle="Pagá con tu cuenta o tarjeta Naranja X"
+                      logoGradient="linear-gradient(135deg,#ff7a00,#ff3d3d)"
+                      logoLabel="NX"
+                      selected={paymentMethod}
+                      onSelect={setPaymentMethod}
                     />
                   </div>
-                )}
-              </div>
 
-              {error && <p className="text-red-400 text-sm">{error}</p>}
+                  {paymentMethod === 'mercadopago' && (
+                    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-5 space-y-4">
+                      <div className="flex items-start gap-3">
+                        <div className="h-9 w-12 rounded-md flex-shrink-0" style={{ background: 'linear-gradient(135deg,#00b1ea,#009ee3)' }} />
+                        <div>
+                          <div className="text-sm text-white">Vas a continuar en Mercado Pago</div>
+                          <div className="text-[12px] text-white/45 mt-1 leading-relaxed">
+                            Al hacer click en <span className="text-white/70">"Pagar"</span> te abrimos el checkout seguro de Mercado Pago. Volvés a esta página al finalizar.
+                          </div>
+                        </div>
+                      </div>
 
-              {paymentMethod === 'nave' && (
+                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[12px] text-white/70">
+                        <li className="flex items-center gap-2">
+                          <span className="text-[rgb(0,255,255)]">✓</span> Tarjeta de crédito y débito
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="text-[rgb(0,255,255)]">✓</span> Cuotas con o sin interés
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="text-[rgb(0,255,255)]">✓</span> Dinero en cuenta de Mercado Pago
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="text-[rgb(0,255,255)]">✓</span> Rapipago, Pago Fácil y otros
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+
+                  {paymentMethod === 'nave' && (
+                    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-5 flex items-start gap-3">
+                      <div className="h-9 w-12 rounded-md flex-shrink-0" style={{ background: 'linear-gradient(135deg,#ff7a00,#ff3d3d)' }} />
+                      <div>
+                        <div className="text-sm text-white">Vas a continuar en Nave · Naranja X</div>
+                        <div className="text-[12px] text-white/45 mt-1 leading-relaxed">
+                          Al hacer click en <span className="text-white/70">"Pagar"</span>, se abre el checkout embebido. Si tu cuenta no soporta el SDK, te redirigimos al checkout seguro de Nave. Volvés a esta página al finalizar.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {error && <p className="mt-4 text-red-400 text-sm">{error}</p>}
+                </div>
+              </section>
+
+              {(paymentMethod === 'nave' || paymentMethod === 'mercadopago') && (
                 <button
                   type="submit"
                   disabled={isSubmitDisabled}
-                  className="w-full bg-white text-black py-4 text-sm tracking-[0.2em] uppercase font-bold hover:bg-[rgb(0,255,255)] transition-colors duration-300 rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-primary-checkout"
                 >
                   {loading ? 'Procesando...' : `Pagar $${grandTotal.toLocaleString('es-AR')}`}
                 </button>
@@ -704,71 +1021,33 @@ export default function Checkout() {
             </form>
           </div>
 
-          {/* Right: Order Summary */}
-          <div className="space-y-6 lg:order-1 bg-zinc-900/50 p-8 rounded-lg border border-white/10">
-            <h2 className="text-lg font-heading tracking-widest border-b border-white/10 pb-4">TUS PRODUCTOS</h2>
-            {cart.length > 0 ? (
-              <div className="space-y-6">
-                {cart.map((item) => (
-                  <div key={item.id} className="flex gap-4 items-start">
-                    <div className="w-24 h-32 bg-zinc-900 rounded-sm overflow-hidden flex-shrink-0">
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                    </div>
-                    <div className="flex-1 flex flex-col justify-between h-32 py-1">
-                      <div>
-                        <div className="flex justify-between items-start">
-                          <h3 className="font-heading text-white tracking-wide text-sm pr-4">{item.name}</h3>
-                          <p className="text-white/90 font-light text-sm whitespace-nowrap">
-                            ${(item.price * item.quantity).toLocaleString('es-AR')}
-                          </p>
-                        </div>
-                        <p className="text-xs text-white/50 mt-1">60ml • Eau de Parfum</p>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center border border-white/20 rounded-sm">
-                          <button type="button" onClick={() => updateQuantity(item.id, item.quantity - 1)} className="w-8 h-8 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors" aria-label="Restar uno">-</button>
-                          <span className="w-8 text-center text-sm font-medium text-white">{item.quantity}</span>
-                          <button type="button" onClick={() => updateQuantity(item.id, item.quantity + 1)} className="w-8 h-8 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors" aria-label="Añadir uno">+</button>
-                        </div>
-                        <button type="button" onClick={() => removeFromCart(item.id)} className="text-[10px] text-white/40 hover:text-red-400 tracking-widest transition-colors uppercase border-b border-transparent hover:border-red-400/50">
-                          Eliminar
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-white/60 py-8 text-center">No hay productos en tu carrito.</p>
-            )}
-
-            <div className="pt-6 border-t border-white/10">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-white/60 text-sm">
-                  <span>Subtotal</span>
-                  <span>${totalPrice.toLocaleString('es-AR')}</span>
-                </div>
-                <div className="flex justify-between items-center text-white/60 text-sm">
-                  <span>Envío</span>
-                  {shippingLoading
-                    ? <span className="text-white/40 text-xs">Calculando...</span>
-                    : selectedShipping
-                      ? shippingCost === 0
-                        ? <span className="text-[rgb(0,255,255)]">Gratis</span>
-                        : <span>${shippingCost.toLocaleString('es-AR')}</span>
-                      : <span className="text-[rgb(0,255,255)]">Gratis</span>
-                  }
-                </div>
-                <div className="flex justify-between items-end pt-4 border-t border-white/10 mt-4">
-                  <span className="text-white font-heading tracking-widest">TOTAL</span>
-                  <span className="text-2xl font-light text-white tracking-tight">
-                    ${grandTotal.toLocaleString('es-AR')}
-                  </span>
-                </div>
-              </div>
+          {/* Right: sticky summary */}
+          <aside className="hidden lg:block lg:col-span-5 xl:col-span-4">
+            <div className="sticky top-6 space-y-5">
+              <OrderSummaryCard
+                cart={cart}
+                totalPrice={totalPrice}
+                shippingCost={shippingCost}
+                total={grandTotal}
+                providerLabel={providerLabel}
+                shippingLoading={shippingLoading}
+                updateQuantity={updateQuantity}
+                removeFromCart={removeFromCart}
+              />
+              <TrustBadges />
+              <p className="text-[10px] text-white/30 leading-relaxed text-center px-2">
+                Al continuar aceptás los Términos y la Política de Privacidad.
+              </p>
             </div>
-          </div>
+          </aside>
+        </div>
 
+        {/* Mobile: trust badges al final */}
+        <div className="lg:hidden mt-8 space-y-4">
+          <TrustBadges />
+          <p className="text-[10px] text-white/30 leading-relaxed text-center">
+            Al continuar aceptás los Términos y la Política de Privacidad.
+          </p>
         </div>
       </div>
 
