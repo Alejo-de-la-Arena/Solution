@@ -3,6 +3,7 @@ const axios = require('axios');
 const crypto = require('crypto');
 const { supabase } = require('../lib/supabase');
 const { sendPaymentConfirmationEmail } = require('../services/email');
+const { sendPurchaseEvent } = require('../services/metaCapi');
 
 const router = express.Router();
 const MP_API = 'https://api.mercadopago.com';
@@ -220,7 +221,7 @@ async function applyPaymentToDb(orderRowId, payment, { sendEmailIfPaid }) {
 
   const { data: prevOrder, error: prevErr } = await supabase
     .from('orders')
-    .select('id, status, customer_email, customer_name, total, currency, payment_confirmation_email_sent_at')
+    .select('id, status, customer_email, customer_name, customer_phone, total, currency, payment_confirmation_email_sent_at, fbclid')
     .eq('id', orderRowId)
     .maybeSingle();
   if (prevErr || !prevOrder) {
@@ -268,6 +269,16 @@ async function applyPaymentToDb(orderRowId, payment, { sendEmailIfPaid }) {
         .update({ payment_confirmation_email_sent_at: new Date().toISOString() })
         .eq('id', orderRowId);
     }
+
+    // CAPI: evento Purchase server-side (no bloquea — try/catch interno en sendPurchaseEvent)
+    sendPurchaseEvent({
+      orderId:    orderRowId,
+      value:      prevOrder.total,
+      currency:   prevOrder.currency || 'ARS',
+      userEmail:  prevOrder.customer_email,
+      userPhone:  prevOrder.customer_phone,
+      fbclid:     prevOrder.fbclid,
+    }).catch(() => {});
   }
   return nextStatus;
 }
@@ -282,7 +293,7 @@ async function applyMpOrderToDb(orderRowId, mpOrder, { sendEmailIfPaid }) {
 
   const { data: prevOrder, error: prevErr } = await supabase
     .from('orders')
-    .select('id, status, customer_email, customer_name, total, currency, payment_confirmation_email_sent_at, payment_method')
+    .select('id, status, customer_email, customer_name, customer_phone, total, currency, payment_confirmation_email_sent_at, payment_method, fbclid')
     .eq('id', orderRowId)
     .maybeSingle();
 
@@ -329,6 +340,16 @@ async function applyMpOrderToDb(orderRowId, mpOrder, { sendEmailIfPaid }) {
         .update({ payment_confirmation_email_sent_at: new Date().toISOString() })
         .eq('id', orderRowId);
     }
+
+    // CAPI: evento Purchase server-side (no bloquea — try/catch interno en sendPurchaseEvent)
+    sendPurchaseEvent({
+      orderId:   orderRowId,
+      value:     prevOrder.total,
+      currency:  prevOrder.currency || 'ARS',
+      userEmail: prevOrder.customer_email,
+      userPhone: prevOrder.customer_phone,
+      fbclid:    prevOrder.fbclid,
+    }).catch(() => {});
   }
 }
 
@@ -575,6 +596,7 @@ router.post('/mercadopago/create-preference', async (req, res) => {
     shipping_is_free, shipping_agency_code, shipping_agency_name,
     shipping_customer_id, shipping_quote_payload, shipping_quote_response,
     callback_url,
+    fbclid,
   } = req.body || {};
 
   const name = (customer_name || '').trim();
@@ -638,6 +660,7 @@ router.post('/mercadopago/create-preference', async (req, res) => {
     shipping_customer_id: (shipping_customer_id || '').trim() || null,
     shipping_quote_payload: shipping_quote_payload || null,
     shipping_quote_response: shipping_quote_response || null,
+    fbclid: (fbclid || '').trim() || null,
   };
 
   const { data: order, error: orderErr } = await supabase
@@ -733,6 +756,7 @@ router.post('/mercadopago/process-card-payment', async (req, res) => {
     shipping_provider, shipping_mode, shipping_service_type,
     shipping_is_free, shipping_agency_code, shipping_agency_name,
     shipping_customer_id, shipping_quote_payload, shipping_quote_response,
+    fbclid,
   } = req.body || {};
 
   // Validar datos del Brick primero (comunes a creación e intento de retry).
@@ -825,6 +849,7 @@ router.post('/mercadopago/process-card-payment', async (req, res) => {
       shipping_customer_id: (shipping_customer_id || '').trim() || null,
       shipping_quote_payload: shipping_quote_payload || null,
       shipping_quote_response: shipping_quote_response || null,
+      fbclid: (fbclid || '').trim() || null,
     };
 
     const { data: newOrder, error: orderErr } = await supabase

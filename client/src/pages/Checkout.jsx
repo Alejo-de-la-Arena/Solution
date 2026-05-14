@@ -533,6 +533,10 @@ export default function Checkout() {
 
     setLoading(true);
     try {
+      // Recuperar fbclid guardado por captureAttributionData (metaPixel.js)
+      let _fbclid;
+      try { _fbclid = localStorage.getItem('meta_attr_fbclid') || undefined; } catch { /* ignore */ }
+
       const basePayload = {
         customer_name: name,
         customer_email: email,
@@ -563,6 +567,7 @@ export default function Checkout() {
           ? { parcel: shippingQuote.parcel, selectedOption: selectedShipping }
           : undefined,
         shipping_quote_response: shippingQuote || undefined,
+        fbclid: _fbclid,
       };
 
       // Snapshot del carrito para trackPurchase post-redirect
