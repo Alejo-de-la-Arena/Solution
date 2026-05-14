@@ -27,10 +27,18 @@
   100% { transform: translateX(-50%); }
 }
 .sol-ticker-track {
-  display: inline-block;
-  animation: sol-ticker 15s linear infinite;
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  line-height: 1;
+  animation: sol-ticker 13s linear infinite;
   will-change: transform;
   white-space: nowrap;
+}
+@media (max-width: 767px) {
+  .sol-ticker-track {
+    animation-duration: 15s;
+  }
 }
 
 /* ── Pulse (LIVE badge) ── */
@@ -217,20 +225,21 @@
 
 /* ── Product scroll: forced padding so Tailwind reset can't strip it ── */
 .sol-prod-scroll {
-  padding-left: var(--sol-section-px) !important;
+  --sol-prod-edge-offset: var(--sol-section-px);
+  padding-left: 0 !important;
   box-sizing: border-box !important;
 }
 @media (min-width: 1281px) {
   /* Align first card with the sol-container left edge on wide viewports */
   .sol-prod-scroll {
-    padding-left: calc((100vw - 1280px) / 2 + var(--sol-section-px)) !important;
+    --sol-prod-edge-offset: calc((100vw - 1280px) / 2 + var(--sol-section-px));
   }
 }
 
 /* ── TrustBar responsive ── */
-.sol-trust-item   { padding: 22px 14px; }
-.sol-trust-title  { font-size: 12px; }
-.sol-trust-sub    { font-size: 9px; }
+.sol-trust-item   { padding: 26px 14px; }
+.sol-trust-title  { font-size: 14px; }
+.sol-trust-sub    { font-size: 10px; }
 .sol-trust-icon   { display: block; }
 .sol-trust-icon-lg { display: none !important; }
 @media (min-width: 768px) {
@@ -244,6 +253,26 @@
 /* ── Btn hover arrow nudge ── */
 .sol-btn:hover .sol-arrow { transform: translateX(4px); }
 .sol-arrow { display: inline-block; transition: transform 0.4s var(--sol-ease); }
+
+/* ── Wholesale CTAs: stack full-width on mobile, row on desktop ── */
+.sol-wholesale-ctas {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sol-wholesale-ctas > * {
+  width: 100%;
+  box-sizing: border-box;
+}
+@media (min-width: 640px) {
+  .sol-wholesale-ctas {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .sol-wholesale-ctas > * {
+    width: auto;
+  }
+}
 
 /* ── Reduced motion overrides ── */
 @media (prefers-reduced-motion: reduce) {
@@ -766,6 +795,9 @@
 @media (max-width: 767px) {
   h1, h2, h3 {
     text-align: center;
+  }
+  h2 {
+    font-size: clamp(30px, 7.8vw, 36px) !important;
   }
   /* Section header rows → stack vertically, centered */
   .sol-section-head {

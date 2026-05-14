@@ -19,6 +19,14 @@ export default function WholesalePriceTable() {
       className="section-precios-bg bg-black text-white py-12 md:py-20 px-4"
     >
       <div className="relative z-10 max-w-5xl mx-auto">
+        {/* Section eyebrow */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
+          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#4caf72', display: 'inline-block' }} />
+            Precios
+          </div>
+          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'rgba(255,255,255,0.35)' }}>§ 06</div>
+        </div>
         <motion.h2
           initial={{ opacity: 0, y: 14 }}
           whileInView={{ opacity: 1, y: 0 }}

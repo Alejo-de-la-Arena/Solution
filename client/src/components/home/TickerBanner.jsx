@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 const ITEMS = [
   'Envío a todo el país',
@@ -23,7 +23,8 @@ export default function TickerBanner() {
         zIndex: 90,
         height: 'var(--sol-ticker-h)',
         overflow: 'hidden',
-        background: 'var(--sol-green)',
+        background: 'var(--sol-bg)',
+        borderBottom: '0.5px solid var(--sol-line)',
         display: 'flex',
         alignItems: 'center',
         whiteSpace: 'nowrap',
@@ -35,23 +36,29 @@ export default function TickerBanner() {
             <span
               className="font-jakarta"
               style={{
-                display: 'inline-block',
+                display: 'inline-flex',
+                alignItems: 'center',
                 fontSize: '10px',
-                fontWeight: 700,
-                letterSpacing: '0.28em',
+                fontWeight: 600,
+                letterSpacing: '0.24em',
                 textTransform: 'uppercase',
-                color: 'rgba(0,0,0,0.82)',
-                padding: '0 22px',
+                color: '#999',
+                lineHeight: 1,
               }}
             >
               {item}
             </span>
             <span
-              className="font-jakarta"
-              style={{ color: 'rgba(0,0,0,0.80)', fontSize: '8px', padding: '0 4px' }}
               aria-hidden
+              style={{
+                display: 'inline-block',
+                color: 'var(--sol-green)',
+                fontSize: '8px',
+                padding: '0 20px',
+                verticalAlign: 'middle',
+              }}
             >
-              .
+              ◆
             </span>
           </span>
         ))}
@@ -59,4 +66,3 @@ export default function TickerBanner() {
     </div>
   );
 }
-

@@ -112,9 +112,12 @@ export default function WholesaleBenefitsGrid() {
 
         {/* Section header */}
         <div ref={headRef} className="sol-reveal" style={{ marginBottom: '56px' }}>
-          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sol-green)', display: 'inline-block' }} />
-            Beneficios
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sol-green)', display: 'inline-block' }} />
+              Beneficios
+            </div>
+            <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-muted)' }}>§ 03</div>
           </div>
           <h2 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(28px, 5vw, 48px)', lineHeight: 1.1, letterSpacing: '-0.025em', color: 'var(--sol-ink)', maxWidth: 520 }}>
             Todo lo que necesitás<br />
