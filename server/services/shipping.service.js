@@ -1,48 +1,9 @@
 const correoProvider = require('./providers/correo/correo.provider');
-const gestionarProvider = require('./providers/gestionar.provider');
 const { isAmbaCoverage } = require('../data/amba-zones');
 const { getOrderBundle, updateOrderShippingFields } = require('./shipping.data');
 const { buildAddressFromOrder } = require('./providers/correo/correo.mapper');
 
 async function quoteShipping({ items, address }) {
-    // Cuando el CP está en AMBA, Gestionar es el provider principal (domicilio con tarifa
-    // fija por zona). Sumamos las opciones de Correo Argentino que sean "sucursal" para
-    // que el usuario pueda elegir retiro si prefiere. Si Correo falla, se devuelve solo
-    // Gestionar; si Gestionar falla, caemos a Correo completo.
-    if (isAmbaCoverage(address?.postalCode)) {
-        const [gestionarResult, correoResult] = await Promise.allSettled([
-            gestionarProvider.quote({ items, address }),
-            correoProvider.quote({ items, address }),
-        ]);
-
-        if (gestionarResult.status === 'fulfilled') {
-            const merged = gestionarResult.value;
-            if (correoResult.status === 'fulfilled') {
-                const branchOptions = (correoResult.value.options || []).filter((o) => o.mode === 'branch');
-                if (branchOptions.length > 0) {
-                    merged.options = [...merged.options, ...branchOptions];
-                    // Carry over de metadata de Correo necesaria para crear el envío si el
-                    // usuario elige una sucursal.
-                    merged.parcel = correoResult.value.parcel || null;
-                    merged.customerId = correoResult.value.customerId || null;
-                }
-            } else {
-                console.warn(
-                    '[shipping] Correo falló al ofrecer sucursales para CP AMBA:',
-                    correoResult.reason?.message || correoResult.reason,
-                );
-            }
-            return merged;
-        }
-
-        console.warn(
-            '[shipping] Gestionar falló pese a CP AMBA, fallback a Correo:',
-            gestionarResult.reason?.message || gestionarResult.reason,
-        );
-        if (correoResult.status === 'fulfilled') return correoResult.value;
-        // Ambos fallaron — re-lanzamos el error de Correo para que el caller lo maneje.
-        throw correoResult.reason;
-    }
     return correoProvider.quote({ items, address });
 }
 

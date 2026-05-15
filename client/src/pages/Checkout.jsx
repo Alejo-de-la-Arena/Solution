@@ -11,7 +11,7 @@ import {
 } from '../services/checkout';
 import { quoteShipping } from '../services/shipping';
 import NaveEmbed from '../components/checkout/NaveEmbed';
-import { trackInitiateCheckout, trackPurchase } from '../lib/metaPixel';
+import { trackInitiateCheckout, captureAttributionData } from '../lib/metaPixel';
 import { getTrackedOrder, saveTrackedOrder, updateTrackedOrderStatus } from '../services/orderTracking';
 import { firePurchaseEvent } from '../lib/firePurchaseEvent';
 
@@ -447,6 +447,42 @@ export default function Checkout() {
     return () => clearInterval(interval);
   }, [paymentResult, resultOrderId, clearCart]);
 
+  // ── Polling para Nave embed ──────────────────────────────────────────────
+  // El modal de Nave embebido no hace redirect de vuelta, así que no hay
+  // orderIdFromUrl que dispare la verificación. Necesitamos polear activamente
+  // mientras el modal esté abierto para detectar APPROVED / REJECTED.
+  useEffect(() => {
+    if (!showNaveModal || !resultOrderId) return;
+
+    let stopped = false;
+    let count = 0;
+    const MAX_POLLS = 72; // 6 minutos a 5s
+
+    const interval = setInterval(async () => {
+      count += 1;
+      if (count > MAX_POLLS) { clearInterval(interval); return; }
+      try {
+        const data = await fetchOrderPaymentStatus(resultOrderId);
+        if (stopped) return;
+        if (isCheckoutPaid(data)) {
+          clearInterval(interval);
+          firePurchaseEvent(resultOrderId);
+          setShowNaveModal(false);
+          setPaymentResult('success');
+          updateTrackedOrderStatus(resultOrderId, 'paid');
+          setTimeout(() => clearCart(), 500);
+        } else if (data.order_status === 'payment_failed' || data.order_status === 'cancelled') {
+          clearInterval(interval);
+          setShowNaveModal(false);
+          setPaymentResult('rejected');
+          updateTrackedOrderStatus(resultOrderId, 'payment_failed');
+        }
+      } catch { /* ignorar errores transitorios, seguir poeleando */ }
+    }, 5000);
+
+    return () => { stopped = true; clearInterval(interval); };
+  }, [showNaveModal, resultOrderId, clearCart]);
+
   useEffect(() => {
     if (paymentMethod === 'mercadopago') {
       clearNavePendingStorage();
@@ -603,6 +639,9 @@ export default function Checkout() {
           localStorage.setItem('mp_purchase_backup', snap);
           sessionStorage.setItem('mp_purchase_backup', snap);
         } catch { /* ignore */ }
+        // Guardar fbclid/_fbc/_fbp ANTES de salir del sitio: si iOS ITP las elimina durante
+        // la sesión en MP, las restauramos cuando el usuario vuelve (ver firePurchaseEvent.js).
+        captureAttributionData();
         window.location.assign(mpData.init_point);
         return;
       }
@@ -632,6 +671,7 @@ export default function Checkout() {
       }
       // Fallback robusto: si falta SDK config o payment_request_id, redirigimos al hosted checkout.
       if (data.checkout_url) {
+        captureAttributionData();
         window.location.assign(data.checkout_url);
         return;
       }
@@ -739,7 +779,7 @@ export default function Checkout() {
       {/* Global loading overlay while calling Nave API */}
       <LoadingOverlay visible={loading} />
 
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-8 py-12 sm:py-16">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-8 py-24">
         {/* Title block */}
         <div className="mb-8 sm:mb-10 flex items-end justify-between gap-6 flex-wrap">
           <div>
@@ -812,15 +852,15 @@ export default function Checkout() {
                 <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field id="email" label="Email" required span={2}>
                     <input id="email" type="email" className="field" placeholder="tu@email.com"
-                           value={form.email} onChange={handleChange} required />
+                      value={form.email} onChange={handleChange} required />
                   </Field>
                   <Field id="name" label="Nombre y apellido" required>
                     <input id="name" className="field" placeholder="Nombre Apellido"
-                           value={form.name} onChange={handleChange} required />
+                      value={form.name} onChange={handleChange} required />
                   </Field>
                   <Field id="phone" label="Teléfono" hint="Para coordinar envío">
                     <input id="phone" type="tel" className="field" placeholder="11 1234-5678"
-                           value={form.phone} onChange={handleChange} />
+                      value={form.phone} onChange={handleChange} />
                   </Field>
                 </div>
               </section>
@@ -836,29 +876,29 @@ export default function Checkout() {
                 <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field id="address" label="Calle y número" span={2}>
                     <input id="address" className="field" placeholder="Av. Siempre Viva 742"
-                           value={form.address} onChange={handleChange} />
+                      value={form.address} onChange={handleChange} />
                   </Field>
                   <Field id="address2" label="Piso / Depto" hint="Opcional" span={2}>
                     <input id="address2" className="field" placeholder="Piso 2, Depto B"
-                           value={form.address2} onChange={handleChange} />
+                      value={form.address2} onChange={handleChange} />
                   </Field>
                   <Field id="city" label="Ciudad" required>
                     <input id="city" className="field" value={form.city} onChange={handleChange} />
                   </Field>
                   <Field id="zip" label="Código postal" required>
                     <input id="zip" className="field" placeholder="1414"
-                           value={form.zip} onChange={handleChange} />
+                      value={form.zip} onChange={handleChange} />
                   </Field>
                   <Field id="state" label="Provincia" required span={2}>
                     <select id="state" className="field appearance-none cursor-pointer"
-                            value={form.state} onChange={handleChange}>
+                      value={form.state} onChange={handleChange}>
                       <option value="">Seleccioná una provincia</option>
                       {PROVINCIAS.map((p) => <option key={p} value={p}>{p}</option>)}
                     </select>
                   </Field>
                   <Field id="notes" label="Comentarios para la entrega" hint="Opcional" span={2}>
                     <input id="notes" className="field" placeholder="Horario preferido, referencias..."
-                           value={form.notes} onChange={handleChange} />
+                      value={form.notes} onChange={handleChange} />
                   </Field>
                 </div>
               </section>

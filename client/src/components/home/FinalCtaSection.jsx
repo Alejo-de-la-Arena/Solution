@@ -1,147 +1,85 @@
 import { Link } from 'react-router-dom';
-import { useReveal } from '../../hooks/useReveal';
+import { motion } from 'motion/react';
+import { useScrollMotion } from '../../hooks/useScrollMotion';
 
 export default function FinalCtaSection() {
-  const innerRef = useReveal();
+  const { ref, motionProps, reducedMotion } = useScrollMotion();
 
   return (
     <section
-      className="sol-cta-final"
-      style={{
-        padding: '80px 22px 88px',
-        textAlign: 'center',
-        background: 'var(--sol-bg)',
-        color: 'var(--sol-ink)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
+      ref={ref}
+      className="relative py-20 sm:py-32 px-4 border-t border-white/10 bg-black text-white overflow-hidden"
     >
-      <div ref={innerRef} className="sol-reveal" style={{ position: 'relative', zIndex: 1 }}>
-        {/* Eyebrow */}
-        <div
-          className="font-jmono sol-cta-eyebrow"
+      <div className="absolute inset-0 pointer-events-none" aria-hidden>
+        <motion.div
+          className="absolute inset-x-[-10%] bottom-[-30%] h-[70vh] blur-[90px]"
           style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '16px',
-            fontSize: '9px',
-            letterSpacing: '0.24em',
-            textTransform: 'uppercase',
-            color: 'var(--sol-muted)',
-            marginBottom: '32px',
-            position: 'relative',
+            background:
+              'radial-gradient(circle_at_20%_0%,rgba(0,255,255,0.22)_0%,transparent_55%),radial-gradient(circle_at_80%_20%,rgba(255,215,0,0.24)_0%,transparent_55%)',
           }}
+          animate={
+            reducedMotion
+              ? { opacity: 0.5 }
+              : { opacity: [0.36, 0.7, 0.5], scale: [0.96, 1.04, 0.98] }
+          }
+          transition={{ duration: 26, ease: 'easeInOut', repeat: Infinity }}
+        />
+      </div>
+
+      <div className="relative mx-auto max-w-6xl">
+        <motion.div
+          {...motionProps}
+          transition={{ ...motionProps.transition, delay: 0.02 }}
+          className="relative overflow-hidden rounded-[40px] border border-white/10 bg-[#050505]/80 px-6 py-10 sm:px-10 sm:py-14 lg:px-16 lg:py-18 shadow-[0_40px_120px_rgba(0,0,0,0.95)]"
         >
-          El perfume más caro es el que no usás
-        </div>
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute inset-x-[-20%] top-0 h-[40%] bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.16)_0%,transparent_60%)]" />
+          </div>
 
-        {/* Headline */}
-        <h2
-          className="font-jost"
-          style={{
-            fontWeight: 300,
-            fontSize: 'clamp(38px, 11vw, 52px)',
-            lineHeight: 1.02,
-            letterSpacing: '-0.03em',
-            color: 'var(--sol-ink)',
-            marginBottom: '24px',
-          }}
-        >
-          ¿Cuál es<br />
-          <em style={{ fontStyle: 'italic', color: 'var(--sol-green)', fontWeight: 300 }}>
-            tu momento?
-          </em>
-        </h2>
+          <div className="relative flex flex-col lg:flex-row items-center lg:items-end justify-between gap-10">
+            <div className="space-y-6 max-w-xl text-center lg:text-left">
+              <motion.h2
+                {...motionProps}
+                transition={{ ...motionProps.transition, delay: 0 }}
+                className="text-3xl sm:text-4xl lg:text-5xl font-heading tracking-[0.18em] leading-tight"
+              >
+                Explorá la colección
+                <br />
+                completa
+              </motion.h2>
+              <motion.p
+                {...motionProps}
+                transition={{ ...motionProps.transition, delay: 0.05 }}
+                className="text-base sm:text-lg opacity-50 leading-relaxed max-w-2xl mx-auto lg:mx-0"
+              >
+                Cinco fragancias únicas. Cada una con su propia identidad. Todas con la calidad y autenticidad que define a
+                SOLUTION.
+              </motion.p>
+            </div>
 
-        {/* Subtext */}
-        <p
-          className="font-jakarta"
-          style={{
-            fontSize: '13px',
-            lineHeight: 1.65,
-            color: 'var(--sol-ink-dim)',
-            marginBottom: '40px',
-          }}
-        >
-          Cinco fragancias para cinco momentos.<br />
-          Envío a todo el país. Garantía de 30 días.
-        </p>
-
-        {/* Buttons */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '340px', margin: '0 auto' }}>
-          <Link
-            to="/tienda"
-            className="sol-btn font-jakarta"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              width: '100%',
-              padding: '18px 22px',
-              fontSize: '11.5px',
-              fontWeight: 600,
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase',
-              textDecoration: 'none',
-              cursor: 'pointer',
-              background: 'var(--sol-ink)',
-              color: 'var(--sol-bg)',
-              transition: 'background 0.3s var(--sol-ease), color 0.3s var(--sol-ease)',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--sol-green)'; e.currentTarget.style.color = 'var(--sol-ink)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--sol-ink)'; e.currentTarget.style.color = 'var(--sol-bg)'; }}
-          >
-            <span>Ir a la tienda</span>
-            <span className="sol-arrow">→</span>
-          </Link>
-
-          <Link
-            to="/aplicar-mayorista"
-            className="sol-btn font-jakarta"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              width: '100%',
-              padding: '18px 22px',
-              fontSize: '11.5px',
-              fontWeight: 600,
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase',
-              textDecoration: 'none',
-              cursor: 'pointer',
-              background: 'transparent',
-              color: 'var(--sol-ink-dim)',
-              border: '0.5px solid var(--sol-line-mid)',
-              transition: 'color 0.3s var(--sol-ease), border-color 0.3s var(--sol-ease)',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--sol-ink)'; e.currentTarget.style.borderColor = 'var(--sol-line-str)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--sol-ink-dim)'; e.currentTarget.style.borderColor = 'var(--sol-line-mid)'; }}
-          >
-            <span>Ser punto de venta</span>
-            <span className="sol-arrow">↗</span>
-          </Link>
-        </div>
-
-        {/* Footer tag */}
-        <div
-          className="font-jmono sol-arg"
-          style={{
-            marginTop: '48px',
-            fontSize: '9px',
-            letterSpacing: '0.22em',
-            textTransform: 'uppercase',
-            color: 'var(--sol-muted)',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '10px',
-          }}
-        >
-          Hecho en Argentina
-        </div>
+            <div className="flex flex-col items-center lg:items-end gap-4 min-w-[260px]">
+              <div className="flex flex-col sm:flex-row gap-4 items-center">
+                <Link
+                  to="/tienda"
+                  className="inline-block bg-white text-black px-12 py-5 tracking-widest text-sm font-semibold rounded hover:bg-white/90 hover:shadow-[0_0_30px_-5px_rgba(255,255,255,0.3)] transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                >
+                  IR A LA TIENDA
+                </Link>
+                <Link
+                  to="/aplicar-mayorista"
+                  className="nav-link-underline inline-flex items-center gap-2 text-sm tracking-widest opacity-60 hover:opacity-100 transition-opacity group text-white"
+                >
+                  <span className="pb-1">O VENDER SOLUTION</span>
+                  <span className="w-4 h-4 inline-block group-hover:translate-x-1 transition-transform" aria-hidden>
+                    →
+                  </span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </div>
     </section>
   );
 }
+

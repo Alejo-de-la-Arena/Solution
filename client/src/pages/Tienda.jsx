@@ -166,7 +166,7 @@ function ProductBlock({ perfume, index, altView }) {
     },
     'deep-blue': {
       subtitle: 'Elegancia clásica',
-      marketReference: 'Blue de Chanel',
+      marketReference: 'Bleu de Chanel',
     },
     'yellow-bloom': {
       subtitle: 'Una explosión frutal que destaca',
