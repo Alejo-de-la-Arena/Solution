@@ -68,4 +68,4 @@ logs/
 # Supabase (opcional)
 # =========================
 # si no querés trackear cosas locales del CLI
-supabase/.temp/
+supabase/.temp/.claude/
