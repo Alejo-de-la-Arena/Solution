@@ -82,9 +82,11 @@ const POSTAL_CODE_MAP = {
     '1680': { partido: 'Tres de Febrero', zona: 2 }, // Ciudadela
     '1682': { partido: 'Tres de Febrero', zona: 2 }, // Martín Coronado
     '1684': { partido: 'Tres de Febrero', zona: 2 }, // El Palomar
+    '1702': { partido: 'Tres de Febrero', zona: 2 },
 
     // ── Morón ──
     '1706': { partido: 'Morón', zona: 2 }, // Haedo
+    '1707': { partido: 'Morón', zona: 2 },
     '1708': { partido: 'Morón', zona: 2 }, // Morón
     '1712': { partido: 'Morón', zona: 2 }, // Castelar
     '1718': { partido: 'Morón', zona: 2 }, // San Antonio de Padua
@@ -93,12 +95,16 @@ const POSTAL_CODE_MAP = {
     '1686': { partido: 'Hurlingham', zona: 2 }, // Hurlingham
     '1687': { partido: 'Hurlingham', zona: 2 }, // William C. Morris
     '1688': { partido: 'Hurlingham', zona: 2 }, // Villa Tesei
+    '1690': { partido: 'Hurlingham', zona: 2 }, // William Morris
 
     // ── Ituzaingó ──
+    '1713': { partido: 'Ituzaingó', zona: 2 },
     '1714': { partido: 'Ituzaingó', zona: 2 }, // Ituzaingó
     '1715': { partido: 'Ituzaingó', zona: 2 }, // Ituzaingó
 
     // ── Avellaneda ──
+    '1868': { partido: 'Avellaneda', zona: 2 },
+    '1869': { partido: 'Avellaneda', zona: 2 },
     '1870': { partido: 'Avellaneda', zona: 2 }, // Avellaneda
     '1871': { partido: 'Avellaneda', zona: 2 }, // Dock Sud
     '1872': { partido: 'Avellaneda', zona: 2 }, // Sarandí
@@ -108,15 +114,21 @@ const POSTAL_CODE_MAP = {
 
     // ── Lanús ──
     '1822': { partido: 'Lanús', zona: 2 }, // Valentín Alsina
+    '1823': { partido: 'Lanús', zona: 2 },
     '1824': { partido: 'Lanús', zona: 2 }, // Lanús
     '1825': { partido: 'Lanús', zona: 2 }, // Lanús Este
     '1826': { partido: 'Lanús', zona: 2 }, // Remedios de Escalada
     '1827': { partido: 'Lanús', zona: 2 }, // Monte Chingolo
 
     // ── Lomas de Zamora ──
+    '1773': { partido: 'Lomas de Zamora', zona: 2 },
     '1828': { partido: 'Lomas de Zamora', zona: 2 }, // Banfield
+    '1829': { partido: 'Lomas de Zamora', zona: 2 },
+    '1831': { partido: 'Lomas de Zamora', zona: 2 },
     '1832': { partido: 'Lomas de Zamora', zona: 2 }, // Lomas de Zamora
+    '1833': { partido: 'Lomas de Zamora', zona: 2 }, // Turdera
     '1834': { partido: 'Lomas de Zamora', zona: 2 }, // Temperley
+    '1835': { partido: 'Lomas de Zamora', zona: 2 },
     '1836': { partido: 'Lomas de Zamora', zona: 2 }, // Llavallol
     '1838': { partido: 'Lomas de Zamora', zona: 2 }, // Turdera
 
@@ -126,6 +138,7 @@ const POSTAL_CODE_MAP = {
     '1880': { partido: 'Quilmes', zona: 2 }, // Bernal Oeste
     '1881': { partido: 'Quilmes', zona: 2 }, // Don Bosco
     '1882': { partido: 'Quilmes', zona: 2 }, // San Francisco Solano
+    '1883': { partido: 'Quilmes', zona: 2 }, // San Francisco Solano
     '1886': { partido: 'Quilmes', zona: 2 }, // Ezpeleta
 
     // ╔══════════════════════════════════════════════════════════════════════╗
@@ -166,8 +179,10 @@ const POSTAL_CODE_MAP = {
     '1743': { partido: 'Moreno', zona: 3 }, // Francisco Álvarez
     '1744': { partido: 'Moreno', zona: 3 }, // Trujui
     '1745': { partido: 'Moreno', zona: 3 }, // La Reja
+    '1746': { partido: 'Moreno', zona: 3 }, // Francisco Álvarez
 
     // ── Merlo ──
+    '1716': { partido: 'Merlo', zona: 3 }, // San Antonio de Padua
     '1722': { partido: 'Merlo', zona: 3 }, // Merlo
     '1723': { partido: 'Merlo', zona: 3 }, // Pontevedra
     '1724': { partido: 'Merlo', zona: 3 }, // Mariano Acosta
@@ -175,23 +190,33 @@ const POSTAL_CODE_MAP = {
 
     // ── La Matanza ──
     '1704': { partido: 'La Matanza', zona: 3 }, // Ramos Mejía
+    '1752': { partido: 'La Matanza', zona: 3 }, // Lomas del Mirador
     '1754': { partido: 'La Matanza', zona: 3 }, // San Justo
     '1755': { partido: 'La Matanza', zona: 3 }, // Isidro Casanova
     '1756': { partido: 'La Matanza', zona: 3 }, // Gregorio de Laferrere
     '1757': { partido: 'La Matanza', zona: 3 }, // Lomas del Mirador
     '1759': { partido: 'La Matanza', zona: 3 }, // González Catán
+    '1761': { partido: 'La Matanza', zona: 3 }, // 20 de Junio / Compartido
     '1762': { partido: 'La Matanza', zona: 3 }, // Tapiales
     '1763': { partido: 'La Matanza', zona: 3 }, // Villa Madero
     '1765': { partido: 'La Matanza', zona: 3 }, // Aldo Bonzi
     '1766': { partido: 'La Matanza', zona: 3 }, // La Tablada
     '1768': { partido: 'La Matanza', zona: 3 }, // Virrey del Pino
+    '1770': { partido: 'La Matanza', zona: 3 }, // Tapiales / Aldo Bonzi
+    '1771': { partido: 'La Matanza', zona: 3 },
+    '1772': { partido: 'La Matanza', zona: 3 },
+    '1774': { partido: 'La Matanza', zona: 3 },
+    '1778': { partido: 'La Matanza', zona: 3 }, // Ciudad Evita
+    '1785': { partido: 'La Matanza', zona: 3 },
 
     // ── Ezeiza ──
     '1802': { partido: 'Ezeiza', zona: 3 }, // Aeropuerto
     '1804': { partido: 'Ezeiza', zona: 3 }, // Ezeiza
     '1806': { partido: 'Ezeiza', zona: 3 }, // Tristán Suárez
+    '1812': { partido: 'Ezeiza', zona: 3 },
 
     // ── Esteban Echeverría ──
+    '1776': { partido: 'Esteban Echeverría', zona: 3 }, // 9 de Abril
     '1841': { partido: 'Esteban Echeverría', zona: 3 }, // 9 de Abril
     '1842': { partido: 'Esteban Echeverría', zona: 3 }, // Monte Grande
 
@@ -199,17 +224,24 @@ const POSTAL_CODE_MAP = {
     '1844': { partido: 'Almirante Brown', zona: 3 }, // Burzaco
     '1846': { partido: 'Almirante Brown', zona: 3 }, // Adrogué
     '1847': { partido: 'Almirante Brown', zona: 3 }, // Adrogué
+    '1849': { partido: 'Almirante Brown', zona: 3 }, // Claypole
     '1850': { partido: 'Almirante Brown', zona: 3 }, // Glew
     '1852': { partido: 'Almirante Brown', zona: 3 }, // Burzaco
+    '1854': { partido: 'Almirante Brown', zona: 3 }, // Longchamps
     '1856': { partido: 'Almirante Brown', zona: 3 }, // Don Orione
     '1858': { partido: 'Almirante Brown', zona: 3 }, // Longchamps
 
     // ── Florencio Varela ──
     '1888': { partido: 'Florencio Varela', zona: 3 }, // Florencio Varela
+    '1889': { partido: 'Florencio Varela', zona: 3 },
+    '1891': { partido: 'Florencio Varela', zona: 3 },
 
     // ── Berazategui ──
     '1884': { partido: 'Berazategui', zona: 3 }, // Berazategui
     '1885': { partido: 'Berazategui', zona: 3 }, // Hudson / Pereyra
+    '1890': { partido: 'Berazategui', zona: 3 },
+    '1893': { partido: 'Berazategui', zona: 3 },
+    '1894': { partido: 'Berazategui', zona: 3 }, // Villa Elisa (Compartido)
 
     // ╔══════════════════════════════════════════════════════════════════════╗
     // ║ ZONA 4 — Cuarto cordón ($10.300)                                     ║
@@ -222,6 +254,7 @@ const POSTAL_CODE_MAP = {
     '2804': { partido: 'Campana', zona: 4 },
 
     // ── Escobar ──
+    '1619': { partido: 'Escobar', zona: 4 }, // Garín
     '1624': { partido: 'Escobar', zona: 4 }, // Ingeniero Maschwitz
     '1626': { partido: 'Escobar', zona: 4 }, // Belén de Escobar (norte)
     '1632': { partido: 'Escobar', zona: 4 }, // Manuel Alberti / Garín
@@ -231,22 +264,38 @@ const POSTAL_CODE_MAP = {
     '1630': { partido: 'Pilar', zona: 4 }, // Pilar centro
     '1631': { partido: 'Pilar', zona: 4 }, // Villa Rosa
     '1633': { partido: 'Pilar', zona: 4 }, // Del Viso
+    '1634': { partido: 'Pilar', zona: 4 }, // Derqui
+    '1669': { partido: 'Pilar', zona: 4 }, // Del Viso
+    '1693': { partido: 'Pilar', zona: 4 },
+    '1694': { partido: 'Pilar', zona: 4 },
+    '1695': { partido: 'Pilar', zona: 4 },
+    '1696': { partido: 'Pilar', zona: 4 },
+    '1697': { partido: 'Pilar', zona: 4 },
 
     // ── Luján ──
     '6700': { partido: 'Luján', zona: 4 }, // Luján
+    '6701': { partido: 'Luján', zona: 4 },
     '6702': { partido: 'Luján', zona: 4 }, // Cortines
+    '6703': { partido: 'Luján', zona: 4 },
+    '6706': { partido: 'Luján', zona: 4 },
+    '6708': { partido: 'Luján', zona: 4 },
+    '6712': { partido: 'Luján', zona: 4 },
 
     // ── General Rodríguez ──
+    '1747': { partido: 'General Rodríguez', zona: 4 },
     '1748': { partido: 'General Rodríguez', zona: 4 },
     '1749': { partido: 'General Rodríguez', zona: 4 },
+    '1750': { partido: 'General Rodríguez', zona: 4 },
 
     // ── Marcos Paz ──
     '1727': { partido: 'Marcos Paz', zona: 4 },
 
     // ── Cañuelas ──
     '1814': { partido: 'Cañuelas', zona: 4 },
+    '1816': { partido: 'Cañuelas', zona: 4 }, // Máximo Paz
 
     // ── San Vicente ──
+    '1864': { partido: 'San Vicente', zona: 4 }, // Alejandro Korn
     '1865': { partido: 'San Vicente', zona: 4 },
 
     // ── Presidente Perón ──
@@ -254,8 +303,10 @@ const POSTAL_CODE_MAP = {
 
     // ── Coronel Brandsen ──
     '1980': { partido: 'Coronel Brandsen', zona: 4 },
+    '1981': { partido: 'Coronel Brandsen', zona: 4 },
 
     // ── La Plata ──
+    '1895': { partido: 'La Plata', zona: 4 }, // Arturo Seguí
     '1896': { partido: 'La Plata', zona: 4 }, // City Bell
     '1897': { partido: 'La Plata', zona: 4 }, // Gonnet
     '1900': { partido: 'La Plata', zona: 4 }, // La Plata
@@ -265,6 +316,8 @@ const POSTAL_CODE_MAP = {
     '1904': { partido: 'La Plata', zona: 4 }, // Tolosa
     '1905': { partido: 'La Plata', zona: 4 }, // Ringuelet
     '1906': { partido: 'La Plata', zona: 4 }, // M. Romero / Los Hornos
+    '1907': { partido: 'La Plata', zona: 4 },
+    '1909': { partido: 'La Plata', zona: 4 }, // Arana
 
     // ── Ensenada ──
     '1925': { partido: 'Ensenada', zona: 4 },
