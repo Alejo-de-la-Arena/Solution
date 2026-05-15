@@ -14,6 +14,7 @@ import NaveEmbed from '../components/checkout/NaveEmbed';
 import { trackInitiateCheckout, trackPurchase } from '../lib/metaPixel';
 import { getTrackedOrder, saveTrackedOrder, updateTrackedOrderStatus } from '../services/orderTracking';
 import { firePurchaseEvent } from '../lib/firePurchaseEvent';
+import { useMetaPixelIdentify } from '../hooks/useMetaPixelIdentify';
 
 const PROVINCIAS = [
   'CABA', 'Buenos Aires', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba',
@@ -403,6 +404,13 @@ export default function Checkout() {
     checkoutSnapshot.current = { items, totalValue: totalPrice };
     trackInitiateCheckout({ items, totalValue: totalPrice });
   }, [cart, totalPrice, orderIdFromUrl]);
+
+  // Enriquece el pixel con datos del comprador al confirmar la compra
+  useMetaPixelIdentify({
+    email: form.email,
+    phone: form.phone,
+    enabled: paymentResult === 'success',
+  });
 
   const purchaseFired = useRef(false);
   useEffect(() => {
