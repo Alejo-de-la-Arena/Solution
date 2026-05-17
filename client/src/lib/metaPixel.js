@@ -77,6 +77,29 @@ export function restoreAttributionCookies() {
     } catch { /* ignore */ }
 }
 
+/**
+ * Devuelve los datos de atribución para enviar al backend al crear la orden.
+ * El servidor los persiste en la orden y los usa en el evento CAPI Purchase.
+ * Lee de cookies primero (valor fresco) y cae a localStorage como respaldo.
+ */
+export function getAttributionForServer() {
+    if (typeof window === 'undefined') return {};
+    try {
+        const fbc = _getCookie('_fbc') || localStorage.getItem(ATTR_FBC) || null;
+        const fbp = _getCookie('_fbp') || localStorage.getItem(ATTR_FBP) || null;
+        const fbclid = localStorage.getItem(ATTR_FBCLID) || null;
+        const fbclidTs = localStorage.getItem(ATTR_FBCLID_TS) || null;
+        const out = {};
+        if (fbclid) out.fbclid = fbclid;
+        if (fbclidTs && Number(fbclidTs) > 0) out.fbclid_ts = Number(fbclidTs);
+        if (fbc) out.fbc = fbc;
+        if (fbp) out.fbp = fbp;
+        return out;
+    } catch {
+        return {};
+    }
+}
+
 function fbq(eventType, eventName, params, options) {
     if (typeof window === "undefined" || typeof window.fbq !== "function") return;
     if (import.meta.env.DEV) {

@@ -11,7 +11,7 @@ import {
 } from '../services/checkout';
 import { quoteShipping } from '../services/shipping';
 import NaveEmbed from '../components/checkout/NaveEmbed';
-import { trackInitiateCheckout, captureAttributionData } from '../lib/metaPixel';
+import { trackInitiateCheckout, captureAttributionData, getAttributionForServer } from '../lib/metaPixel';
 import { getTrackedOrder, saveTrackedOrder, updateTrackedOrderStatus } from '../services/orderTracking';
 import { firePurchaseEvent } from '../lib/firePurchaseEvent';
 
@@ -569,7 +569,11 @@ export default function Checkout() {
 
     setLoading(true);
     try {
+      // Capturar fbclid/_fbc/_fbp ANTES de construir el payload: así viajan al
+      // backend y quedan persistidos en la orden para el evento CAPI Purchase.
+      captureAttributionData();
       const basePayload = {
+        ...getAttributionForServer(),
         customer_name: name,
         customer_email: email,
         customer_phone: (form.phone || '').trim() || undefined,

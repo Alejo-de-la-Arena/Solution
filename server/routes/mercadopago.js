@@ -27,6 +27,76 @@ function getAccessTokenMeta(accessToken) {
   };
 }
 
+/** IP real del comprador, respetando el proxy (Railway/Render). */
+function getClientIp(req) {
+  const xff = req.headers['x-forwarded-for'];
+  if (xff) {
+    const first = String(xff).split(',')[0].trim();
+    if (first) return first;
+  }
+  return (req.ip || req.socket?.remoteAddress || '').replace(/^::ffff:/, '') || null;
+}
+
+/**
+ * Extrae los datos de atribución de Meta del request (body + headers).
+ * Se capturan al INICIAR el checkout (cuando el navegador del comprador
+ * golpea el server) y se guardan en la orden, para que el evento CAPI
+ * Purchase del webhook tenga user_data completo aunque el comprador no vuelva.
+ */
+function extractMetaAttribution(req) {
+  const b = req.body || {};
+  const fbclidTs = Number(b.fbclid_ts);
+  return {
+    fbclid: (b.fbclid || '').toString().trim() || null,
+    fbp: (b.fbp || '').toString().trim() || null,
+    fbc: (b.fbc || '').toString().trim() || null,
+    meta_fbclid_ts: Number.isFinite(fbclidTs) && fbclidTs > 0 ? fbclidTs : null,
+    meta_client_ip_address: getClientIp(req),
+    meta_client_user_agent: (req.headers['user-agent'] || '').toString().slice(0, 512) || null,
+  };
+}
+
+/**
+ * Dispara el evento CAPI Purchase exactamente una vez por orden.
+ * Desacoplado del envío de email: usa su propio flag meta_capi_purchase_sent_at.
+ * `prevOrder` debe traer las columnas de atribución (ver selects).
+ */
+async function fireCapiPurchaseOnce(orderRowId, prevOrder, { eventTime } = {}) {
+  if (!prevOrder || prevOrder.meta_capi_purchase_sent_at) return;
+  const ok = await sendPurchaseEvent({
+    orderId:         orderRowId,
+    value:           prevOrder.total,
+    currency:        prevOrder.currency || 'ARS',
+    userEmail:       prevOrder.customer_email,
+    userPhone:       prevOrder.customer_phone,
+    userName:        prevOrder.customer_name,
+    fbp:             prevOrder.fbp,
+    fbc:             prevOrder.fbc,
+    fbclid:          prevOrder.fbclid,
+    fbclidTs:        prevOrder.meta_fbclid_ts,
+    userAgent:       prevOrder.meta_client_user_agent,
+    clientIpAddress: prevOrder.meta_client_ip_address,
+    sourceUrl:       'https://solutionperfumes.com/checkout',
+    eventTime,
+  }).catch((e) => {
+    console.error('[CAPI] fireCapiPurchaseOnce error:', e?.message || e);
+    return false;
+  });
+  if (ok) {
+    await supabase
+      .from('orders')
+      .update({ meta_capi_purchase_sent_at: new Date().toISOString() })
+      .eq('id', orderRowId);
+  }
+}
+
+/** epoch (s) del pago aprobado, para reportar el evento con la hora real. */
+function paidAtToEpoch(dateStr) {
+  if (!dateStr) return undefined;
+  const t = Date.parse(dateStr);
+  return Number.isFinite(t) ? Math.floor(t / 1000) : undefined;
+}
+
 function normalizePaymentType(rawType, paymentMethodId) {
   const type = String(rawType || '').trim().toLowerCase();
   const methodId = String(paymentMethodId || '').trim().toLowerCase();
@@ -221,7 +291,7 @@ async function applyPaymentToDb(orderRowId, payment, { sendEmailIfPaid }) {
 
   const { data: prevOrder, error: prevErr } = await supabase
     .from('orders')
-    .select('id, status, customer_email, customer_name, customer_phone, total, currency, payment_confirmation_email_sent_at, fbclid')
+    .select('id, status, customer_email, customer_name, customer_phone, total, currency, payment_confirmation_email_sent_at, fbclid, fbp, fbc, meta_fbclid_ts, meta_client_ip_address, meta_client_user_agent, meta_capi_purchase_sent_at')
     .eq('id', orderRowId)
     .maybeSingle();
   if (prevErr || !prevOrder) {
@@ -236,6 +306,14 @@ async function applyPaymentToDb(orderRowId, payment, { sendEmailIfPaid }) {
   }
 
   console.log(`[MP] Orden ${orderRowId} → ${nextStatus} (payment ${payment?.id})`);
+
+  // CAPI Purchase: fuente PRIMARIA del evento. Desacoplado del email — se
+  // dispara aunque la orden no tenga email o el envío de email falle.
+  if (nextStatus === 'paid') {
+    await fireCapiPurchaseOnce(orderRowId, prevOrder, {
+      eventTime: paidAtToEpoch(payment?.date_approved),
+    });
+  }
 
   if (sendEmailIfPaid && nextStatus === 'paid' && !prevOrder.payment_confirmation_email_sent_at) {
     const to = (prevOrder.customer_email || '').trim();
@@ -269,16 +347,6 @@ async function applyPaymentToDb(orderRowId, payment, { sendEmailIfPaid }) {
         .update({ payment_confirmation_email_sent_at: new Date().toISOString() })
         .eq('id', orderRowId);
     }
-
-    // CAPI: evento Purchase server-side (no bloquea — try/catch interno en sendPurchaseEvent)
-    sendPurchaseEvent({
-      orderId:    orderRowId,
-      value:      prevOrder.total,
-      currency:   prevOrder.currency || 'ARS',
-      userEmail:  prevOrder.customer_email,
-      userPhone:  prevOrder.customer_phone,
-      fbclid:     prevOrder.fbclid,
-    }).catch(() => {});
   }
   return nextStatus;
 }
@@ -293,7 +361,7 @@ async function applyMpOrderToDb(orderRowId, mpOrder, { sendEmailIfPaid }) {
 
   const { data: prevOrder, error: prevErr } = await supabase
     .from('orders')
-    .select('id, status, customer_email, customer_name, customer_phone, total, currency, payment_confirmation_email_sent_at, payment_method, fbclid')
+    .select('id, status, customer_email, customer_name, customer_phone, total, currency, payment_confirmation_email_sent_at, payment_method, fbclid, fbp, fbc, meta_fbclid_ts, meta_client_ip_address, meta_client_user_agent, meta_capi_purchase_sent_at')
     .eq('id', orderRowId)
     .maybeSingle();
 
@@ -309,6 +377,13 @@ async function applyMpOrderToDb(orderRowId, mpOrder, { sendEmailIfPaid }) {
   }
 
   console.log(`[MP] Orden ${orderRowId} → ${nextStatus} (mp ${mpOrder?.id})`);
+
+  // CAPI Purchase: fuente PRIMARIA del evento. Desacoplado del email.
+  if (nextStatus === 'paid') {
+    await fireCapiPurchaseOnce(orderRowId, prevOrder, {
+      eventTime: paidAtToEpoch(mpOrder?.last_updated_date || mpOrder?.created_date),
+    });
+  }
 
   if (sendEmailIfPaid && nextStatus === 'paid' && !prevOrder.payment_confirmation_email_sent_at) {
     const to = (prevOrder.customer_email || '').trim();
@@ -340,16 +415,6 @@ async function applyMpOrderToDb(orderRowId, mpOrder, { sendEmailIfPaid }) {
         .update({ payment_confirmation_email_sent_at: new Date().toISOString() })
         .eq('id', orderRowId);
     }
-
-    // CAPI: evento Purchase server-side (no bloquea — try/catch interno en sendPurchaseEvent)
-    sendPurchaseEvent({
-      orderId:   orderRowId,
-      value:     prevOrder.total,
-      currency:  prevOrder.currency || 'ARS',
-      userEmail: prevOrder.customer_email,
-      userPhone: prevOrder.customer_phone,
-      fbclid:    prevOrder.fbclid,
-    }).catch(() => {});
   }
 }
 
@@ -660,7 +725,10 @@ router.post('/mercadopago/create-preference', async (req, res) => {
     shipping_customer_id: (shipping_customer_id || '').trim() || null,
     shipping_quote_payload: shipping_quote_payload || null,
     shipping_quote_response: shipping_quote_response || null,
-    fbclid: (fbclid || '').trim() || null,
+    // Atribución Meta capturada en el navegador del comprador (fbclid del
+    // anuncio + cookies _fbc/_fbp + IP/UA). Imprescindible para que el evento
+    // CAPI Purchase del webhook tenga match quality alto.
+    ...extractMetaAttribution(req),
   };
 
   const { data: order, error: orderErr } = await supabase
@@ -849,7 +917,7 @@ router.post('/mercadopago/process-card-payment', async (req, res) => {
       shipping_customer_id: (shipping_customer_id || '').trim() || null,
       shipping_quote_payload: shipping_quote_payload || null,
       shipping_quote_response: shipping_quote_response || null,
-      fbclid: (fbclid || '').trim() || null,
+      ...extractMetaAttribution(req),
     };
 
     const { data: newOrder, error: orderErr } = await supabase
