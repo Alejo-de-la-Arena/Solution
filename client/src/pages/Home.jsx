@@ -7,7 +7,7 @@ import FinalCtaSection from '../components/home/FinalCtaSection';
 
 export default function Home() {
   return (
-    <div className="bg-black text-white min-h-screen">
+    <div className="home-page bg-black text-white min-h-screen">
       <main>
         <HeroSection />
         <TrustBar />
