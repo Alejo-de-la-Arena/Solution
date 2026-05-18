@@ -32,10 +32,10 @@ export default function WholesaleHero() {
         }}
       />
 
-      <div className="sol-container" style={{ padding: '0 var(--sol-section-px)', position: 'relative', zIndex: 1 }}>
+      <div className="sol-container" style={{ padding: '0 var(--sol-section-px)', position: 'relative', zIndex: 1, textAlign: 'center' }}>
 
         {/* Eyebrow */}
-        <div ref={headRef} className="sol-reveal" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '28px' }}>
+        <div ref={headRef} className="sol-reveal" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '28px' }}>
           <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sol-green)', display: 'inline-block' }} />
             Programa Mayorista
@@ -53,21 +53,22 @@ export default function WholesaleHero() {
             letterSpacing: '-0.03em',
             color: 'var(--sol-ink)',
             marginBottom: '28px',
+            textAlign: 'center',
           }}
         >
           Vendé Solution<br />
-          <em style={{ fontStyle: 'italic', color: 'var(--sol-green)', fontWeight: 300 }}>en tu tienda.</em>
+          <em style={{ fontStyle: 'italic', color: '#999', fontWeight: 300 }}>en tu tienda.</em>
         </h1>
 
         {/* Sub */}
-        <div ref={subRef} className="sol-reveal" style={{ maxWidth: 540, marginBottom: '48px' }}>
+        <div ref={subRef} className="sol-reveal" style={{ maxWidth: 540, marginBottom: '48px', margin: '0 auto 48px' }}>
           <p className="font-jakarta" style={{ fontSize: '14px', lineHeight: 1.75, color: '#888', textAlign: 'center' }}>
             Convertite en revendedor oficial y accedé a condiciones exclusivas: márgenes reales, stock garantizado y soporte comercial dedicado.
           </p>
         </div>
 
         {/* CTAs */}
-        <div ref={ctaRef} className="sol-reveal sol-wholesale-ctas" style={{ marginBottom: '0' }}>
+        <div ref={ctaRef} className="sol-reveal sol-wholesale-ctas" style={{ marginBottom: '0', justifyContent: 'center' }}>
           <Link
             to="/aplicar-mayorista"
             className="font-jakarta sol-btn"

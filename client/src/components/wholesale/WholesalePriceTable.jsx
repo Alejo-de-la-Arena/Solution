@@ -16,7 +16,7 @@ export default function WholesalePriceTable() {
   return (
     <section
       ref={ref}
-      className="section-precios-bg bg-black text-white py-12 md:py-20 px-4"
+      className="bg-black text-white py-12 md:py-20 px-4"
     >
       <div className="relative z-10 max-w-5xl mx-auto">
         {/* Section eyebrow */}

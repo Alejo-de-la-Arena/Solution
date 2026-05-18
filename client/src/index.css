@@ -372,6 +372,35 @@
   }
 }
 
+/* ── Combo: showcase left + builder right on desktop ── */
+.sol-combo-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 40px;
+}
+.sol-combo-showcase { display: none; }
+@media (min-width: 1024px) {
+  .sol-combo-layout {
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: start;
+  }
+  .sol-combo-showcase { display: block; }
+}
+
+/* ── Benefits grid: 1 col mobile, 3 cols desktop ── */
+.sol-benefits-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  background: var(--sol-line);
+}
+@media (min-width: 768px) {
+  .sol-benefits-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 /* ── Testimonials: wider cards on desktop ── */
 @media (min-width: 1024px) {
   .sol-test-card { flex-basis: 380px !important; min-width: 380px !important; }

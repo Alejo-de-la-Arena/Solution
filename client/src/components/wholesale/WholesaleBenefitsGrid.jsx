@@ -5,7 +5,7 @@ const BENEFITS = [
     title: 'Envíos rápidos',
     description: 'Despachos en 48 h con prioridad logística para revendedores activos.',
     icon: (
-      <svg style={{ width: 28, height: 28, stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1 }} viewBox="0 0 24 24" aria-hidden>
+      <svg style={{ width: 26, height: 26, stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1.2, flexShrink: 0 }} viewBox="0 0 24 24" aria-hidden>
         <path d="M3 7h13v9H3z"/><path d="M16 11h4l1 2v3h-5z"/>
         <circle cx="7" cy="18" r="1.6"/><circle cx="18" cy="18" r="1.6"/>
       </svg>
@@ -15,7 +15,7 @@ const BENEFITS = [
     title: 'Márgenes reales',
     description: 'Hasta 40 % de ganancia sobre precio de lista. Sin costos ocultos ni sorpresas.',
     icon: (
-      <svg style={{ width: 28, height: 28, stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1 }} viewBox="0 0 24 24" aria-hidden>
+      <svg style={{ width: 26, height: 26, stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1.2, flexShrink: 0 }} viewBox="0 0 24 24" aria-hidden>
         <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
         <polyline points="16 7 22 7 22 13"/>
       </svg>
@@ -25,7 +25,7 @@ const BENEFITS = [
     title: 'Stock garantizado',
     description: 'Acceso prioritario a reposiciones y reserva de unidades para planes avanzados.',
     icon: (
-      <svg style={{ width: 28, height: 28, stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1 }} viewBox="0 0 24 24" aria-hidden>
+      <svg style={{ width: 26, height: 26, stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1.2, flexShrink: 0 }} viewBox="0 0 24 24" aria-hidden>
         <path d="M12 3l8 3v6c0 4.5-3.5 8-8 9-4.5-1-8-4.5-8-9V6l8-3Z"/>
         <path d="M9 12l2.2 2.2L15 10"/>
       </svg>
@@ -35,7 +35,7 @@ const BENEFITS = [
     title: 'Soporte comercial',
     description: 'Asesor dedicado por WhatsApp. Estrategia de venta, pricing y objeciones.',
     icon: (
-      <svg style={{ width: 28, height: 28, stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1 }} viewBox="0 0 24 24" aria-hidden>
+      <svg style={{ width: 26, height: 26, stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1.2, flexShrink: 0 }} viewBox="0 0 24 24" aria-hidden>
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
       </svg>
     ),
@@ -44,7 +44,7 @@ const BENEFITS = [
     title: 'Material listo',
     description: 'Fotos, videos y copies para redes sociales. Solo publicás y vendés.',
     icon: (
-      <svg style={{ width: 28, height: 28, stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1 }} viewBox="0 0 24 24" aria-hidden>
+      <svg style={{ width: 26, height: 26, stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1.2, flexShrink: 0 }} viewBox="0 0 24 24" aria-hidden>
         <rect x="3" y="3" width="18" height="18" rx="2"/>
         <circle cx="8.5" cy="8.5" r="1.5"/>
         <polyline points="21 15 16 10 5 21"/>
@@ -55,7 +55,7 @@ const BENEFITS = [
     title: 'Sin mínimo inicial',
     description: 'Una vez aprobado, empezás con el volumen que tu negocio necesita.',
     icon: (
-      <svg style={{ width: 28, height: 28, stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1 }} viewBox="0 0 24 24" aria-hidden>
+      <svg style={{ width: 26, height: 26, stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1.2, flexShrink: 0 }} viewBox="0 0 24 24" aria-hidden>
         <circle cx="12" cy="12" r="10"/>
         <polyline points="12 6 12 12 16 14"/>
       </svg>
@@ -70,27 +70,24 @@ function BenefitItem({ item }) {
       ref={itemRef}
       className="sol-reveal"
       style={{
-        background: 'var(--sol-bg)',
-        padding: '32px 28px',
+        background: '#111',
+        padding: '28px 24px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px',
-        transition: 'background 0.3s var(--sol-ease)',
+        gap: '10px',
       }}
-      onMouseEnter={e => e.currentTarget.style.background = 'var(--sol-bg-card)'}
-      onMouseLeave={e => e.currentTarget.style.background = 'var(--sol-bg)'}
     >
-      <div style={{ width: 48, height: 48, border: '0.5px solid var(--sol-green-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--sol-green-soft)' }}>
+      {/* Icon + title row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         {item.icon}
-      </div>
-      <div>
-        <h3 className="font-jost" style={{ fontWeight: 500, fontSize: '16px', color: 'var(--sol-ink)', marginBottom: '8px', letterSpacing: '-0.01em' }}>
+        <h3 className="font-jost" style={{ fontWeight: 500, fontSize: '15px', color: 'var(--sol-ink)', letterSpacing: '-0.01em', margin: 0 }}>
           {item.title}
         </h3>
-        <p className="font-jakarta" style={{ fontSize: '13px', lineHeight: 1.7, color: 'var(--sol-muted)' }}>
-          {item.description}
-        </p>
       </div>
+      {/* Description */}
+      <p className="font-jakarta" style={{ fontSize: '13px', lineHeight: 1.7, color: 'var(--sol-muted)', margin: 0 }}>
+        {item.description}
+      </p>
     </div>
   );
 }
@@ -111,7 +108,7 @@ export default function WholesaleBenefitsGrid() {
       <div className="sol-container" style={{ padding: '0 var(--sol-section-px)' }}>
 
         {/* Section header */}
-        <div ref={headRef} className="sol-reveal" style={{ marginBottom: '56px' }}>
+        <div ref={headRef} className="sol-reveal" style={{ marginBottom: '40px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sol-green)', display: 'inline-block' }} />
@@ -125,8 +122,8 @@ export default function WholesaleBenefitsGrid() {
           </h2>
         </div>
 
-        {/* Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1px', background: 'var(--sol-line)' }}>
+        {/* Grid: 1 col mobile, 3 cols desktop */}
+        <div className="sol-benefits-grid">
           {BENEFITS.map((item) => (
             <BenefitItem key={item.title} item={item} />
           ))}

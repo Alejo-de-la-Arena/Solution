@@ -66,7 +66,7 @@ function StatItem({ stat }) {
 function WholesaleStats() {
   const headRef = useReveal();
   return (
-    <section style={{ borderBottom: '0.5px solid var(--sol-line)', background: 'var(--sol-bg)' }}>
+    <section style={{ borderBottom: '0.5px solid var(--sol-line)', background: 'var(--sol-bg)', paddingBottom: '48px' }}>
       <div className="sol-container" style={{ padding: '0 var(--sol-section-px)' }}>
         {/* Eyebrow */}
         <div ref={headRef} className="sol-reveal" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '0.5px solid var(--sol-line)', padding: '16px 0' }}>

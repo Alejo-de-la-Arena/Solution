@@ -124,7 +124,6 @@ export default function Tienda() {
         pills={FILTER_PILLS}
         active={activeFilter}
         onChange={setActiveFilter}
-        count={visiblePerfumes.length}
       />
 
       {/* Product list */}
@@ -179,28 +178,28 @@ function TiendaHero() {
         {/* Headline */}
         <h1
           className="font-jost"
-          style={{ fontWeight: 300, fontSize: 'clamp(36px, 9vw, 72px)', lineHeight: 1.0, letterSpacing: '-0.03em', color: 'var(--sol-ink)', marginBottom: '24px' }}
+          style={{ fontWeight: 300, fontSize: 'clamp(36px, 9vw, 72px)', lineHeight: 1.0, letterSpacing: '-0.03em', color: 'var(--sol-ink)', marginBottom: '24px', textAlign: 'center' }}
         >
           Cinco<br />fragancias.<br />
           <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>Tu momento.</em>
         </h1>
 
         {/* Sub */}
-        <div ref={subRef} className="sol-reveal" style={{ maxWidth: 480, marginBottom: '48px' }}>
+        <div ref={subRef} className="sol-reveal" style={{ maxWidth: 480, marginBottom: '48px', margin: '0 auto 48px', textAlign: 'center' }}>
           <p className="font-jakarta" style={{ fontSize: '14px', lineHeight: 1.75, color: 'var(--sol-muted)' }}>
             Cada perfume sigue la línea de una referencia de nicho reconocida. Elegís el momento, nosotros te decimos cuál usar. Sin marketing vacío.
           </p>
         </div>
 
         {/* Stats strip */}
-        <div ref={statsRef} className="sol-reveal" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderTop: '0.5px solid var(--sol-line)', paddingTop: '28px', gap: '16px' }}>
+        <div ref={statsRef} className="sol-reveal" style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'flex-start', borderTop: '0.5px solid var(--sol-line)', paddingTop: '28px', gap: '16px' }}>
           {[
             { n: '05', l: 'Fragancias\nactivas' },
-            { n: '100ml', l: 'Eau de\nParfum' },
+            { n: '60ml', l: 'Eau de\nParfum' },
             { n: '30d', l: 'Garantía\ntotal' },
           ].map((s, i) => (
-            <div key={i} style={{ textAlign: i === 1 ? 'center' : i === 2 ? 'right' : 'left' }}>
-              <div className="font-jost" style={{ fontSize: 'clamp(24px, 5vw, 36px)', fontWeight: 300, letterSpacing: '-0.02em', color: 'var(--sol-ink)', lineHeight: 1 }}>
+            <div key={i} style={{ textAlign: 'center' }}>
+              <div className="font-jost" style={{ fontSize: 'clamp(24px, 5vw, 36px)', fontWeight: 300, letterSpacing: '-0.02em', color: 'var(--sol-magenta)', lineHeight: 1 }}>
                 {s.n}
               </div>
               <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginTop: '6px', whiteSpace: 'pre-line', lineHeight: 1.5 }}>
@@ -216,40 +215,35 @@ function TiendaHero() {
 }
 
 // ─── Moment filter pills ───────────────────────────────────────────────────────
-function MomentFilter({ pills, active, onChange, count }) {
+function MomentFilter({ pills, active, onChange }) {
   return (
-    <div style={{ borderBottom: '0.5px solid var(--sol-line)', background: 'var(--sol-bg)', position: 'sticky', top: 'calc(var(--sol-nav-h, 56px) + var(--sol-ticker-h, 40px))', zIndex: 10 }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '12px var(--sol-section-px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', scrollbarWidth: 'none', flexShrink: 1, minWidth: 0 }}>
-          {pills.map(pill => {
-            const isActive = pill.key === active;
-            return (
-              <button
-                key={pill.key}
-                type="button"
-                onClick={() => onChange(pill.key)}
-                className="font-jakarta"
-                style={{
-                  flexShrink: 0,
-                  display: 'inline-flex', alignItems: 'center', gap: '6px',
-                  padding: '6px 14px',
-                  fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase',
-                  background: isActive ? 'var(--sol-green)' : 'transparent',
-                  color: isActive ? 'var(--sol-bg)' : 'var(--sol-ink-dim)',
-                  border: `0.5px solid ${isActive ? 'var(--sol-green)' : 'var(--sol-line-mid)'}`,
-                  cursor: 'pointer',
-                  transition: 'all 0.25s var(--sol-ease)',
-                }}
-              >
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: isActive ? 'var(--sol-bg)' : pill.dot, flexShrink: 0 }} />
-                {pill.label}
-              </button>
-            );
-          })}
-        </div>
-        <div className="font-jakarta" style={{ flexShrink: 0, fontSize: '10px', letterSpacing: '0.18em', color: 'var(--sol-muted)', whiteSpace: 'nowrap' }}>
-          {count} {count === 1 ? 'fragancia' : 'fragancias'}
-        </div>
+    <div style={{ borderBottom: '0.5px solid var(--sol-line)', background: 'var(--sol-bg)' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '12px var(--sol-section-px)', display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+        {pills.map(pill => {
+          const isActive = pill.key === active;
+          return (
+            <button
+              key={pill.key}
+              type="button"
+              onClick={() => onChange(pill.key)}
+              className="font-jakarta"
+              style={{
+                flexShrink: 0,
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '6px 14px',
+                fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase',
+                background: isActive ? 'var(--sol-green)' : 'transparent',
+                color: isActive ? 'var(--sol-bg)' : 'var(--sol-ink-dim)',
+                border: `0.5px solid ${isActive ? 'var(--sol-green)' : 'var(--sol-line-mid)'}`,
+                cursor: 'pointer',
+                transition: 'all 0.25s var(--sol-ease)',
+              }}
+            >
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: isActive ? 'var(--sol-bg)' : pill.dot, flexShrink: 0 }} />
+              {pill.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -283,7 +277,7 @@ function ProductCard({ perfume, index, altView }) {
         {/* Top row: index + momento */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
           <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
-            N°/{idx} — F26
+            N°/{idx}
           </div>
           <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-ink-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: meta.dotColor || accent, boxShadow: `0 0 0 1px rgba(0,0,0,0.4)` }} />
@@ -377,7 +371,7 @@ function ProductCard({ perfume, index, altView }) {
                 <span className="font-jakarta" style={{ fontSize: '10px', color: 'var(--sol-muted)', letterSpacing: '0.18em', marginLeft: '6px' }}>ARS</span>
               </div>
               <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '20px' }}>
-                100ml · Eau de Parfum · 12 cuotas sin interés
+                60ml · Eau de Parfum · 2 cuotas sin interés
               </div>
 
               {/* CTA buttons */}
@@ -418,14 +412,6 @@ function ProductCard({ perfume, index, altView }) {
                 </Link>
               </div>
 
-              {/* Trust mini */}
-              <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginTop: '16px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <span>Envío 48h</span>
-                <span style={{ color: 'var(--sol-line-mid)' }}>·</span>
-                <span>Garantía 30 días</span>
-                <span style={{ color: 'var(--sol-line-mid)' }}>·</span>
-                <span style={{ color: 'var(--sol-green)' }}>● En stock</span>
-              </div>
             </div>
           </div>
         </div>
@@ -564,8 +550,16 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
           </p>
         </div>
 
-        {/* Builder + profile */}
-        <div ref={bodyRef} className="sol-reveal" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px' }}>
+        {/* Builder + profile — 2 col on desktop */}
+        <div ref={bodyRef} className="sol-reveal sol-combo-layout">
+
+          {/* ── Left: image showcase ── */}
+          <div className="sol-combo-showcase">
+            <ComboCollectionShowcase />
+          </div>
+
+          {/* ── Right: builder + profile + price ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
           {/* Slot 1 */}
           <div>
@@ -715,6 +709,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
             </button>
           </div>
 
+          </div>{/* end right column */}
         </div>
       </div>
     </section>
