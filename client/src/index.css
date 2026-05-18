@@ -358,34 +358,38 @@
   .sol-prod-card { width: 300px !important; }
 }
 
-/* ── Tienda product card: 2-col on desktop ── */
+/* ── Tienda product card: always 1-col, centered ── */
 .sol-prod-tienda-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 32px;
 }
-@media (min-width: 1024px) {
-  .sol-prod-tienda-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 80px;
-    align-items: start;
-  }
-}
 
-/* ── Combo: showcase left + builder right on desktop ── */
-.sol-combo-layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 40px;
+/* ── Filter pills: mobile scroll, desktop center ── */
+.sol-filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
-.sol-combo-showcase { display: none; }
-@media (min-width: 1024px) {
-  .sol-combo-layout {
-    grid-template-columns: 1fr 1fr;
-    gap: 80px;
-    align-items: start;
+.sol-filter-pills::-webkit-scrollbar { display: none; }
+.sol-filter-pill {
+  padding: 6px 14px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+@media (min-width: 768px) {
+  .sol-filter-pills {
+    justify-content: center;
+    flex-wrap: wrap;
+    overflow-x: visible;
   }
-  .sol-combo-showcase { display: block; }
+  .sol-filter-pill {
+    padding: 12px 24px;
+    font-size: 13px;
+  }
 }
 
 /* ── Benefits grid: 1 col mobile, 3 cols desktop ── */

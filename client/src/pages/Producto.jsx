@@ -242,7 +242,7 @@ function CSSBottle({ name, btl1, btl2 }) {
           <div style={{ width: 30, height: '0.5px', background: 'var(--accent)', margin: '0 auto 8px' }} />
           {name}
           <small className="font-jakarta" style={{ display: 'block', fontSize: '7px', letterSpacing: '0.24em', color: 'var(--sol-ink-dim)', marginTop: '6px', fontWeight: 400, opacity: 0.7 }}>
-            EDP · 100ML
+            EDP · 60ML
           </small>
           {/* Accent line below */}
           <div style={{ width: 30, height: '0.5px', background: 'var(--accent)', margin: '6px auto 0' }} />
@@ -426,7 +426,7 @@ export default function Producto() {
               ● En stock
             </span>
             <span className="font-jakarta" style={{ position: 'absolute', bottom: 16, left: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', zIndex: 2 }}>
-              EDP · 100ML
+              EDP · 60ML
             </span>
             <span className="font-jakarta" style={{ position: 'absolute', bottom: 16, right: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', zIndex: 2 }}>
               Origen AR
@@ -736,7 +736,7 @@ export default function Producto() {
             </div>
             <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '22px', position: 'relative' }}>
               <strong style={{ color: 'var(--sol-ink-dim)', fontWeight: 400 }}>{data.stock || 'En stock'}</strong>
-              {' · '}Hasta 12 cuotas
+              {' · '}Hasta 2 cuotas sin interés
             </div>
 
             {/* Trust row */}
@@ -840,7 +840,8 @@ export default function Producto() {
         </section>
       )}
 
-      {/* ── VIDEO REELS (placeholder) ───────────────────────────────── */}
+      {/* RESEÑAS EN VIDEO — habilitarlas cuando estén listos los videos */}
+      {/*
       <section style={{ padding: 'var(--sol-section-py) 0', ...SEC }}>
         <div className="sol-container" style={{ padding: '0 var(--sol-section-px)' }}>
           <div style={{ marginBottom: '28px' }}>
@@ -855,7 +856,6 @@ export default function Producto() {
               Clientes reales · Sin filtros
             </div>
           </div>
-          {/* 2×2 grid of video placeholders */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             {[
               { num: '01', handle: 'andresf.ok',  dur: '0:24', likes: '1.2K' },
@@ -868,7 +868,6 @@ export default function Producto() {
                 background: 'radial-gradient(80% 60% at 50% 30%, #181818 0%, #0a0a0a 70%)',
                 border: '0.5px solid var(--sol-line)', overflow: 'hidden', cursor: 'pointer',
               }}>
-                {/* Diagonal texture */}
                 <div style={{
                   position: 'absolute', inset: 0,
                   backgroundImage: 'repeating-linear-gradient(135deg, transparent 0, transparent 18px, rgba(244,241,236,0.012) 18px, rgba(244,241,236,0.012) 19px)',
@@ -880,7 +879,6 @@ export default function Producto() {
                 <span className="font-jakarta" style={{ position: 'absolute', top: 10, right: 12, fontSize: '8px', letterSpacing: '0.2em', color: 'var(--sol-ink-dim)', background: 'rgba(0,0,0,0.55)', padding: '2px 6px' }}>
                   {r.dur}
                 </span>
-                {/* Play button */}
                 <div style={{
                   position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
                   width: 44, height: 44, borderRadius: '50%',
@@ -889,7 +887,6 @@ export default function Producto() {
                 }}>
                   <div style={{ width: 0, height: 0, borderStyle: 'solid', borderWidth: '7px 0 7px 11px', borderColor: 'transparent transparent transparent var(--accent)', marginLeft: 2 }} />
                 </div>
-                {/* Footer */}
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '24px 12px 10px', background: 'linear-gradient(transparent, rgba(0,0,0,0.85))', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div className="font-jost" style={{ fontSize: '11px', color: 'var(--sol-ink)', fontWeight: 500 }}>
                     <span style={{ color: 'var(--accent)' }}>@</span>{r.handle}
@@ -903,6 +900,7 @@ export default function Producto() {
           </div>
         </div>
       </section>
+      */}
 
       {/* ── FINAL CTA ──────────────────────────────────────────────── */}
       <section style={{ padding: 'var(--sol-section-py) 0 calc(var(--sol-section-py) * 1.5)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
