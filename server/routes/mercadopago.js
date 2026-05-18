@@ -57,6 +57,22 @@ function extractMetaAttribution(req) {
 }
 
 /**
+ * Extrae los parámetros UTM de campaña del body del request.
+ * Se capturan en el frontend al llegar al sitio y se persisten en la orden
+ * para atribución del origen del tráfico.
+ */
+function extractUtmParams(req) {
+  const b = req.body || {};
+  return {
+    utm_source: (b.utm_source || '').toString().trim() || null,
+    utm_medium: (b.utm_medium || '').toString().trim() || null,
+    utm_campaign: (b.utm_campaign || '').toString().trim() || null,
+    utm_content: (b.utm_content || '').toString().trim() || null,
+    utm_term: (b.utm_term || '').toString().trim() || null,
+  };
+}
+
+/**
  * Dispara el evento CAPI Purchase exactamente una vez por orden.
  * Desacoplado del envío de email: usa su propio flag meta_capi_purchase_sent_at.
  * `prevOrder` debe traer las columnas de atribución (ver selects).
@@ -729,6 +745,8 @@ router.post('/mercadopago/create-preference', async (req, res) => {
     // anuncio + cookies _fbc/_fbp + IP/UA). Imprescindible para que el evento
     // CAPI Purchase del webhook tenga match quality alto.
     ...extractMetaAttribution(req),
+    // Parámetros UTM de campaña capturados en el frontend.
+    ...extractUtmParams(req),
   };
 
   const { data: order, error: orderErr } = await supabase
@@ -918,6 +936,7 @@ router.post('/mercadopago/process-card-payment', async (req, res) => {
       shipping_quote_payload: shipping_quote_payload || null,
       shipping_quote_response: shipping_quote_response || null,
       ...extractMetaAttribution(req),
+      ...extractUtmParams(req),
     };
 
     const { data: newOrder, error: orderErr } = await supabase
