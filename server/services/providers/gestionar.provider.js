@@ -1,6 +1,6 @@
 const axios = require('axios');
 const { hasFreeShipping } = require('../shipping.rules');
-const { lookupCP } = require('../../data/amba-zones');
+const { lookupCP, normalizeCP } = require('../../data/amba-zones');
 
 const GESTIONAR_API_URL =
     process.env.GESTIONAR_API_URL || 'https://apiv1.gestionarlogistica.com.ar';
@@ -378,8 +378,13 @@ async function buildFullfilmentExcel({ orders } = {}) {
 
         const destinatario = (order.customer_name || '').trim();
         const direccion = joinAddress(order.shipping_address_line1, order.shipping_address_line2);
-        const localidad = (order.shipping_city || '').trim();
-        const codigoPostal = (order.shipping_postal_code || '').trim();
+        // Gestionar rechaza el Excel si el CP no es numérico de 4 dígitos (formato CPA
+        // alfanumérico como "C1428CUB" rompe la validación). Cuando el CP cae en AMBA,
+        // sobreescribimos también la localidad con el partido canónico — el valor que
+        // tipeó el cliente puede no coincidir con el padrón de Gestionar.
+        const codigoPostal = normalizeCP(order.shipping_postal_code);
+        const coverage = lookupCP(order.shipping_postal_code);
+        const localidad = coverage?.partido || (order.shipping_city || '').trim();
         const telefono = (order.customer_phone || '').trim();
         const correo = (order.customer_email || '').trim();
         const fechaVenta = toExcelDate(order.created_at || new Date());
