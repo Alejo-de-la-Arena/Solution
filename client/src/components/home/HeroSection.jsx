@@ -25,10 +25,71 @@ export default function HeroSection() {
       }}
     >
       <div className="sol-container">
-        {/* sol-hero-inner: on desktop becomes a 2-col grid via CSS */}
+        {/* sol-hero-inner: on desktop becomes a 2-col grid via CSS named areas */}
         <div className="sol-hero-inner">
 
-          {/* ── Video VSL — first in DOM so it renders first on mobile ── */}
+          {/* ── Meta row — 1st mobile, grid-area: meta desktop ── */}
+          <div
+            ref={metaRef}
+            className="sol-hero-meta sol-reveal"
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '36px',
+            }}
+          >
+            <div
+              className="font-jakarta"
+              style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}
+            >
+              N°/01{' '}
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: '4px', height: '4px',
+                  background: 'var(--sol-green)',
+                  borderRadius: '50%',
+                  margin: '0 8px 2px',
+                  verticalAlign: 'middle',
+                }}
+                aria-hidden
+              />
+              New Era
+            </div>
+          </div>
+
+          {/* ── Headline — 2nd mobile, grid-area: head desktop ── */}
+          <h1
+            ref={headlineRef}
+            className="font-jost sol-hero-head sol-reveal"
+            style={{
+              fontWeight: 400,
+              fontSize: 'clamp(34px, 9vw, 64px)',
+              lineHeight: 1.02,
+              letterSpacing: '-0.025em',
+              color: 'var(--sol-ink)',
+              marginBottom: '28px',
+            }}
+          >
+            No competimos<br />
+            con los perfumes<br />
+            de nicho.
+            <em
+              style={{
+                fontStyle: 'italic',
+                fontWeight: 300,
+                color: 'var(--sol-ink-dim)',
+                display: 'block',
+                marginTop: '4px',
+              }}
+            >
+              <span style={{ color: 'var(--sol-magenta)', fontStyle: 'normal' }}>— </span>
+              Competimos con<br />la costumbre de<br />no usar perfume.
+            </em>
+          </h1>
+
+          {/* ── Video VSL — 3rd mobile, grid-area: video desktop ── */}
           <div
             ref={videoRef}
             className="sol-video sol-hero-video sol-reveal"
@@ -91,68 +152,7 @@ export default function HeroSection() {
             />
           </div>
 
-          {/* ── Meta row ── */}
-          <div
-            ref={metaRef}
-            className="sol-hero-meta sol-reveal"
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '36px',
-            }}
-          >
-            <div
-              className="font-jakarta"
-              style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}
-            >
-              N°/01{' '}
-              <span
-                style={{
-                  display: 'inline-block',
-                  width: '4px', height: '4px',
-                  background: 'var(--sol-green)',
-                  borderRadius: '50%',
-                  margin: '0 8px 2px',
-                  verticalAlign: 'middle',
-                }}
-                aria-hidden
-              />
-              New Era
-            </div>
-          </div>
-
-          {/* ── Headline ── */}
-          <h1
-            ref={headlineRef}
-            className="font-jost sol-hero-head sol-reveal"
-            style={{
-              fontWeight: 400,
-              fontSize: 'clamp(34px, 9vw, 64px)',
-              lineHeight: 1.02,
-              letterSpacing: '-0.025em',
-              color: 'var(--sol-ink)',
-              marginBottom: '28px',
-            }}
-          >
-            No competimos<br />
-            con los perfumes<br />
-            de nicho.
-            <em
-              style={{
-                fontStyle: 'italic',
-                fontWeight: 300,
-                color: 'var(--sol-ink-dim)',
-                display: 'block',
-                marginTop: '4px',
-              }}
-            >
-              <span style={{ color: 'var(--sol-magenta)', fontStyle: 'normal' }}>— </span>
-              Competimos con<br />la costumbre de<br />no usar perfume.
-            </em>
-          </h1>
-
-          {/* ── CTAs ── */}
+          {/* ── CTAs — 4th mobile, grid-area: ctas desktop ── */}
           <div
             ref={ctasRef}
             className="sol-hero-ctas sol-reveal"

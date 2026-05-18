@@ -1,97 +1,137 @@
-import { motion } from "motion/react";
-import { useScrollMotion } from "../../hooks/useScrollMotion";
+import { useReveal } from '../../hooks/useReveal';
 
 const BENEFITS = [
   {
-    iconColor: "rgb(0, 255, 255)",
-    title: "Descuentos por plan",
-    description: "Accedé a precios mayoristas según tu nivel (Starter, Pro o Elite).",
+    title: 'Envíos rápidos',
+    description: 'Despachos en 48 h con prioridad logística para revendedores activos.',
+    icon: (
+      <svg style={{ width: 28, height: 28, stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1 }} viewBox="0 0 24 24" aria-hidden>
+        <path d="M3 7h13v9H3z"/><path d="M16 11h4l1 2v3h-5z"/>
+        <circle cx="7" cy="18" r="1.6"/><circle cx="18" cy="18" r="1.6"/>
+      </svg>
+    ),
   },
   {
-    iconColor: "rgb(255, 0, 255)",
-    title: "Stock garantizado",
-    description: "Acceso prioritario a reposiciones y disponibilidad según plan.",
+    title: 'Márgenes reales',
+    description: 'Hasta 40 % de ganancia sobre precio de lista. Sin costos ocultos ni sorpresas.',
+    icon: (
+      <svg style={{ width: 28, height: 28, stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1 }} viewBox="0 0 24 24" aria-hidden>
+        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+        <polyline points="16 7 22 7 22 13"/>
+      </svg>
+    ),
   },
   {
-    iconColor: "rgb(0, 255, 127)",
-    title: "Envío rápido",
-    description: "Despachos ágiles y prioridad logística en planes avanzados.",
+    title: 'Stock garantizado',
+    description: 'Acceso prioritario a reposiciones y reserva de unidades para planes avanzados.',
+    icon: (
+      <svg style={{ width: 28, height: 28, stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1 }} viewBox="0 0 24 24" aria-hidden>
+        <path d="M12 3l8 3v6c0 4.5-3.5 8-8 9-4.5-1-8-4.5-8-9V6l8-3Z"/>
+        <path d="M9 12l2.2 2.2L15 10"/>
+      </svg>
+    ),
   },
   {
-    iconColor: "rgb(255, 215, 0)",
-    title: "Material promocional",
-    description: "Imágenes, videos y recursos listos para vender (Pro/Elite).",
+    title: 'Soporte comercial',
+    description: 'Asesor dedicado por WhatsApp. Estrategia de venta, pricing y objeciones.',
+    icon: (
+      <svg style={{ width: 28, height: 28, stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1 }} viewBox="0 0 24 24" aria-hidden>
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+    ),
   },
   {
-    iconColor: "rgb(138, 43, 226)",
-    title: "Asesoramiento",
-    description: "Soporte comercial para ayudarte a crecer y resolver dudas.",
+    title: 'Material listo',
+    description: 'Fotos, videos y copies para redes sociales. Solo publicás y vendés.',
+    icon: (
+      <svg style={{ width: 28, height: 28, stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1 }} viewBox="0 0 24 24" aria-hidden>
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <polyline points="21 15 16 10 5 21"/>
+      </svg>
+    ),
   },
   {
-    iconColor: "rgb(255, 182, 193)",
-    title: "Sin mínimo inicial",
-    description: "Una vez aprobado el plan, podés comprar sin mínimo.",
+    title: 'Sin mínimo inicial',
+    description: 'Una vez aprobado, empezás con el volumen que tu negocio necesita.',
+    icon: (
+      <svg style={{ width: 28, height: 28, stroke: 'var(--sol-green)', fill: 'none', strokeWidth: 1 }} viewBox="0 0 24 24" aria-hidden>
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+    ),
   },
 ];
 
-function CheckIcon({ color }) {
+function BenefitItem({ item }) {
+  const itemRef = useReveal();
   return (
-    <span
-      className="benefit-icon shrink-0 w-10 h-10 rounded-full flex items-center justify-center border border-white/15 bg-black/30 backdrop-blur-md transition-all duration-300 ease-out"
-      style={{ borderColor: color, color }}
+    <div
+      ref={itemRef}
+      className="sol-reveal"
+      style={{
+        background: 'var(--sol-bg)',
+        padding: '32px 28px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        transition: 'background 0.3s var(--sol-ease)',
+      }}
+      onMouseEnter={e => e.currentTarget.style.background = 'var(--sol-bg-card)'}
+      onMouseLeave={e => e.currentTarget.style.background = 'var(--sol-bg)'}
     >
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-      </svg>
-    </span>
+      <div style={{ width: 48, height: 48, border: '0.5px solid var(--sol-green-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--sol-green-soft)' }}>
+        {item.icon}
+      </div>
+      <div>
+        <h3 className="font-jost" style={{ fontWeight: 500, fontSize: '16px', color: 'var(--sol-ink)', marginBottom: '8px', letterSpacing: '-0.01em' }}>
+          {item.title}
+        </h3>
+        <p className="font-jakarta" style={{ fontSize: '13px', lineHeight: 1.7, color: 'var(--sol-muted)' }}>
+          {item.description}
+        </p>
+      </div>
+    </div>
   );
 }
 
 export default function WholesaleBenefitsGrid() {
-  const { ref, reducedMotion, premiumEasing } = useScrollMotion();
+  const headRef = useReveal();
 
   return (
     <section
-      ref={ref}
       id="beneficios"
-      className="section-beneficios-bg bg-black text-white py-16 md:py-24 px-4"
+      style={{
+        borderBottom: '0.5px solid var(--sol-line)',
+        paddingTop: 'var(--sol-section-py)',
+        paddingBottom: 'var(--sol-section-py)',
+        background: 'var(--sol-bg)',
+      }}
     >
-      <div className="relative z-10 max-w-6xl mx-auto">
-        <motion.h2
-          initial={{ opacity: 0, y: 14 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.35 }}
-          transition={{ duration: 0.65, ease: premiumEasing }}
-          className="font-heading text-3xl md:text-4xl lg:text-5xl font-semibold tracking-wider text-center mb-14 md:mb-20"
-        >
-          Beneficios del programa
-        </motion.h2>
+      <div className="sol-container" style={{ padding: '0 var(--sol-section-px)' }}>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-12 md:gap-y-16">
-          {BENEFITS.map((item, i) => (
-            <motion.div
-              key={item.title}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.35 }}
-              transition={{ duration: 0.6, ease: premiumEasing, delay: 0.08 + i * 0.05 }}
-              whileHover={
-                reducedMotion
-                  ? undefined
-                  : {
-                      y: -6,
-                    }
-              }
-              className="benefit-card relative flex gap-4 text-left rounded-[28px] p-5 md:p-6 transition-all duration-300 ease-out border border-white/10 bg-white/[0.02] hover:border-white/20"
-            >
-              <CheckIcon color={item.iconColor} />
-              <div className="min-w-0">
-                <h3 className="font-heading text-base md:text-lg font-bold text-white mb-2 tracking-wide">{item.title}</h3>
-                <p className="text-white/70 text-sm md:text-base leading-relaxed">{item.description}</p>
-              </div>
-            </motion.div>
+        {/* Section header */}
+        <div ref={headRef} className="sol-reveal" style={{ marginBottom: '56px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sol-green)', display: 'inline-block' }} />
+              Beneficios
+            </div>
+            <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-magenta)' }}>§ 03</div>
+          </div>
+          <h2 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(28px, 5vw, 48px)', lineHeight: 1.1, letterSpacing: '-0.025em', color: 'var(--sol-ink)', maxWidth: 520 }}>
+            Todo lo que necesitás<br />
+            <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)' }}>para vender.</em>
+          </h2>
+        </div>
+
+        {/* Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1px', background: 'var(--sol-line)' }}>
+          {BENEFITS.map((item) => (
+            <BenefitItem key={item.title} item={item} />
           ))}
         </div>
+
       </div>
     </section>
   );

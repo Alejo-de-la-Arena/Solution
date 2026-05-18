@@ -128,22 +128,6 @@ export default function FinalCtaSection() {
             </Link>
           </div>
 
-          {/* Footer tag */}
-          <div
-            className="font-jakarta sol-arg"
-            style={{
-              marginTop: '48px',
-              fontSize: '9px',
-              letterSpacing: '0.22em',
-              textTransform: 'uppercase',
-              color: 'var(--sol-muted)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '10px',
-            }}
-          >
-            Hecho en Argentina
-          </div>
         </div>
       </div>
     </section>
