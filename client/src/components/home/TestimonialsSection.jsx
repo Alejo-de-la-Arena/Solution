@@ -160,16 +160,6 @@ export default function TestimonialsSection() {
         </div>
       </div>
 
-      {/* Decorative progress dots */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '24px', padding: '0 var(--sol-section-px)' }}>
-        {TESTIMONIALS.map((_, i) => (
-          <span key={i} style={{
-            width: '16px', height: '0.5px',
-            background: i === 0 ? 'var(--sol-green)' : 'var(--sol-line-mid)',
-            display: 'block',
-          }} />
-        ))}
-      </div>
     </section>
   );
 }

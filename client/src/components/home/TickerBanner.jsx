@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 
 const ITEMS = [
   'Envío a todo el país',
-  'Hasta 12 cuotas con Mercado Pago',
+  'Hasta 2 cuotas con Mercado Pago',
   'Garantía 30 días',
   'Producción argentina',
 ];

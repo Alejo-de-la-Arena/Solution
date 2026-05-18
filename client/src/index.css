@@ -349,7 +349,7 @@
   }
   .sol-hero-meta  { grid-area: meta; }
   .sol-hero-head  { grid-area: head; }
-  .sol-hero-video { grid-area: video; margin-bottom: 0 !important; aspect-ratio: 16/9; min-height: 500px; }
+  .sol-hero-video { grid-area: video; margin-bottom: 0 !important; aspect-ratio: 16/9 !important; }
   .sol-hero-ctas  { grid-area: ctas; padding-top: 40px; }
 }
 
