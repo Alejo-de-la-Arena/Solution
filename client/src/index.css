@@ -228,11 +228,12 @@
 /* ── Product scroll: forced padding so Tailwind reset can't strip it ── */
 .sol-prod-scroll {
   --sol-prod-edge-offset: var(--sol-section-px);
-  padding-left: 0 !important;
+  padding-left:  var(--sol-prod-edge-offset) !important;
+  padding-right: var(--sol-prod-edge-offset) !important;
   box-sizing: border-box !important;
 }
 @media (min-width: 1281px) {
-  /* Align first card with the sol-container left edge on wide viewports */
+  /* Align first/last card with the sol-container edge on wide viewports */
   .sol-prod-scroll {
     --sol-prod-edge-offset: calc((100vw - 1280px) / 2 + var(--sol-section-px));
   }
@@ -348,7 +349,7 @@
   }
   .sol-hero-meta  { grid-area: meta; }
   .sol-hero-head  { grid-area: head; }
-  .sol-hero-video { grid-area: video; margin-bottom: 0 !important; aspect-ratio: 16/9 !important; }
+  .sol-hero-video { grid-area: video; margin-bottom: 0 !important; aspect-ratio: 16/9; min-height: 500px; }
   .sol-hero-ctas  { grid-area: ctas; padding-top: 40px; }
 }
 

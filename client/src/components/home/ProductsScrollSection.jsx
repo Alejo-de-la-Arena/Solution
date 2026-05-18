@@ -338,7 +338,6 @@ export default function ProductsScrollSection() {
           gap: `${CARD_GAP}px`,
           overflowX: 'auto',
           scrollSnapType: 'x mandatory',
-          paddingRight: 'var(--sol-section-px)',
           paddingBottom: '8px',
           WebkitOverflowScrolling: 'touch',
         }}

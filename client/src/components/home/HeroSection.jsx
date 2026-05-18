@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useReveal } from '../../hooks/useReveal';
 
 const VSL_VIDEO_URL = 'https://tpyzgrcqregtzmuirfny.supabase.co/storage/v1/object/public/solution-products/video/video-home-solution.mp4';
 
 export default function HeroSection() {
+  const [videoReady, setVideoReady] = useState(false);
+
   const metaRef     = useReveal();
   const headlineRef = useReveal();
   const videoRef    = useReveal();
@@ -39,12 +42,52 @@ export default function HeroSection() {
               marginBottom: '28px',
             }}
           >
+            {/* Skeleton loader — visible until onCanPlay fires */}
+            <div
+              aria-hidden
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: '#111',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 2,
+                opacity: videoReady ? 0 : 1,
+                transition: 'opacity 0.5s ease',
+                pointerEvents: 'none',
+              }}
+            >
+              <div
+                className="animate-spin"
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  border: '2px solid rgba(255,255,255,0.08)',
+                  borderTopColor: 'var(--sol-green)',
+                }}
+              />
+            </div>
+
             <video
               src={VSL_VIDEO_URL}
-              controls
+              autoPlay
+              muted
               playsInline
-              preload="none"
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+              loop
+              controls
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                opacity: videoReady ? 1 : 0,
+                transition: 'opacity 0.5s ease',
+              }}
+              onCanPlay={() => setVideoReady(true)}
+              onLoadedData={() => setVideoReady(true)}
             />
           </div>
 
