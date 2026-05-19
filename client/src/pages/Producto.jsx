@@ -466,7 +466,7 @@ export default function Producto() {
                       animate={{ opacity: 1, scale: 1.02, filter: 'blur(0px)' }}
                       exit={{ opacity: 0, scale: 0.98, filter: 'blur(6px)' }}
                       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                      autoPlay muted loop playsInline
+                      controls loop playsInline
                     />
                   ) : activeItem && (
                     <motion.img
@@ -521,7 +521,7 @@ export default function Producto() {
                     }}
                   >
                     {item.kind === 'video'
-                      ? <video src={src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted playsInline preload="metadata" />
+                      ? <video src={src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} playsInline preload="metadata" />
                       : <img src={src} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     }
                   </button>
