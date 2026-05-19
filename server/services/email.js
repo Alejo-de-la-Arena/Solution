@@ -3,6 +3,7 @@ const axios = require('axios');
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || '').trim();
 const RESEND_FROM_EMAIL = (process.env.RESEND_FROM_EMAIL || '').trim();
 const RESEND_TEST_TO_EMAIL = (process.env.RESEND_TEST_TO_EMAIL || '').trim();
+const ADMIN_NOTIFICATION_EMAIL = (process.env.ADMIN_NOTIFICATION_EMAIL || '').trim();
 
 async function postResendEmail({ to, subject, html }) {
   if (!RESEND_API_KEY || !RESEND_FROM_EMAIL) {
@@ -394,9 +395,142 @@ async function sendTrackingEmail({ to, order, trackingNumber, deliveryType, agen
   }
 }
 
+/**
+ * Notificación al dueño: nueva venta confirmada (status=paid).
+ * Destinatario fijo via env `ADMIN_NOTIFICATION_EMAIL`.
+ * Idempotencia controlada en el caller via `orders.admin_notification_sent_at`.
+ *
+ * @param {{ order: object, items: Array<{ product_id, product_name?, quantity, unit_price }>, payment?: object }} params
+ * @returns {Promise<boolean>}
+ */
+async function sendAdminSaleNotificationEmail({ order, items, payment }) {
+  const to = ADMIN_NOTIFICATION_EMAIL;
+  if (!to) {
+    console.warn('[email] ADMIN_NOTIFICATION_EMAIL no seteada — admin notification no enviada');
+    return false;
+  }
+
+  try {
+    const pm = payment?.payment_method || {};
+    const inst = pm?.installment_plan || {};
+
+    const cardLine = [pm.card_brand, pm.card_type, pm.card_last4 ? `···${pm.card_last4}` : null]
+      .filter(Boolean).map(escapeHtml).join(' · ');
+    const issuerLine = pm.issuer ? escapeHtml(pm.issuer) : '';
+    const cuotasLine = inst.installments != null
+      ? `${escapeHtml(String(inst.installments))} cuota${Number(inst.installments) !== 1 ? 's' : ''}${inst.name ? ` (${escapeHtml(inst.name)})` : ''}`
+      : '';
+    const paymentCode = payment?.payment_code ? escapeHtml(payment.payment_code) : '';
+    const paymentMethodLabel = order?.payment_method
+      ? escapeHtml(String(order.payment_method).toUpperCase())
+      : '—';
+
+    const linesHtml = (items || []).map((i) => {
+      const itemTotal = Number(i.quantity) * Number(i.unit_price);
+      return `
+      <tr>
+        <td style="padding:12px 0;border-bottom:1px solid #eaeaea;">
+          <p style="margin:0;font-size:14px;color:#111827;font-weight:500;">${escapeHtml(i.product_name || ('Producto ' + i.product_id))}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#6b7280;">Cant: ${Number(i.quantity)} · Unit: ${formatMoneyArs(i.unit_price, order.currency)}</p>
+        </td>
+        <td style="padding:12px 0;border-bottom:1px solid #eaeaea;text-align:right;font-size:14px;color:#111827;font-weight:500;">
+          ${formatMoneyArs(itemTotal, order.currency)}
+        </td>
+      </tr>`;
+    }).join('');
+
+    const isHomeDelivery = (order.shipping_mode || order.shipping_service_type) !== 'S'
+      && order.shipping_service_type !== 'branch';
+    const shippingDest = isHomeDelivery
+      ? [order.shipping_address_line1, order.shipping_address_line2, order.shipping_city, order.shipping_state, order.shipping_postal_code]
+          .filter(Boolean).join(', ')
+      : (order.shipping_agency_name || 'Sucursal');
+    const shippingMethod = [
+      order.shipping_provider,
+      order.shipping_mode,
+      order.shipping_service_type,
+    ].filter(Boolean).map((s) => escapeHtml(String(s))).join(' · ');
+
+    const adminLink = 'https://www.solutionperfumes.com/admin/pedidos';
+
+    const body = `
+    <tr><td style="padding:40px;">
+      <h2 style="margin:0 0 8px;font-size:22px;color:#111827;">🛒 Nueva venta confirmada</h2>
+      <p style="margin:0 0 24px;font-size:14px;color:#6b7280;">
+        Se acreditó un pago — preparar el pedido.
+      </p>
+
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:16px;margin-bottom:24px;">
+        <p style="margin:0;font-size:13px;color:#166534;">Orden <strong>#${escapeHtml(String(order.id))}</strong></p>
+        <p style="margin:6px 0 0;font-size:22px;color:#065f46;font-weight:700;">${formatMoneyArs(order.total, order.currency)}</p>
+        <p style="margin:6px 0 0;font-size:13px;color:#166534;">Método: ${paymentMethodLabel} · Canal: ${escapeHtml(order.channel || 'retail')}</p>
+      </div>
+
+      <h3 style="margin:0 0 8px;font-size:14px;color:#111827;text-transform:uppercase;letter-spacing:0.5px;">Cliente</h3>
+      <div style="background:#f9fafb;border:1px solid #eaeaea;border-radius:6px;padding:12px 16px;margin-bottom:24px;">
+        <p style="margin:0;font-size:14px;color:#111827;">${escapeHtml(order.customer_name || '—')}</p>
+        <p style="margin:4px 0 0;font-size:13px;color:#4b5563;">${escapeHtml(order.customer_email || '—')}</p>
+        ${order.customer_phone ? `<p style="margin:4px 0 0;font-size:13px;color:#4b5563;">${escapeHtml(order.customer_phone)}</p>` : ''}
+      </div>
+
+      <h3 style="margin:0 0 8px;font-size:14px;color:#111827;text-transform:uppercase;letter-spacing:0.5px;">Ítems</h3>
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+        <thead><tr>
+          <th style="padding-bottom:8px;border-bottom:2px solid #eaeaea;text-align:left;font-size:11px;color:#6b7280;text-transform:uppercase;">Producto</th>
+          <th style="padding-bottom:8px;border-bottom:2px solid #eaeaea;text-align:right;font-size:11px;color:#6b7280;text-transform:uppercase;">Subtotal</th>
+        </tr></thead>
+        <tbody>${linesHtml}</tbody>
+        <tfoot><tr>
+          <td style="padding-top:12px;text-align:right;font-weight:600;font-size:14px;color:#111827;">Total productos</td>
+          <td style="padding-top:12px;text-align:right;font-size:14px;font-weight:600;color:#111827;">${formatMoneyArs(order.total, order.currency)}</td>
+        </tr></tfoot>
+      </table>
+
+      <h3 style="margin:0 0 8px;font-size:14px;color:#111827;text-transform:uppercase;letter-spacing:0.5px;">Envío</h3>
+      <div style="background:#f9fafb;border:1px solid #eaeaea;border-radius:6px;padding:12px 16px;margin-bottom:24px;">
+        <p style="margin:0;font-size:13px;color:#4b5563;"><strong>${isHomeDelivery ? 'Domicilio' : 'Sucursal'}:</strong> ${escapeHtml(shippingDest || '—')}</p>
+        ${shippingMethod ? `<p style="margin:4px 0 0;font-size:13px;color:#4b5563;">${shippingMethod}</p>` : ''}
+        ${order.shipping_cost != null ? `<p style="margin:4px 0 0;font-size:13px;color:#4b5563;">Costo: ${formatMoneyArs(order.shipping_cost, order.currency)}${order.shipping_is_free ? ' (free shipping)' : ''}</p>` : ''}
+        ${order.shipping_notes ? `<p style="margin:4px 0 0;font-size:13px;color:#4b5563;"><em>${escapeHtml(order.shipping_notes)}</em></p>` : ''}
+      </div>
+
+      ${cardLine || paymentCode || cuotasLine ? `
+      <h3 style="margin:0 0 8px;font-size:14px;color:#111827;text-transform:uppercase;letter-spacing:0.5px;">Pago</h3>
+      <div style="background:#f9fafb;border:1px solid #eaeaea;border-radius:6px;padding:12px 16px;margin-bottom:24px;">
+        ${cardLine ? `<p style="margin:0;font-size:13px;color:#4b5563;">${cardLine}</p>` : ''}
+        ${issuerLine ? `<p style="margin:4px 0 0;font-size:13px;color:#6b7280;">Emisor: ${issuerLine}</p>` : ''}
+        ${cuotasLine ? `<p style="margin:4px 0 0;font-size:13px;color:#6b7280;">${cuotasLine}</p>` : ''}
+        ${paymentCode ? `<p style="margin:4px 0 0;font-size:13px;color:#6b7280;">Código: <strong>${paymentCode}</strong></p>` : ''}
+      </div>
+      ` : ''}
+
+      <div style="text-align:center;margin:32px 0 0;">
+        <a href="${adminLink}"
+           style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-size:14px;font-weight:600;letter-spacing:0.5px;">
+          Ver en el panel
+        </a>
+      </div>
+    </td></tr>`;
+
+    const shortId = String(order.id || '').slice(0, 8);
+    const subject = `🛒 Nueva venta #${shortId} — ${formatMoneyArs(order.total, order.currency)} — Solution`;
+
+    const out = await postResendEmail({ to, subject, html: emailWrapper(body) });
+    if (!out) {
+      console.warn('[email] sendAdminSaleNotificationEmail: Resend no devolvió respuesta');
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('[email] sendAdminSaleNotificationEmail:', e?.response?.data || e.message || e);
+    return false;
+  }
+}
+
 module.exports = {
   sendOrderEmail,
   sendPaymentConfirmationEmail,
+  sendAdminSaleNotificationEmail,
   sendDispatchEmail,
   sendTrackingEmail,
   sendRefundInitiatedEmail,

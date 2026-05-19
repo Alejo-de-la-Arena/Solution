@@ -3,13 +3,28 @@ const axios = require('axios');
 const crypto = require('crypto');
 const { supabase } = require('../lib/supabase');
 const { applyTestMode } = require('../lib/testMode');
-const { sendPaymentConfirmationEmail } = require('../services/email');
+const { sendPaymentConfirmationEmail, sendAdminSaleNotificationEmail } = require('../services/email');
 
 const router = express.Router();
 const MP_API = 'https://api.mercadopago.com';
 
 function toDecimalString(num) {
   return Number(num).toFixed(2);
+}
+
+async function buildItemsForEmail(orderRowId) {
+  const { data: rawItems } = await supabase
+    .from('order_items')
+    .select('product_id, quantity, unit_price')
+    .eq('order_id', orderRowId);
+  let items = rawItems || [];
+  const pids = [...new Set(items.map((i) => i.product_id))];
+  if (pids.length > 0) {
+    const { data: products } = await supabase.from('products').select('id, name').in('id', pids);
+    const nameById = Object.fromEntries((products || []).map((p) => [p.id, p.name]));
+    items = items.map((i) => ({ ...i, product_name: nameById[i.product_id] || null }));
+  }
+  return items;
 }
 
 function getAccessToken() {
@@ -221,7 +236,7 @@ async function applyPaymentToDb(orderRowId, payment, { sendEmailIfPaid }) {
 
   const { data: prevOrder, error: prevErr } = await supabase
     .from('orders')
-    .select('id, status, customer_email, customer_name, total, currency, payment_confirmation_email_sent_at')
+    .select('*')
     .eq('id', orderRowId)
     .maybeSingle();
   if (prevErr || !prevOrder) {
@@ -237,21 +252,10 @@ async function applyPaymentToDb(orderRowId, payment, { sendEmailIfPaid }) {
 
   console.log(`[MP] Orden ${orderRowId} → ${nextStatus} (payment ${payment?.id})`);
 
-  if (sendEmailIfPaid && nextStatus === 'paid' && !prevOrder.payment_confirmation_email_sent_at) {
-    const to = (prevOrder.customer_email || '').trim();
-    if (!to) return nextStatus;
-
-    const { data: rawItems } = await supabase
-      .from('order_items')
-      .select('product_id, quantity, unit_price')
-      .eq('order_id', orderRowId);
-    let itemsForEmail = rawItems || [];
-    const pids = [...new Set(itemsForEmail.map((i) => i.product_id))];
-    if (pids.length > 0) {
-      const { data: products } = await supabase.from('products').select('id, name').in('id', pids);
-      const nameById = Object.fromEntries((products || []).map((p) => [p.id, p.name]));
-      itemsForEmail = itemsForEmail.map((i) => ({ ...i, product_name: nameById[i.product_id] || null }));
-    }
+  const needCustomerEmail = !prevOrder.payment_confirmation_email_sent_at;
+  const needAdminEmail = !prevOrder.admin_notification_sent_at;
+  if (sendEmailIfPaid && nextStatus === 'paid' && (needCustomerEmail || needAdminEmail)) {
+    const itemsForEmail = await buildItemsForEmail(orderRowId);
 
     const syntheticPayment = {
       payment_code: payment?.id || null,
@@ -262,12 +266,28 @@ async function applyPaymentToDb(orderRowId, payment, { sendEmailIfPaid }) {
         installment_plan: { installments: payment?.installments, name: null },
       },
     };
-    const sent = await sendPaymentConfirmationEmail({ to, order: prevOrder, items: itemsForEmail, payment: syntheticPayment });
-    if (sent) {
-      await supabase
-        .from('orders')
-        .update({ payment_confirmation_email_sent_at: new Date().toISOString() })
-        .eq('id', orderRowId);
+
+    if (needCustomerEmail) {
+      const to = (prevOrder.customer_email || '').trim();
+      if (to) {
+        const sent = await sendPaymentConfirmationEmail({ to, order: prevOrder, items: itemsForEmail, payment: syntheticPayment });
+        if (sent) {
+          await supabase
+            .from('orders')
+            .update({ payment_confirmation_email_sent_at: new Date().toISOString() })
+            .eq('id', orderRowId);
+        }
+      }
+    }
+
+    if (needAdminEmail) {
+      const sent = await sendAdminSaleNotificationEmail({ order: prevOrder, items: itemsForEmail, payment: syntheticPayment });
+      if (sent) {
+        await supabase
+          .from('orders')
+          .update({ admin_notification_sent_at: new Date().toISOString() })
+          .eq('id', orderRowId);
+      }
     }
   }
   return nextStatus;
@@ -283,7 +303,7 @@ async function applyMpOrderToDb(orderRowId, mpOrder, { sendEmailIfPaid }) {
 
   const { data: prevOrder, error: prevErr } = await supabase
     .from('orders')
-    .select('id, status, customer_email, customer_name, total, currency, payment_confirmation_email_sent_at, payment_method')
+    .select('*')
     .eq('id', orderRowId)
     .maybeSingle();
 
@@ -300,35 +320,35 @@ async function applyMpOrderToDb(orderRowId, mpOrder, { sendEmailIfPaid }) {
 
   console.log(`[MP] Orden ${orderRowId} → ${nextStatus} (mp ${mpOrder?.id})`);
 
-  if (sendEmailIfPaid && nextStatus === 'paid' && !prevOrder.payment_confirmation_email_sent_at) {
-    const to = (prevOrder.customer_email || '').trim();
-    if (!to) {
-      console.warn('[MP] Pago acreditado sin email:', orderRowId);
-      return;
-    }
-
-    const { data: rawItems } = await supabase
-      .from('order_items')
-      .select('product_id, quantity, unit_price')
-      .eq('order_id', orderRowId);
-    let itemsForEmail = rawItems || [];
-    const pids = [...new Set(itemsForEmail.map((i) => i.product_id))];
-    if (pids.length > 0) {
-      const { data: products } = await supabase.from('products').select('id, name').in('id', pids);
-      const nameById = Object.fromEntries((products || []).map((p) => [p.id, p.name]));
-      itemsForEmail = itemsForEmail.map((i) => ({
-        ...i,
-        product_name: nameById[i.product_id] || null,
-      }));
-    }
-
+  const needCustomerEmail = !prevOrder.payment_confirmation_email_sent_at;
+  const needAdminEmail = !prevOrder.admin_notification_sent_at;
+  if (sendEmailIfPaid && nextStatus === 'paid' && (needCustomerEmail || needAdminEmail)) {
+    const itemsForEmail = await buildItemsForEmail(orderRowId);
     const payment = buildSyntheticPaymentForEmail(mpOrder);
-    const sent = await sendPaymentConfirmationEmail({ to, order: prevOrder, items: itemsForEmail, payment });
-    if (sent) {
-      await supabase
-        .from('orders')
-        .update({ payment_confirmation_email_sent_at: new Date().toISOString() })
-        .eq('id', orderRowId);
+
+    if (needCustomerEmail) {
+      const to = (prevOrder.customer_email || '').trim();
+      if (!to) {
+        console.warn('[MP] Pago acreditado sin email:', orderRowId);
+      } else {
+        const sent = await sendPaymentConfirmationEmail({ to, order: prevOrder, items: itemsForEmail, payment });
+        if (sent) {
+          await supabase
+            .from('orders')
+            .update({ payment_confirmation_email_sent_at: new Date().toISOString() })
+            .eq('id', orderRowId);
+        }
+      }
+    }
+
+    if (needAdminEmail) {
+      const sent = await sendAdminSaleNotificationEmail({ order: prevOrder, items: itemsForEmail, payment });
+      if (sent) {
+        await supabase
+          .from('orders')
+          .update({ admin_notification_sent_at: new Date().toISOString() })
+          .eq('id', orderRowId);
+      }
     }
   }
 }
@@ -517,33 +537,35 @@ router.post('/mercadopago/create-order', async (req, res) => {
   if (nextStatus === 'paid') {
     const { data: prevOrder } = await supabase
       .from('orders')
-      .select('id, status, customer_email, customer_name, total, currency, payment_confirmation_email_sent_at')
+      .select('*')
       .eq('id', order.id)
       .single();
 
-    if (prevOrder && !prevOrder.payment_confirmation_email_sent_at) {
-      const to = (prevOrder.customer_email || '').trim();
-      if (to) {
-        const { data: rawItems } = await supabase
-          .from('order_items')
-          .select('product_id, quantity, unit_price')
-          .eq('order_id', order.id);
-        let itemsForEmail = rawItems || [];
-        const pids = [...new Set(itemsForEmail.map((i) => i.product_id))];
-        if (pids.length > 0) {
-          const { data: products } = await supabase.from('products').select('id, name').in('id', pids);
-          const nameById = Object.fromEntries((products || []).map((p) => [p.id, p.name]));
-          itemsForEmail = itemsForEmail.map((i) => ({
-            ...i,
-            product_name: nameById[i.product_id] || null,
-          }));
+    const needCustomerEmail = prevOrder && !prevOrder.payment_confirmation_email_sent_at;
+    const needAdminEmail = prevOrder && !prevOrder.admin_notification_sent_at;
+    if (needCustomerEmail || needAdminEmail) {
+      const itemsForEmail = await buildItemsForEmail(order.id);
+      const payment = buildSyntheticPaymentForEmail(mpOrder);
+
+      if (needCustomerEmail) {
+        const to = (prevOrder.customer_email || '').trim();
+        if (to) {
+          const sent = await sendPaymentConfirmationEmail({ to, order: prevOrder, items: itemsForEmail, payment });
+          if (sent) {
+            await supabase
+              .from('orders')
+              .update({ payment_confirmation_email_sent_at: new Date().toISOString() })
+              .eq('id', order.id);
+          }
         }
-        const payment = buildSyntheticPaymentForEmail(mpOrder);
-        const sent = await sendPaymentConfirmationEmail({ to, order: prevOrder, items: itemsForEmail, payment });
+      }
+
+      if (needAdminEmail) {
+        const sent = await sendAdminSaleNotificationEmail({ order: prevOrder, items: itemsForEmail, payment });
         if (sent) {
           await supabase
             .from('orders')
-            .update({ payment_confirmation_email_sent_at: new Date().toISOString() })
+            .update({ admin_notification_sent_at: new Date().toISOString() })
             .eq('id', order.id);
         }
       }

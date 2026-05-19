@@ -2,7 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const { supabase } = require('../lib/supabase');
 const { applyTestMode } = require('../lib/testMode');
-const { sendPaymentConfirmationEmail } = require('../services/email');
+const { sendPaymentConfirmationEmail, sendAdminSaleNotificationEmail } = require('../services/email');
 
 const router = express.Router();
 
@@ -323,7 +323,7 @@ async function handleNaveWebhook(req, res) {
 
     const { data: prevOrder, error: prevErr } = await supabase
       .from('orders')
-      .select('id, status, customer_email, customer_name, total, currency, payment_confirmation_email_sent_at')
+      .select('*')
       .eq('id', external_payment_id).maybeSingle();
 
     if (prevErr || !prevOrder) { console.error('[Nave Webhook] Orden no encontrada:', external_payment_id, prevErr); return; }
@@ -333,10 +333,9 @@ async function handleNaveWebhook(req, res) {
 
     console.log(`[Nave Webhook] Orden ${external_payment_id} → ${orderStatus}`);
 
-    if (orderStatus === 'paid' && !prevOrder.payment_confirmation_email_sent_at) {
-      const to = (prevOrder.customer_email || '').trim() || (payment?.buyer?.user_email || '').trim();
-      if (!to) { console.warn('[Nave Webhook] Pago aprobado sin email:', external_payment_id); return; }
-
+    const needCustomerEmail = !prevOrder.payment_confirmation_email_sent_at;
+    const needAdminEmail = !prevOrder.admin_notification_sent_at;
+    if (orderStatus === 'paid' && (needCustomerEmail || needAdminEmail)) {
       const { data: rawItems } = await supabase.from('order_items').select('product_id, quantity, unit_price').eq('order_id', external_payment_id);
       let itemsForEmail = rawItems || [];
       const pids = [...new Set(itemsForEmail.map((i) => i.product_id))];
@@ -346,11 +345,27 @@ async function handleNaveWebhook(req, res) {
         itemsForEmail = itemsForEmail.map((i) => ({ ...i, product_name: nameById[i.product_id] || null }));
       }
 
-      const sent = await sendPaymentConfirmationEmail({ to, order: prevOrder, items: itemsForEmail, payment });
-      if (sent) {
-        const { error: markErr } = await supabase.from('orders').update({ payment_confirmation_email_sent_at: new Date().toISOString() }).eq('id', external_payment_id);
-        if (markErr) console.error('[Nave Webhook] Falló marcar payment_confirmation_email_sent_at:', markErr);
-        else console.log('[Nave Webhook] Email de pago confirmado enviado a:', to);
+      if (needCustomerEmail) {
+        const to = (prevOrder.customer_email || '').trim() || (payment?.buyer?.user_email || '').trim();
+        if (!to) {
+          console.warn('[Nave Webhook] Pago aprobado sin email:', external_payment_id);
+        } else {
+          const sent = await sendPaymentConfirmationEmail({ to, order: prevOrder, items: itemsForEmail, payment });
+          if (sent) {
+            const { error: markErr } = await supabase.from('orders').update({ payment_confirmation_email_sent_at: new Date().toISOString() }).eq('id', external_payment_id);
+            if (markErr) console.error('[Nave Webhook] Falló marcar payment_confirmation_email_sent_at:', markErr);
+            else console.log('[Nave Webhook] Email de pago confirmado enviado a:', to);
+          }
+        }
+      }
+
+      if (needAdminEmail) {
+        const sent = await sendAdminSaleNotificationEmail({ order: prevOrder, items: itemsForEmail, payment });
+        if (sent) {
+          const { error: markErr } = await supabase.from('orders').update({ admin_notification_sent_at: new Date().toISOString() }).eq('id', external_payment_id);
+          if (markErr) console.error('[Nave Webhook] Falló marcar admin_notification_sent_at:', markErr);
+          else console.log('[Nave Webhook] Email de venta nueva enviado al admin');
+        }
       }
     }
   } catch (err) {

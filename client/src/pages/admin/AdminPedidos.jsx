@@ -4,6 +4,7 @@ import { getAdminOrders, refundNaveOrder, updateAdminOrderStatus } from '../../s
 import { dispatchWithCorreo, fetchCorreoAgencies, saveTrackingNumber } from '../../services/shipping';
 import { gestionarDispatchNow } from '../../services/gestionar';
 import { AdminDatePicker, toYMDLocal } from '../../components/admin/AdminDatePicker';
+import { useNewOrdersRealtime } from '../../hooks/useNewOrdersRealtime';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const CHANNEL_OPTIONS = [
@@ -854,6 +855,8 @@ export default function AdminPedidos() {
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
+  const { newOrdersCount, clearCount: clearNewOrders } = useNewOrdersRealtime({ onNewSale: fetchOrders });
+
   useEffect(() => {
     if (!expandedId) { setStatusEditDraft(''); return; }
     const o = orders.find((x) => x.id === expandedId);
@@ -964,6 +967,22 @@ export default function AdminPedidos() {
           <p className="mt-2 text-xs text-white/50">{orders.length} resultado{orders.length !== 1 ? 's' : ''}</p>
         )}
       </motion.div>
+
+      <AnimatePresence>
+        {newOrdersCount > 0 && (
+          <motion.button
+            type="button"
+            onClick={clearNewOrders}
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="w-full mb-4 flex items-center justify-center gap-2 px-4 py-3 rounded border border-emerald-400/60 bg-emerald-400/10 text-emerald-300 text-sm font-semibold uppercase tracking-widest hover:bg-emerald-400/20 transition-colors"
+          >
+            <span aria-hidden>🔔</span>
+            {newOrdersCount} venta{newOrdersCount !== 1 ? 's' : ''} nueva{newOrdersCount !== 1 ? 's' : ''} — clickear para marcar como vista{newOrdersCount !== 1 ? 's' : ''}
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {error && (
         <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="mb-6 p-3 rounded border border-red-500/50 bg-red-500/10 text-red-200 text-sm">
