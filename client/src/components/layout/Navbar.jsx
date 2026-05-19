@@ -106,7 +106,7 @@ export default function Navbar() {
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
   const navTransparent = isHome && !scrolled;
-  const navTop         = isHome ? 'var(--sol-ticker-h)' : '0';
+  const navTop         = 'var(--sol-ticker-h)';
 
   const handleLogout = async () => {
     await signOut();
