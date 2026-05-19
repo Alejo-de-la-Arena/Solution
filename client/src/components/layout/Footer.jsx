@@ -74,10 +74,10 @@ function ColLabel({ children }) {
   return (
     <div className="font-jakarta" style={{
       fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase',
-      color: 'var(--sol-magenta)', marginBottom: 20,
+      color: 'var(--sol-muted)', marginBottom: 20,
       display: 'flex', alignItems: 'center', gap: 8,
     }}>
-      <span style={{ display: 'inline-block', width: 16, height: '0.5px', background: 'var(--sol-magenta)', verticalAlign: 'middle' }} aria-hidden />
+      <span style={{ display: 'inline-block', width: 16, height: '0.5px', background: 'var(--sol-muted)', verticalAlign: 'middle' }} aria-hidden />
       {children}
     </div>
   );

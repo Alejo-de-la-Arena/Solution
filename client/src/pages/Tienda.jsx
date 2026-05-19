@@ -324,50 +324,58 @@ function ProductCard({ perfume, index, altView }) {
     >
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: 'var(--sol-section-py) var(--sol-section-px)' }}>
 
-        {/* Top row: index + momento */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
-            N°/{idx}
+        {/* All text above image — centered */}
+        <div style={{ textAlign: 'center' }}>
+
+          {/* Index + momento row — centered */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', marginBottom: '20px' }}>
+            <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
+              N°/{idx}
+            </div>
+            <span style={{ width: 1, height: 10, background: 'var(--sol-line-mid)', display: 'inline-block' }} />
+            <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-ink-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: meta.dotColor || accent, boxShadow: `0 0 0 1px rgba(0,0,0,0.4)` }} />
+              {meta.momento || ''}
+            </div>
           </div>
-          <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-ink-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: meta.dotColor || accent, boxShadow: `0 0 0 1px rgba(0,0,0,0.4)` }} />
-            {meta.momento || ''}
-          </div>
-        </div>
 
-        {/* Product name */}
-        <div style={{ marginBottom: '10px' }}>
-          <h2 className="font-jost" style={{
-            fontWeight: 300, fontSize: 'clamp(36px, 9vw, 64px)', lineHeight: 1,
-            letterSpacing: '-0.03em', color: 'var(--sol-ink)',
-          }}>
-            {perfume.name}<em style={{ fontStyle: 'italic', color: accent }}>.</em>
-          </h2>
-          {meta.subtitle && (
-            <p className="font-jost" style={{ fontStyle: 'italic', fontWeight: 300, fontSize: '15px', color: 'var(--sol-ink-dim)', marginTop: '6px' }}>
-              {meta.subtitle}
-            </p>
-          )}
-        </div>
-
-        {/* Reference — sweep-fill on hover */}
-        {meta.reference && (
-          <ReferenceTag reference={meta.reference} accent={accent} />
-        )}
-
-        {/* "Más vendido" badge */}
-        {isFeatured && (
-          <div style={{ marginBottom: '16px' }}>
-            <span className="font-jakarta" style={{
-              display: 'inline-block',
-              fontSize: '8px', letterSpacing: '0.22em', textTransform: 'uppercase',
-              background: 'var(--sol-magenta)', color: 'var(--sol-bg)',
-              padding: '5px 10px', fontWeight: 600,
+          {/* Product name */}
+          <div style={{ marginBottom: '10px' }}>
+            <h2 className="font-jost" style={{
+              fontWeight: 300, fontSize: 'clamp(36px, 9vw, 64px)', lineHeight: 1,
+              letterSpacing: '-0.03em', color: 'var(--sol-ink)',
             }}>
-              Más vendido
-            </span>
+              {perfume.name}<em style={{ fontStyle: 'italic', color: accent }}>.</em>
+            </h2>
+            {meta.subtitle && (
+              <p className="font-jost" style={{ fontStyle: 'italic', fontWeight: 300, fontSize: '15px', color: 'var(--sol-ink-dim)', marginTop: '6px' }}>
+                {meta.subtitle}
+              </p>
+            )}
           </div>
-        )}
+
+          {/* Reference — sweep-fill on hover, centered */}
+          {meta.reference && (
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <ReferenceTag reference={meta.reference} accent={accent} />
+            </div>
+          )}
+
+          {/* "Más vendido" badge */}
+          {isFeatured && (
+            <div style={{ marginBottom: '16px' }}>
+              <span className="font-jakarta" style={{
+                display: 'inline-block',
+                fontSize: '8px', letterSpacing: '0.22em', textTransform: 'uppercase',
+                background: 'var(--sol-magenta)', color: 'var(--sol-bg)',
+                padding: '5px 10px', fontWeight: 600,
+              }}>
+                Más vendido
+              </span>
+            </div>
+          )}
+
+        </div>{/* end centered text block */}
 
         {/* Desktop: 2-col layout (image left, info right) */}
         <div className="sol-prod-tienda-grid">
@@ -542,8 +550,8 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
     const first4 = orderedPerfumes.slice(0, 4);
     const fifth  = orderedPerfumes[4];
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
           {first4.map((p) => {
             const pIdx = perfumes.findIndex(x => x.id === p.id);
             const ac = p.accent_color || ACCENT_COLORS[pIdx] || 'var(--sol-green)';
@@ -554,8 +562,8 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
               <button key={p.id} type="button" onClick={() => { onSelect(p.id); setStep(2); }}
                 className="font-jakarta"
                 style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '6px',
-                  padding: '8px 12px', fontSize: '10px', letterSpacing: '0.14em',
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '16px 20px', minHeight: '52px', fontSize: '11px', letterSpacing: '0.14em',
                   textTransform: 'uppercase', cursor: 'pointer',
                   background: isSelected ? ac : 'transparent',
                   color: isSelected ? 'var(--sol-bg)' : 'var(--sol-ink-dim)',
@@ -563,7 +571,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                   transition: 'all 0.25s var(--sol-ease)',
                 }}
               >
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: isSelected ? 'var(--sol-bg)' : (meta.dotColor || ac), flexShrink: 0 }} />
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: isSelected ? 'var(--sol-bg)' : (meta.dotColor || ac), flexShrink: 0 }} />
                 {p.name}
               </button>
             );
@@ -579,8 +587,8 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
             <button key={fifth.id} type="button" onClick={() => { onSelect(fifth.id); setStep(2); }}
               className="font-jakarta"
               style={{
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                padding: '8px 12px', fontSize: '10px', letterSpacing: '0.14em',
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '16px 20px', minHeight: '52px', fontSize: '11px', letterSpacing: '0.14em',
                 textTransform: 'uppercase', cursor: 'pointer', width: '100%',
                 background: isSelected ? ac : 'transparent',
                 color: isSelected ? 'var(--sol-bg)' : 'var(--sol-ink-dim)',
@@ -588,7 +596,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                 transition: 'all 0.25s var(--sol-ease)',
               }}
             >
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: isSelected ? 'var(--sol-bg)' : (meta.dotColor || ac), flexShrink: 0 }} />
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: isSelected ? 'var(--sol-bg)' : (meta.dotColor || ac), flexShrink: 0 }} />
               {fifth.name}
             </button>
           );
@@ -601,20 +609,19 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
     <section style={{ background: 'var(--sol-bg)', color: 'var(--sol-ink)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)', borderBottom: '0.5px solid var(--sol-line)' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)' }}>
 
-        {/* Head */}
-        <div ref={headRef} className="sol-reveal" style={{ marginBottom: '40px', paddingBottom: '32px', borderBottom: '0.5px solid var(--sol-line)' }}>
-          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: '#e040fb', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Head — centered */}
+        <div ref={headRef} className="sol-reveal" style={{ marginBottom: '40px', paddingBottom: '32px', borderBottom: '0.5px solid var(--sol-line)', textAlign: 'center' }}>
+          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: '#e040fb', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#e040fb', display: 'inline-block' }} />
             Oferta especial · Combo
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '16px' }}>
             <h2 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(28px, 7vw, 48px)', lineHeight: 1.05, letterSpacing: '-0.025em', color: 'var(--sol-ink)' }}>
               Dos perfumes,<br />
               <em style={{ fontStyle: 'italic', color: '#e040fb', fontWeight: 300 }}>tu ritual.</em>
             </h2>
-            <div className="font-jakarta" style={{ flexShrink: 0, fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-magenta)' }}>§ 03</div>
           </div>
-          <p className="font-jakarta" style={{ fontSize: '13px', lineHeight: 1.7, color: 'var(--sol-muted)', marginTop: '16px', maxWidth: 480 }}>
+          <p className="font-jakarta" style={{ fontSize: '13px', lineHeight: 1.7, color: 'var(--sol-muted)', marginTop: '16px', maxWidth: 480, margin: '16px auto 0' }}>
             Armá tu combo con dos fragancias de la colección. Envío gratis a todo el país y 2 cuotas sin interés.
           </p>
         </div>
@@ -625,34 +632,44 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
           {/* Showcase image */}
           <ComboCollectionShowcase />
 
-          {/* Step indicator */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: 22, height: 22, borderRadius: '50%', border: `0.5px solid ${step === 1 ? '#00e5ff' : 'var(--sol-line-mid)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: step === 1 ? '#00e5ff' : 'var(--sol-ink-dim)', fontSize: '10px', flexShrink: 0 }}>1</span>
-              <span style={{ width: 22, height: 22, borderRadius: '50%', border: `0.5px solid ${step === 2 ? '#00e5ff' : 'var(--sol-line-mid)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: step === 2 ? '#00e5ff' : 'var(--sol-ink-dim)', fontSize: '10px', flexShrink: 0 }}>2</span>
-            </div>
-            <span className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#e040fb' }}>
-              Paso {step} de 2
-            </span>
-          </div>
+          {/* Builder block — max-width centered */}
+          <div style={{ maxWidth: 640, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
-          {/* Slot 1 */}
-          <div>
-            <div className="font-jakarta" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
-              <span style={{ width: 20, height: 20, borderRadius: '50%', border: '0.5px solid #00e5ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00e5ff', fontSize: '9px', flexShrink: 0 }}>1</span>
-              Primera fragancia
-            </div>
-            {renderSelector(selectedPerfume1, setSelectedPerfume1)}
-          </div>
+          {/* Selector container — bordered form-like box */}
+          <div style={{ border: '0.5px solid var(--sol-line)', maxWidth: 480, margin: '0 auto', width: '100%' }}>
 
-          {/* Slot 2 */}
-          <div style={{ borderTop: '0.5px solid var(--sol-line)', paddingTop: '24px' }}>
-            <div className="font-jakarta" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
-              <span style={{ width: 20, height: 20, borderRadius: '50%', border: '0.5px solid var(--sol-line-mid)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--sol-ink-dim)', fontSize: '9px', flexShrink: 0 }}>2</span>
-              Segunda fragancia
+            {/* Header row */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '0.5px solid var(--sol-line)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ width: 22, height: 22, borderRadius: '50%', border: `0.5px solid ${step === 1 ? '#00e5ff' : 'var(--sol-line-mid)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: step === 1 ? '#00e5ff' : 'var(--sol-ink-dim)', fontSize: '10px', flexShrink: 0 }}>1</span>
+                  <span style={{ width: 22, height: 22, borderRadius: '50%', border: `0.5px solid ${step === 2 ? '#00e5ff' : 'var(--sol-line-mid)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: step === 2 ? '#00e5ff' : 'var(--sol-ink-dim)', fontSize: '10px', flexShrink: 0 }}>2</span>
+                </div>
+                <span className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#e040fb' }}>
+                  Paso {step} de 2
+                </span>
+              </div>
             </div>
-            {renderSelector(selectedPerfume2, setSelectedPerfume2)}
-          </div>
+
+            {/* Slot 1 */}
+            <div style={{ padding: '16px 18px' }}>
+              <div className="font-jakarta" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
+                <span style={{ width: 18, height: 18, borderRadius: '50%', border: '0.5px solid #00e5ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00e5ff', fontSize: '9px', flexShrink: 0 }}>1</span>
+                Primera fragancia
+              </div>
+              {renderSelector(selectedPerfume1, setSelectedPerfume1)}
+            </div>
+
+            {/* Slot 2 */}
+            <div style={{ padding: '16px 18px', borderTop: '0.5px solid var(--sol-line)' }}>
+              <div className="font-jakarta" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
+                <span style={{ width: 18, height: 18, borderRadius: '50%', border: '0.5px solid var(--sol-line-mid)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--sol-ink-dim)', fontSize: '9px', flexShrink: 0 }}>2</span>
+                Segunda fragancia
+              </div>
+              {renderSelector(selectedPerfume2, setSelectedPerfume2)}
+            </div>
+
+          </div>{/* end selector container */}
 
           {/* Profile */}
           <div style={{ borderTop: '0.5px solid var(--sol-line)', paddingTop: '32px' }}>
@@ -736,7 +753,8 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
             </button>
           </div>
 
-        </div>
+          </div>{/* end builder block */}
+        </div>{/* end bodyRef single-column */}
       </div>
     </section>
   );

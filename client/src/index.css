@@ -365,13 +365,14 @@
   gap: 32px;
 }
 
-/* ── Filter pills: mobile scroll, desktop center ── */
+/* ── Filter pills: mobile scroll, desktop single-row centered ── */
 .sol-filter-pills {
   display: flex;
   align-items: center;
   gap: 8px;
   overflow-x: auto;
   scrollbar-width: none;
+  flex-wrap: nowrap;
 }
 .sol-filter-pills::-webkit-scrollbar { display: none; }
 .sol-filter-pill {
@@ -379,16 +380,17 @@
   font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .sol-filter-pills {
     justify-content: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     overflow-x: visible;
   }
   .sol-filter-pill {
-    padding: 12px 24px;
-    font-size: 13px;
+    padding: 8px 14px;
+    font-size: 11px;
   }
 }
 
