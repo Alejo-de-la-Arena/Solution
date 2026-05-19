@@ -11,7 +11,7 @@ import {
 } from '../services/checkout';
 import { quoteShipping } from '../services/shipping';
 import NaveEmbed from '../components/checkout/NaveEmbed';
-import { trackInitiateCheckout, captureAttributionData } from '../lib/metaPixel';
+import { trackInitiateCheckout, captureAttributionData, getAttributionForServer, getUTMsForServer } from '../lib/metaPixel';
 import { getTrackedOrder, saveTrackedOrder, updateTrackedOrderStatus } from '../services/orderTracking';
 import { firePurchaseEvent } from '../lib/firePurchaseEvent';
 
@@ -570,6 +570,8 @@ export default function Checkout() {
     setLoading(true);
     try {
       const basePayload = {
+        ...getAttributionForServer(),
+        ...getUTMsForServer(),
         customer_name: name,
         customer_email: email,
         customer_phone: (form.phone || '').trim() || undefined,

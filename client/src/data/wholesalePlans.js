@@ -38,11 +38,12 @@ export function planShortDescription(plan) {
  * Valores exactos: minorista | Starter (20%) | Pro (25%) | Elite (30%)
  */
 export const WHOLESALE_PRICE_TABLE = {
-  "red-desire": { retail: 49999, starter: 39999, pro: 37499, elite: 34999 },
-  "yellow-bloom": { retail: 49999, starter: 39999, pro: 37499, elite: 34999 },
-  "black-code": { retail: 55000, starter: 44000, pro: 41250, elite: 38500 },
-  "white-ice": { retail: 47000, starter: 37600, pro: 35250, elite: 32900 },
-  "deep-blue": { retail: 47000, starter: 37600, pro: 35250, elite: 32900 },
+  // retail prices real. Starter -20%, Pro -25%, Elite -30%
+  "red-desire":    { retail: 39999, starter: 31999, pro: 29999, elite: 27999 },
+  "yellow-bloom":  { retail: 39999, starter: 31999, pro: 29999, elite: 27999 },
+  "black-code":    { retail: 44999, starter: 35999, pro: 33749, elite: 31499 },
+  "white-ice":     { retail: 34999, starter: 27999, pro: 26249, elite: 24499 },
+  "deep-blue":     { retail: 34999, starter: 27999, pro: 26249, elite: 24499 },
 };
 
 /**

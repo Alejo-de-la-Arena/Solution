@@ -16,6 +16,9 @@ const ATTR_FBCLID_TS = 'meta_attr_fbclid_ts';
 const ATTR_FBC = 'meta_attr_fbc';
 const ATTR_FBP = 'meta_attr_fbp';
 
+// ── Atribución: parámetros UTM de campaña ────────────────────────────────
+const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+
 function _getCookie(name) {
     try {
         const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -49,6 +52,12 @@ export function captureAttributionData() {
         if (fbc) localStorage.setItem(ATTR_FBC, fbc);
         const fbp = _getCookie('_fbp');
         if (fbp) localStorage.setItem(ATTR_FBP, fbp);
+        // UTMs: solo sobrescribir si vienen en la URL actual. Si el usuario
+        // navega a una página sin UTMs, conservamos la atribución previa.
+        UTM_KEYS.forEach((k) => {
+            const v = url.searchParams.get(k);
+            if (v) localStorage.setItem(`meta_attr_${k}`, v);
+        });
     } catch { /* ignore */ }
 }
 
@@ -75,6 +84,47 @@ export function restoreAttributionCookies() {
             if (saved) _setCookieLax('_fbp', saved, 90);
         }
     } catch { /* ignore */ }
+}
+
+/**
+ * Devuelve los datos de atribución para enviar al backend al crear la orden.
+ * El servidor los persiste en la orden y los usa en el evento CAPI Purchase.
+ * Lee de cookies primero (valor fresco) y cae a localStorage como respaldo.
+ */
+export function getAttributionForServer() {
+    if (typeof window === 'undefined') return {};
+    try {
+        const fbc = _getCookie('_fbc') || localStorage.getItem(ATTR_FBC) || null;
+        const fbp = _getCookie('_fbp') || localStorage.getItem(ATTR_FBP) || null;
+        const fbclid = localStorage.getItem(ATTR_FBCLID) || null;
+        const fbclidTs = localStorage.getItem(ATTR_FBCLID_TS) || null;
+        const out = {};
+        if (fbclid) out.fbclid = fbclid;
+        if (fbclidTs && Number(fbclidTs) > 0) out.fbclid_ts = Number(fbclidTs);
+        if (fbc) out.fbc = fbc;
+        if (fbp) out.fbp = fbp;
+        return out;
+    } catch {
+        return {};
+    }
+}
+
+/**
+ * Devuelve los parámetros UTM persistidos para enviar al backend al crear
+ * la orden. El servidor los guarda en la orden para atribución de campañas.
+ */
+export function getUTMsForServer() {
+    if (typeof window === 'undefined') return {};
+    try {
+        const out = {};
+        UTM_KEYS.forEach((k) => {
+            const v = localStorage.getItem(`meta_attr_${k}`);
+            if (v) out[k] = v;
+        });
+        return out;
+    } catch {
+        return {};
+    }
 }
 
 function fbq(eventType, eventName, params, options) {

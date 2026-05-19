@@ -1,41 +1,80 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
-import { useScrollMotion } from '../hooks/useScrollMotion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useReveal } from '../hooks/useReveal';
 import { getPublicProducts, productToPerfume } from '../services/products';
 import { ACCENT_COLORS } from '../lib/accentColors';
 import { getComboProfile, normalizeComboKey } from '../data/comboProfiles';
 import { mediaUrl } from '../lib/mediaUrl';
 import { getStoreProductImages } from '../lib/storeProductImages';
-
 import { useCart } from '../contexts/CartContext';
 
-function ChevronDownIcon({ className = 'w-6 h-6' }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-    </svg>
-  );
+// ─── Static per-slug data ──────────────────────────────────────────────────────
+const SLUG_META = {
+  'red-desire': {
+    subtitle:   'Pasión y seducción',
+    reference:  'Stronger with you',
+    momento:    'Noche',
+    dotColor:   '#c0392b',
+    notes:      ['Vainilla', 'Cardamomo', 'Ámbar'],
+    featured:   true,
+  },
+  'black-code': {
+    subtitle:   'Presencia y carácter',
+    reference:  'Creed Aventus',
+    momento:    'Salida',
+    dotColor:   '#888888',
+    notes:      ['Piña ahumada', 'Cuero', 'Madera'],
+    featured:   false,
+  },
+  'deep-blue': {
+    subtitle:   'Elegancia clásica',
+    reference:  'Bleu de Chanel',
+    momento:    'Trabajo',
+    dotColor:   '#378add',
+    notes:      ['Cítrico', 'Madera seca', 'Incienso'],
+    featured:   false,
+  },
+  'yellow-bloom': {
+    subtitle:   'Una explosión frutal que destaca',
+    reference:  'Erba Pura',
+    momento:    'Día',
+    dotColor:   '#e6a72f',
+    notes:      ['Cítrico', 'Frutal', 'Musk'],
+    featured:   false,
+  },
+  'white-ice': {
+    subtitle:   'Pureza y frescura para tu rutina',
+    reference:  'Acqua Di Gio',
+    momento:    'Gym',
+    dotColor:   '#0dd3b8',
+    notes:      ['Acuático', 'Bergamota', 'Pachulí'],
+    featured:   false,
+  },
+};
+
+const FILTER_PILLS = [
+  { key: 'all',      label: 'Todas',    dot: 'var(--sol-ink-dim)' },
+  { key: 'noche',    label: 'Noche',    dot: '#c0392b' },
+  { key: 'salida',   label: 'Salida',   dot: '#888888' },
+  { key: 'dia',      label: 'Día',      dot: '#e6a72f' },
+  { key: 'trabajo',  label: 'Trabajo',  dot: '#378add' },
+  { key: 'gym',      label: 'Gym',      dot: '#0dd3b8' },
+];
+
+function momentoKey(slug) {
+  const m = SLUG_META[slug]?.momento || '';
+  return m.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
 }
 
-function getUsage(intensity) {
-  if (intensity >= 8) return 'Noche / Eventos';
-  if (intensity >= 6) return 'Día / Noche';
-  return 'Diario';
-}
-
-function getOcasion(intensity) {
-  if (intensity >= 8) return 'Formal / Elegante';
-  if (intensity >= 6) return 'Versátil';
-  return 'Casual / Sport';
-}
-
+// ─── Main page ─────────────────────────────────────────────────────────────────
 export default function Tienda() {
-  const [perfumes, setPerfumes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [perfumes, setPerfumes]               = useState([]);
+  const [loading, setLoading]                 = useState(true);
   const [selectedPerfume1, setSelectedPerfume1] = useState(null);
   const [selectedPerfume2, setSelectedPerfume2] = useState(null);
-  const [altView, setAltView] = useState(false);
+  const [altView, setAltView]                 = useState(false);
+  const [activeFilter, setActiveFilter]       = useState('all');
 
   useEffect(() => {
     let cancelled = false;
@@ -47,16 +86,9 @@ export default function Tienda() {
         if (list.length > 0 && selectedPerfume1 === null) setSelectedPerfume1(list[0].id);
         if (list.length > 1 && selectedPerfume2 === null) setSelectedPerfume2(list[1].id);
       })
-      .catch(() => {
-        if (!cancelled) setPerfumes([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
+      .catch(() => { if (!cancelled) setPerfumes([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -64,41 +96,49 @@ export default function Tienda() {
     if (perfumes.length > 1 && !selectedPerfume2) setSelectedPerfume2(perfumes[1].id);
   }, [perfumes, selectedPerfume1, selectedPerfume2]);
 
-  // Auto-cambio sincronizado de imagen (sin hover) para todo el listado
+  // Auto-switch de imagen para todo el listado
   useEffect(() => {
-    const id = window.setInterval(() => {
-      setAltView((v) => !v);
-    }, 6500);
+    const id = window.setInterval(() => { setAltView(v => !v); }, 6500);
     return () => window.clearInterval(id);
   }, []);
 
-  const perfume1 = perfumes.find((p) => p.id === selectedPerfume1);
-  const perfume2 = perfumes.find((p) => p.id === selectedPerfume2);
+  const perfume1 = perfumes.find(p => p.id === selectedPerfume1);
+  const perfume2 = perfumes.find(p => p.id === selectedPerfume2);
+
+  const visiblePerfumes = activeFilter === 'all'
+    ? perfumes
+    : perfumes.filter(p => momentoKey(p.slug) === activeFilter);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+      <div style={{ minHeight: '100vh', background: 'var(--sol-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 28, height: 28, borderRadius: '50%', border: '0.5px solid var(--sol-line-str)', borderTopColor: 'var(--sol-green)', animation: 'spin 0.9s linear infinite' }} />
       </div>
     );
   }
 
   return (
-    <div className="bg-black text-white">
+    <div style={{ background: 'var(--sol-bg)', color: 'var(--sol-ink)', minHeight: '100vh' }}>
       <TiendaHero />
+      <MomentFilter
+        pills={FILTER_PILLS}
+        active={activeFilter}
+        onChange={setActiveFilter}
+      />
 
-      <section className="py-16 sm:py-20 px-4">
-        <div className="mx-auto max-w-7xl">
-          <div className="space-y-28 sm:space-y-36 lg:space-y-44">
-            {perfumes.length === 0 ? (
-              <p className="text-center text-white/60 py-12">No hay productos disponibles.</p>
-            ) : (
-              perfumes.map((perfume, index) => (
-                <ProductBlock key={perfume.id} perfume={perfume} index={index} altView={altView} />
-              ))
-            )}
+      {/* Product list */}
+      <section style={{ borderBottom: '0.5px solid var(--sol-line)' }}>
+        {visiblePerfumes.length === 0 ? (
+          <div style={{ padding: '80px var(--sol-section-px)', textAlign: 'center' }}>
+            <p className="font-jakarta" style={{ fontSize: '13px', color: 'var(--sol-muted)', letterSpacing: '0.1em' }}>
+              Sin fragancias para este momento.
+            </p>
           </div>
-        </div>
+        ) : (
+          visiblePerfumes.map((perfume, index) => (
+            <ProductCard key={perfume.id} perfume={perfume} index={index} altView={altView} />
+          ))
+        )}
       </section>
 
       {perfumes.length >= 2 && (
@@ -116,594 +156,620 @@ export default function Tienda() {
   );
 }
 
+// ─── Hero ──────────────────────────────────────────────────────────────────────
 function TiendaHero() {
-  const { ref, motionProps } = useScrollMotion();
+  const headRef = useReveal();
+  const subRef  = useReveal();
+  const statsRef = useReveal();
 
   return (
-    <motion.section
-      ref={ref}
-      {...motionProps}
-      className="relative overflow-hidden pt-24 pb-12 sm:py-28 px-4 border-b border-white/10 bg-[radial-gradient(circle_at_top,rgba(0,255,255,0.10)_0%,rgba(255,0,255,0.06)_26%,rgba(0,0,0,0)_62%)]"
-    >
-      <div className="mx-auto max-w-7xl text-center space-y-10 sm:space-y-14">
-        <div className="space-y-5 sm:space-y-6">
-          <h1 className="font-heading text-3xl sm:text-6xl tracking-wide max-w-5xl mx-auto">
-            El perfume mas caro es el que nunca usas.
-          </h1>
-          <p className="text-base uppercase tracking-[0.25em] text-white/70">
-            <span style={{ color: 'rgb(0, 255, 255)' }}>¿</span>
-            Nuestra propuesta
-            <span style={{ color: 'rgb(255, 0, 255)' }}>?</span>
-          </p>
-          <p className="text-sm sm:text-lg opacity-75 max-w-3xl mx-auto leading-relaxed">
-            Te brindamos un sistema de 5 perfumes para cada momento del día. Buscamos romper con el concepto de la
-            perfumería tradicional y hacer del perfume algo cotidiano y de todos los días.
-          </p>
-        </div>
+    <section style={{ borderBottom: '0.5px solid var(--sol-line)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)', background: 'var(--sol-bg)' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)' }}>
 
-        <div className="space-y-4 pt-2 sm:pt-4">
-          <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl tracking-wider">5 perfumes. 5 momentos</h2>
-          <div className="flex justify-center pt-1 sm:pt-2">
-            <ChevronDownIcon className="w-6 h-6 text-white opacity-30 animate-bounce" />
+        {/* Eyebrow + section number */}
+        <div ref={headRef} className="sol-reveal" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '28px' }}>
+          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sol-green)', display: 'inline-block' }} />
+            la Tienda
           </div>
+          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-magenta)' }}>§ 02</div>
         </div>
-      </div>
-    </motion.section>
-  );
-}
 
-function ProductBlock({ perfume, index, altView }) {
-  const { ref, motionProps } = useScrollMotion();
-  const accentColor = perfume.accent_color || ACCENT_COLORS[index];
-  const perfumeCopyBySlug = {
-    'red-desire': {
-      subtitle: 'Pasión y seducción',
-      marketReference: 'Stronger with you',
-    },
-    'black-code': {
-      subtitle: 'Presencia y Carácter masculino',
-      marketReference: 'Creed Aventus',
-    },
-    'deep-blue': {
-      subtitle: 'Elegancia clásica',
-      marketReference: 'Bleu de Chanel',
-    },
-    'yellow-bloom': {
-      subtitle: 'Una explosión frutal que destaca',
-      marketReference: 'Erba Pura',
-    },
-    'white-ice': {
-      subtitle: 'Pureza y frescura para tu rutina.',
-      marketReference: 'Acqua Di Gio',
-    },
-  };
-  const normalizedSlug = (perfume.slug || '').trim().toLowerCase();
-  const perfumeCopy = perfumeCopyBySlug[normalizedSlug] || {};
-
-  return (
-    <motion.div ref={ref} {...motionProps} className="relative">
-      <div className="text-center mb-10 sm:mb-12">
-        <h2 className="font-heading text-4xl sm:text-6xl lg:text-7xl tracking-wider mb-3">{perfume.name}</h2>
-        <p className="text-lg sm:text-2xl opacity-75">{perfumeCopy.subtitle || perfume.tagline || ''}</p>
-      </div>
-
-      <div className="max-w-3xl mx-auto">
-        <div>
-          <PerfumeStoreImage perfume={perfume} accentColor={accentColor} altView={altView} />
-
-          <div className="text-center mt-8 sm:mt-10 space-y-4 sm:space-y-5">
-            <div>
-              <div className="flex items-baseline justify-center gap-3 mb-2">
-                <span className="text-4xl tracking-tight">${perfume.price.toLocaleString('es-AR')}</span>
-                <span className="text-sm opacity-60">ARS</span>
-              </div>
-              <p className="text-xs opacity-50">60ml • Eau de Parfum</p>
-            </div>
-            <div className="mx-auto text-[0.68rem] sm:text-[0.72rem] tracking-[0.12em] uppercase" style={{ color: accentColor }}>
-              Referencia de mercado: {perfumeCopy.marketReference || 'Fragancia premium'}
-            </div>
-            <Link
-              to={`/producto/${perfume.id}`}
-              className="inline-block border px-10 sm:px-12 py-4 text-xs sm:text-sm tracking-widest transition-all duration-300 text-white hover:bg-[var(--accent)] hover:text-black"
-              style={{ borderColor: accentColor, ['--accent']: accentColor }}
-            >
-              VER DETALLES
-            </Link>
-            <p className="text-xs sm:text-sm text-white/70 tracking-wide">
-              Envíos a todo el pais - Garantía de 30 días - Cuotas sin interés
-            </p>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function PerfumeStoreImage({ perfume, accentColor, altView }) {
-  const [defaultError, setDefaultError] = useState(false);
-  const [altError, setAltError] = useState(false);
-
-  const productImages = getStoreProductImages(perfume);
-
-  const defaultSrc = productImages?.default ? mediaUrl(productImages.default) : null;
-  const altSrc = productImages?.hover ? mediaUrl(productImages.hover) : null;
-  const hasAlt = Boolean(altSrc);
-  const showAlt = Boolean(altView && hasAlt && !altError);
-  const isBlackCode = (perfume.slug || '').trim().toLowerCase() === 'black-code';
-  const baseScale = isBlackCode ? 0.985 : 1;
-  const activeScale = showAlt ? (isBlackCode ? 1.01 : 1.015) : baseScale;
-  const inactiveScale = showAlt ? baseScale : (isBlackCode ? 1.01 : 1.04);
-
-  if (!defaultSrc) {
-    return (
-      <div className="relative mx-auto w-full max-w-[420px] aspect-[4/5] rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#111_0%,#050505_100%)] flex items-center justify-center">
-        <p className="text-white/40 text-sm tracking-wider">Imagen no configurada</p>
-      </div>
-    );
-  }
-
-  return (
-    <Link to={`/producto/${perfume.id}`} className="group block">
-      <motion.div
-        className="relative mx-auto w-full max-w-[420px]"
-        initial={false}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-      >
-        {/* Glow exterior */}
-        <motion.div
-          className="absolute inset-0 rounded-[28px] blur-[58px]"
-          style={{ backgroundColor: accentColor }}
-          animate={{
-            opacity: showAlt ? 0.22 : 0.16,
-            scale: showAlt ? 1.0 : 0.94,
-          }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-        />
-
-        {/* Card */}
-        <motion.div
-          className="relative z-10 aspect-[4/5] overflow-hidden rounded-[28px] border border-white/10 bg-[#080808]"
-          animate={{
-            borderColor: `${accentColor}AA`,
-            boxShadow: showAlt
-              ? `0 22px 70px rgba(0,0,0,0.52), 0 0 24px ${accentColor}14`
-              : '0 16px 48px rgba(0,0,0,0.38)',
-            scale: 1,
-          }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        {/* Headline */}
+        <h1
+          className="font-jost"
+          style={{ fontWeight: 300, fontSize: 'clamp(36px, 9vw, 72px)', lineHeight: 1.0, letterSpacing: '-0.03em', color: 'var(--sol-ink)', marginBottom: '24px', textAlign: 'center' }}
         >
-          {/* Glow interno */}
-          <motion.div
-            className="pointer-events-none absolute inset-x-[18%] bottom-[6%] h-[24%] rounded-full blur-[56px]"
-            style={{ backgroundColor: accentColor }}
-            animate={{
-              opacity: showAlt ? 0.2 : 0.14,
-              scale: showAlt ? 1.04 : 1,
-            }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-          />
+          Cinco<br />fragancias.<br />
+          <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>Tu momento.</em>
+        </h1>
 
-          {/* Imagen base */}
-          {!defaultError && (
-            <motion.img
-              src={defaultSrc}
-              alt={perfume.name}
-              className="absolute inset-0 h-full w-full object-cover object-center"
-              loading="lazy"
-              animate={{
-                opacity: showAlt ? 0 : 1,
-                scale: showAlt ? inactiveScale : activeScale,
-                filter: showAlt ? 'blur(2px)' : 'blur(0px)',
-              }}
-              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-              onError={() => setDefaultError(true)}
-            />
-          )}
+        {/* Sub */}
+        <div ref={subRef} className="sol-reveal" style={{ maxWidth: 480, marginBottom: '48px', margin: '0 auto 48px', textAlign: 'center' }}>
+          <p className="font-jakarta" style={{ fontSize: '14px', lineHeight: 1.75, color: 'var(--sol-muted)' }}>
+            Cada perfume sigue la línea de una referencia de nicho reconocida. Elegís el momento, nosotros te decimos cuál usar. Sin marketing vacío.
+          </p>
+        </div>
 
-          {/* Imagen alternativa (auto) */}
-          {altSrc && !altError && (
-            <motion.img
-              src={altSrc}
-              alt={`${perfume.name} combo`}
-              className="absolute inset-0 h-full w-full object-cover object-center"
-              loading="lazy"
-              initial={false}
-              animate={{
-                opacity: showAlt ? 1 : 0,
-                scale: showAlt ? activeScale : inactiveScale,
-                filter: showAlt ? 'blur(0px)' : 'blur(2px)',
-              }}
-              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-              onError={() => setAltError(true)}
-            />
-          )}
+        {/* Stats strip */}
+        <div ref={statsRef} className="sol-reveal" style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'flex-start', borderTop: '0.5px solid var(--sol-line)', paddingTop: '28px', gap: '16px' }}>
+          {[
+            { n: '05', l: 'Fragancias\nactivas' },
+            { n: '60ml', l: 'Eau de\nParfum' },
+            { n: '30d', l: 'Garantía\ntotal' },
+          ].map((s, i) => (
+            <div key={i} style={{ textAlign: 'center' }}>
+              <div className="font-jost" style={{ fontSize: 'clamp(24px, 5vw, 36px)', fontWeight: 300, letterSpacing: '-0.02em', color: 'var(--sol-magenta)', lineHeight: 1 }}>
+                {s.n}
+              </div>
+              <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginTop: '6px', whiteSpace: 'pre-line', lineHeight: 1.5 }}>
+                {s.l}
+              </div>
+            </div>
+          ))}
+        </div>
 
-          {/* Overlay premium */}
-          <motion.div
-            className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.10)_0%,rgba(0,0,0,0.03)_38%,rgba(0,0,0,0.18)_100%)]"
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          />
-        </motion.div>
-      </motion.div>
-    </Link>
+      </div>
+    </section>
   );
 }
 
-
-function ComboCollectionShowcase() {
-  const slides = [
-    {
-      src: mediaUrl('all-products/large/all-perfumes-vidrio.webp'),
-      alt: 'Colección completa Solution en vidrio',
-    },
-    {
-      src: mediaUrl('all-products/large/perfumes.webp'),
-      alt: 'Colección completa Solution',
-    },
-  ];
-
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % slides.length);
-    }, 5000);
-
-    return () => window.clearInterval(interval);
-  }, [slides.length]);
-
+// ─── Moment filter pills ───────────────────────────────────────────────────────
+function MomentFilter({ pills, active, onChange }) {
   return (
-    <div className="relative mx-auto w-full max-w-[540px]">
-      {/* glow exterior */}
-      <motion.div
-        className="absolute inset-0 rounded-[30px] blur-[70px]"
-        animate={{
-          opacity: [0.12, 0.18, 0.12],
-          scale: [0.985, 1.02, 0.985],
-        }}
-        transition={{
-          duration: 4.8,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-        style={{
-          background:
-            'radial-gradient(circle at center, rgba(0,255,255,0.12) 0%, rgba(255,0,255,0.08) 46%, rgba(0,0,0,0) 78%)',
-        }}
-      />
-
-      <div className="relative z-10 overflow-hidden rounded-[30px] border border-white/10 bg-[#050505] shadow-[0_24px_70px_rgba(0,0,0,0.44)]">
-        <div className="relative aspect-[4/5] sm:aspect-[5/6] overflow-hidden">
-          {slides.map((slide, index) => (
-            <motion.div
-              key={slide.src}
-              className="absolute inset-0"
-              initial={false}
-              animate={{
-                opacity: activeIndex === index ? 1 : 0,
-              }}
-              transition={{
-                duration: 0.75,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-            >
-              {/* fondo blur */}
-              <motion.img
-                src={slide.src}
-                alt=""
-                aria-hidden="true"
-                className="absolute inset-0 h-full w-full object-cover scale-[1.12] blur-[22px] opacity-28"
-                animate={{
-                  scale: activeIndex === index ? 1.12 : 1.14,
+    <div style={{ borderBottom: '0.5px solid var(--sol-line)', background: 'var(--sol-bg)', paddingTop: '12px', paddingBottom: '12px' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)' }}>
+        {/* Label */}
+        <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '10px' }}>
+          Filtrar por momento
+        </div>
+        {/* Pills */}
+        <div className="sol-filter-pills">
+          {pills.map(pill => {
+            const isActive = pill.key === active;
+            return (
+              <button
+                key={pill.key}
+                type="button"
+                onClick={() => onChange(pill.key)}
+                className="font-jakarta sol-filter-pill"
+                style={{
+                  flexShrink: 0,
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  borderRadius: '9999px',
+                  background: isActive ? 'var(--sol-green)' : 'transparent',
+                  color: isActive ? 'var(--sol-bg)' : 'var(--sol-ink-dim)',
+                  border: `0.5px solid ${isActive ? 'var(--sol-green)' : 'var(--sol-line-mid)'}`,
+                  cursor: 'pointer',
+                  transition: 'all 0.25s var(--sol-ease)',
                 }}
-                transition={{
-                  duration: 1.1,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                draggable={false}
-              />
-
-              <div className="absolute inset-0 bg-black/28" />
-
-              {/* imagen principal completa */}
-              <div className="absolute inset-0">
-                <motion.img
-                  src={slide.src}
-                  alt={slide.alt}
-                  className="h-full w-full object-contain object-center"
-                  animate={{
-                    scale: activeIndex === index ? 1.01 : 1.02,
-                  }}
-                  transition={{
-                    duration: 1.1,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                  draggable={false}
-                />
-              </div>
-            </motion.div>
-          ))}
-
-          {/* overlays premium */}
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_54%,rgba(0,0,0,0.18)_100%)]" />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.10)_0%,rgba(0,0,0,0.04)_38%,rgba(0,0,0,0.22)_100%)]" />
-
-          {/* label */}
-          <div className="absolute left-4 top-4 rounded-full border border-white/10 bg-black/35 px-4 py-2 backdrop-blur-md">
-            <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.26em] text-white/80">
-              Colección completa
-            </p>
-          </div>
-
-          {/* mini indicador visual sutil */}
-          <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-full border border-white/10 bg-black/35 px-3 py-2 backdrop-blur-md">
-            {slides.map((_, index) => (
-              <motion.span
-                key={index}
-                className="block h-[5px] rounded-full"
-                animate={{
-                  width: activeIndex === index ? 18 : 6,
-                  opacity: activeIndex === index ? 1 : 0.35,
-                  backgroundColor: activeIndex === index ? 'rgb(255,255,255)' : 'rgba(255,255,255,0.6)',
-                }}
-                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              />
-            ))}
-          </div>
-
-          {/* shine */}
-          <motion.div
-            className="pointer-events-none absolute inset-y-0 left-[-22%] w-[18%] rotate-12 bg-white/10 blur-xl"
-            animate={{ x: ['620%', '0%', '620%'] }}
-            transition={{
-              duration: 10,
-              repeat: Infinity,
-              ease: 'easeInOut',
-              times: [0, 0.4, 1],
-            }}
-          />
+              >
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: isActive ? 'var(--sol-bg)' : pill.dot, flexShrink: 0 }} />
+                {pill.label}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
   );
 }
 
-function TiendaComboSection({
-  perfumes,
-  selectedPerfume1,
-  setSelectedPerfume1,
-  selectedPerfume2,
-  setSelectedPerfume2,
-  perfume1,
-  perfume2,
-}) {
-  const { ref, motionProps } = useScrollMotion();
+// ─── Product card ──────────────────────────────────────────────────────────────
+function ProductCard({ perfume, index, altView }) {
   const { addToCart } = useCart();
+  const slug     = (perfume.slug || '').trim().toLowerCase();
+  const meta     = SLUG_META[slug] || {};
+  const accent   = perfume.accent_color || ACCENT_COLORS[index] || 'var(--sol-green)';
+  const accentGlow = `${accent}22`;
+  const isFeatured = meta.featured || slug === 'red-desire';
+  const price    = perfume.price ? `$${Number(perfume.price).toLocaleString('es-AR')}` : '';
+  const idx      = String(index + 1).padStart(2, '0');
+  const notes    = meta.notes || [];
+  const cardRef  = useReveal();
+
+  return (
+    <article
+      ref={cardRef}
+      className="sol-reveal"
+      style={{
+        borderBottom: '0.5px solid var(--sol-line)',
+        background: 'var(--sol-bg)',
+        position: 'relative',
+      }}
+    >
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: 'var(--sol-section-py) var(--sol-section-px)' }}>
+
+        {/* Top row: index + momento */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
+            N°/{idx}
+          </div>
+          <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-ink-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: meta.dotColor || accent, boxShadow: `0 0 0 1px rgba(0,0,0,0.4)` }} />
+            {meta.momento || ''}
+          </div>
+        </div>
+
+        {/* Product name */}
+        <div style={{ marginBottom: '10px' }}>
+          <h2 className="font-jost" style={{
+            fontWeight: 300, fontSize: 'clamp(36px, 9vw, 64px)', lineHeight: 1,
+            letterSpacing: '-0.03em', color: 'var(--sol-ink)',
+          }}>
+            {perfume.name}<em style={{ fontStyle: 'italic', color: accent }}>.</em>
+          </h2>
+          {meta.subtitle && (
+            <p className="font-jost" style={{ fontStyle: 'italic', fontWeight: 300, fontSize: '15px', color: 'var(--sol-ink-dim)', marginTop: '6px' }}>
+              {meta.subtitle}
+            </p>
+          )}
+        </div>
+
+        {/* Reference — prominently styled with accent */}
+        {meta.reference && (
+          <div
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '8px',
+              padding: '8px 14px', marginBottom: '28px',
+              border: `0.5px solid ${accent}55`,
+              background: accentGlow,
+              position: 'relative', overflow: 'hidden',
+            }}
+          >
+            <span style={{ color: accent, fontSize: '12px', lineHeight: 1 }}>→</span>
+            <span className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
+              Referencia:
+            </span>
+            <span className="font-jost" style={{ fontSize: '14px', fontWeight: 500, color: accent, letterSpacing: '-0.01em' }}>
+              {meta.reference}
+            </span>
+          </div>
+        )}
+
+        {/* "Más vendido" badge */}
+        {isFeatured && (
+          <div style={{ marginBottom: '16px' }}>
+            <span className="font-jakarta" style={{
+              display: 'inline-block',
+              fontSize: '8px', letterSpacing: '0.22em', textTransform: 'uppercase',
+              background: 'var(--sol-magenta)', color: 'var(--sol-bg)',
+              padding: '5px 10px', fontWeight: 600,
+            }}>
+              Más vendido
+            </span>
+          </div>
+        )}
+
+        {/* Desktop: 2-col layout (image left, info right) */}
+        <div className="sol-prod-tienda-grid">
+
+          {/* Image */}
+          <div>
+            <PerfumeStoreImage perfume={perfume} accentColor={accent} altView={altView} />
+          </div>
+
+          {/* Info — centered below image */}
+          <div style={{ paddingTop: '24px', borderTop: '0.5px solid var(--sol-line)', textAlign: 'center' }}>
+            {/* Price */}
+            <div style={{ marginBottom: '6px' }}>
+              <span className="font-jost" style={{ fontSize: 'clamp(28px, 6vw, 40px)', fontWeight: 300, letterSpacing: '-0.025em', color: 'var(--sol-ink)' }}>
+                {price}
+              </span>
+              <span className="font-jakarta" style={{ fontSize: '10px', color: 'var(--sol-muted)', letterSpacing: '0.18em', marginLeft: '6px' }}>ARS</span>
+            </div>
+            <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '20px' }}>
+              60ml · Eau de Parfum · 2 cuotas sin interés
+            </div>
+
+            {/* CTA buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: 360, margin: '0 auto' }}>
+              <button
+                type="button"
+                onClick={() => addToCart(perfume)}
+                className="font-jakarta"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                  padding: '16px', background: accent, color: 'var(--sol-bg)',
+                  border: 'none', fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em',
+                  textTransform: 'uppercase', cursor: 'pointer', transition: 'opacity 0.3s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+              >
+                <svg style={{ width: 14, height: 14, stroke: 'currentColor', fill: 'none', strokeWidth: 1.5 }} viewBox="0 0 24 24" aria-hidden>
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                Agregar al carrito
+              </button>
+              <Link
+                to={`/producto/${perfume.id}`}
+                className="font-jakarta"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '14px', background: 'transparent',
+                  border: `0.5px solid var(--sol-line-mid)`,
+                  color: 'var(--sol-ink-dim)', fontSize: '11px', letterSpacing: '0.18em',
+                  textTransform: 'uppercase', textDecoration: 'none',
+                  transition: 'border-color 0.3s, color 0.3s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.color = accent; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--sol-line-mid)'; e.currentTarget.style.color = 'var(--sol-ink-dim)'; }}
+              >
+                Ver detalles →
+              </Link>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </article>
+  );
+}
+
+// ─── Product image (unchanged logic from original) ─────────────────────────────
+function PerfumeStoreImage({ perfume, accentColor, altView }) {
+  const [defaultError, setDefaultError] = useState(false);
+  const [altError, setAltError]         = useState(false);
+
+  const productImages = getStoreProductImages(perfume);
+  const defaultSrc    = productImages?.default ? mediaUrl(productImages.default) : null;
+  const altSrc        = productImages?.hover   ? mediaUrl(productImages.hover)   : null;
+  const hasAlt        = Boolean(altSrc);
+  const showAlt       = Boolean(altView && hasAlt && !altError);
+  const isBlackCode   = (perfume.slug || '').trim().toLowerCase() === 'black-code';
+  const isRedDesire   = (perfume.slug || '').trim().toLowerCase() === 'red-desire';
+  const baseScale     = isBlackCode ? 0.985 : 1;
+  const activeScale   = showAlt ? (isBlackCode ? 1.01 : 1.015) : baseScale;
+  const inactiveScale = showAlt ? baseScale : (isBlackCode ? 1.01 : 1.04);
+
+  if (!defaultSrc) {
+    return (
+      <div style={{
+        aspectRatio: '4/5', background: 'linear-gradient(180deg,#111 0%,#050505 100%)',
+        border: '0.5px solid var(--sol-line)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        maxWidth: 420, margin: '0 auto',
+      }}>
+        <p className="font-jakarta" style={{ fontSize: '11px', color: 'var(--sol-muted)', letterSpacing: '0.16em' }}>Imagen no configurada</p>
+      </div>
+    );
+  }
+
+  return (
+    <Link to={`/producto/${perfume.id}`} className="group block" style={{ display: 'block', maxWidth: 420, margin: '0 auto' }}>
+      <motion.div style={{ position: 'relative', width: '100%' }} initial={false}>
+        {/* Glow */}
+        <motion.div
+          style={{ position: 'absolute', inset: 0, filter: 'blur(58px)', backgroundColor: accentColor, borderRadius: 28 }}
+          animate={{ opacity: showAlt ? 0.22 : 0.16, scale: showAlt ? 1.0 : 0.94 }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        />
+        {/* Card */}
+        <motion.div
+          style={{ position: 'relative', zIndex: 1, aspectRatio: '4/5', overflow: 'hidden', borderRadius: 28, border: '1px solid rgba(255,255,255,0.1)', background: '#080808' }}
+          animate={{ borderColor: `${accentColor}AA`, boxShadow: showAlt ? `0 22px 70px rgba(0,0,0,0.52), 0 0 24px ${accentColor}14` : '0 16px 48px rgba(0,0,0,0.38)' }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {/* Inner glow */}
+          <motion.div
+            style={{ position: 'absolute', bottom: '6%', left: '18%', right: '18%', height: '24%', borderRadius: '50%', filter: 'blur(56px)', backgroundColor: accentColor, pointerEvents: 'none' }}
+            animate={{ opacity: showAlt ? 0.2 : 0.14, scale: showAlt ? 1.04 : 1 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          />
+          {/* Base image */}
+          {!defaultError && (
+            <motion.img
+              src={defaultSrc} alt={perfume.name}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: isRedDesire ? 'center 25%' : 'center center' }}
+              loading="lazy"
+              animate={{ opacity: showAlt ? 0 : 1, scale: showAlt ? inactiveScale : activeScale, filter: showAlt ? 'blur(2px)' : 'blur(0px)' }}
+              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+              onError={() => setDefaultError(true)}
+            />
+          )}
+          {/* Alt image */}
+          {altSrc && !altError && (
+            <motion.img
+              src={altSrc} alt={`${perfume.name} combo`}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: isRedDesire ? 'center 25%' : 'center center' }}
+              loading="lazy" initial={false}
+              animate={{ opacity: showAlt ? 1 : 0, scale: showAlt ? activeScale : inactiveScale, filter: showAlt ? 'blur(0px)' : 'blur(2px)' }}
+              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+              onError={() => setAltError(true)}
+            />
+          )}
+          {/* Overlay */}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(0,0,0,0.10) 0%,rgba(0,0,0,0.03) 38%,rgba(0,0,0,0.18) 100%)', pointerEvents: 'none' }} />
+        </motion.div>
+      </motion.div>
+    </Link>
+  );
+}
+
+// ─── Combo section ─────────────────────────────────────────────────────────────
+function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, selectedPerfume2, setSelectedPerfume2, perfume1, perfume2 }) {
+  const { addToCart } = useCart();
+  const headRef = useReveal();
+  const bodyRef = useReveal();
+  const [step, setStep] = useState(1);
 
   const handleAddCombo = () => {
     if (perfume1) addToCart(perfume1);
     if (perfume2) addToCart(perfume2);
   };
 
-  const comboProfile = getComboProfile(selectedPerfume1, selectedPerfume2);
+  const comboProfile    = getComboProfile(selectedPerfume1, selectedPerfume2);
   const comboProfileKey = comboProfile
     ? normalizeComboKey(selectedPerfume1, selectedPerfume2)
     : `${selectedPerfume1 || 'empty'}__${selectedPerfume2 || 'empty'}`;
 
+  const SLUG_ORDER = ['red-desire', 'yellow-bloom', 'black-code', 'white-ice', 'deep-blue'];
+  const orderedPerfumes = [...perfumes].sort((a, b) => {
+    const ai = SLUG_ORDER.indexOf((a.slug || '').toLowerCase());
+    const bi = SLUG_ORDER.indexOf((b.slug || '').toLowerCase());
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+
+  function renderSelector(selected, onSelect) {
+    const first4 = orderedPerfumes.slice(0, 4);
+    const fifth  = orderedPerfumes[4];
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          {first4.map((p) => {
+            const pIdx = perfumes.findIndex(x => x.id === p.id);
+            const ac = p.accent_color || ACCENT_COLORS[pIdx] || 'var(--sol-green)';
+            const slug = (p.slug || '').trim().toLowerCase();
+            const meta = SLUG_META[slug] || {};
+            const isSelected = selected === p.id;
+            return (
+              <button key={p.id} type="button" onClick={() => { onSelect(p.id); setStep(2); }}
+                className="font-jakarta"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '8px 12px', fontSize: '10px', letterSpacing: '0.14em',
+                  textTransform: 'uppercase', cursor: 'pointer',
+                  background: isSelected ? ac : 'transparent',
+                  color: isSelected ? 'var(--sol-bg)' : 'var(--sol-ink-dim)',
+                  border: `0.5px solid ${isSelected ? ac : 'var(--sol-line-mid)'}`,
+                  transition: 'all 0.25s var(--sol-ease)',
+                }}
+              >
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: isSelected ? 'var(--sol-bg)' : (meta.dotColor || ac), flexShrink: 0 }} />
+                {p.name}
+              </button>
+            );
+          })}
+        </div>
+        {fifth && (() => {
+          const pIdx = perfumes.findIndex(x => x.id === fifth.id);
+          const ac = fifth.accent_color || ACCENT_COLORS[pIdx] || 'var(--sol-green)';
+          const slug = (fifth.slug || '').trim().toLowerCase();
+          const meta = SLUG_META[slug] || {};
+          const isSelected = selected === fifth.id;
+          return (
+            <button key={fifth.id} type="button" onClick={() => { onSelect(fifth.id); setStep(2); }}
+              className="font-jakarta"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '8px 12px', fontSize: '10px', letterSpacing: '0.14em',
+                textTransform: 'uppercase', cursor: 'pointer', width: '100%',
+                background: isSelected ? ac : 'transparent',
+                color: isSelected ? 'var(--sol-bg)' : 'var(--sol-ink-dim)',
+                border: `0.5px solid ${isSelected ? ac : 'var(--sol-line-mid)'}`,
+                transition: 'all 0.25s var(--sol-ease)',
+              }}
+            >
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: isSelected ? 'var(--sol-bg)' : (meta.dotColor || ac), flexShrink: 0 }} />
+              {fifth.name}
+            </button>
+          );
+        })()}
+      </div>
+    );
+  }
+
   return (
-    <motion.section ref={ref} {...motionProps} className="py-16 sm:py-20 lg:py-24 px-4 border-t border-white/10">
-      <div className="mx-auto max-w-[1380px]">
-        <div className="text-center mb-20 space-y-4">
-          <div className="text-sm tracking-[0.3em] uppercase" style={{ color: 'rgb(255, 0, 255)' }}>Oferta especial</div>
-          <h2 className="font-heading text-4xl sm:text-5xl tracking-[0.16em]">COMBO SOLUTION</h2>
-          <p className="text-base sm:text-lg opacity-72">2 perfumes de la colección a elección</p>
-          <div className="inline-flex items-center justify-center">
-            <div className="border border-white/10 bg-white/[0.03] px-5 py-3 text-[0.72rem] sm:text-xs tracking-[0.22em] uppercase text-white/82 backdrop-blur-sm">
-              ENVÍO GRATIS A TODO EL PAÍS + 2 CUOTAS SIN INTERES
-            </div>
+    <section style={{ background: 'var(--sol-bg)', color: 'var(--sol-ink)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)', borderBottom: '0.5px solid var(--sol-line)' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)' }}>
+
+        {/* Head */}
+        <div ref={headRef} className="sol-reveal" style={{ marginBottom: '40px', paddingBottom: '32px', borderBottom: '0.5px solid var(--sol-line)' }}>
+          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: '#e040fb', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#e040fb', display: 'inline-block' }} />
+            Oferta especial · Combo
           </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '16px' }}>
+            <h2 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(28px, 7vw, 48px)', lineHeight: 1.05, letterSpacing: '-0.025em', color: 'var(--sol-ink)' }}>
+              Dos perfumes,<br />
+              <em style={{ fontStyle: 'italic', color: '#e040fb', fontWeight: 300 }}>tu ritual.</em>
+            </h2>
+            <div className="font-jakarta" style={{ flexShrink: 0, fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-magenta)' }}>§ 03</div>
+          </div>
+          <p className="font-jakarta" style={{ fontSize: '13px', lineHeight: 1.7, color: 'var(--sol-muted)', marginTop: '16px', maxWidth: 480 }}>
+            Armá tu combo con dos fragancias de la colección. Envío gratis a todo el país y 2 cuotas sin interés.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-14 xl:gap-20 items-center">
-          {/* Columna izquierda: imagen + selectores */}
-          <div className="lg:col-span-5 space-y-10">
-            <div className="max-w-[520px] mx-auto w-full">
-              <ComboCollectionShowcase />
+        {/* Single-column content */}
+        <div ref={bodyRef} className="sol-reveal" style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+
+          {/* Showcase image */}
+          <ComboCollectionShowcase />
+
+          {/* Step indicator */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: 22, height: 22, borderRadius: '50%', border: `0.5px solid ${step === 1 ? '#00e5ff' : 'var(--sol-line-mid)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: step === 1 ? '#00e5ff' : 'var(--sol-ink-dim)', fontSize: '10px', flexShrink: 0 }}>1</span>
+              <span style={{ width: 22, height: 22, borderRadius: '50%', border: `0.5px solid ${step === 2 ? '#00e5ff' : 'var(--sol-line-mid)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: step === 2 ? '#00e5ff' : 'var(--sol-ink-dim)', fontSize: '10px', flexShrink: 0 }}>2</span>
             </div>
-
-            <div className="space-y-7 max-w-[620px] mx-auto">
-              <div>
-                <p className="text-xs tracking-[0.2em] mb-3 opacity-60 uppercase">Selecciona y combina tus dos fragancias</p>
-                <p className="text-sm opacity-60 leading-relaxed mb-5">
-                  a medida que vayas seleccionando te vamos a mostrar el perfil de la combinación que estás creando
-                </p>
-
-                <div className="mb-4">
-                  <label className="text-xs tracking-wider opacity-40 mb-2 block">FRAGANCIA 1</label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {perfumes.map((p, idx) => {
-                      const ac = p.accent_color || ACCENT_COLORS[idx];
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => setSelectedPerfume1(p.id)}
-                          className={`border py-3 px-2 text-xs tracking-widest transition-all duration-300 ${selectedPerfume1 === p.id ? 'text-black' : 'border-white/20 opacity-50 hover:opacity-100 text-white'
-                            }`}
-                          style={{
-                            backgroundColor: selectedPerfume1 === p.id ? ac : 'transparent',
-                            borderColor: selectedPerfume1 === p.id ? ac : undefined,
-                          }}
-                        >
-                          {p.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs tracking-wider opacity-40 mb-2 block">FRAGANCIA 2</label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {perfumes.map((p, idx) => {
-                      const ac = p.accent_color || ACCENT_COLORS[idx];
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => setSelectedPerfume2(p.id)}
-                          className={`border py-3 px-2 text-xs tracking-widest transition-all duration-300 ${selectedPerfume2 === p.id ? 'text-black' : 'border-white/20 opacity-50 hover:opacity-100 text-white'
-                            }`}
-                          style={{
-                            backgroundColor: selectedPerfume2 === p.id ? ac : 'transparent',
-                            borderColor: selectedPerfume2 === p.id ? ac : undefined,
-                          }}
-                        >
-                          {p.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <span className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#e040fb' }}>
+              Paso {step} de 2
+            </span>
           </div>
 
-          {/* Columna derecha: perfil + precio + CTA */}
-          <div className="lg:col-span-7">
-            <div className="space-y-10 text-center max-w-[640px] mx-auto">
-              <div className="space-y-6">
-                {perfume1 && (
-                  <div className="border-t border-b py-6" style={{ borderColor: 'rgb(0, 255, 255)' }}>
-                    <h3 className="font-heading text-2xl tracking-wider mb-2">{perfume1.name}</h3>
-                    {perfume1.tagline ? <p className="text-sm opacity-70 mb-4">{perfume1.tagline}</p> : null}
-                    <div className="flex justify-center gap-8 text-sm">
-                      <div>
-                        <span className="opacity-40 text-xs tracking-wider block mb-1">USO</span>
-                        <span>{perfume1.tipo_de_uso || getUsage(perfume1.intensity)}</span>
-                      </div>
-                      <div>
-                        <span className="opacity-40 text-xs tracking-wider block mb-1">INTENSIDAD</span>
-                        <span>{perfume1.intensity}/10</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {perfume2 && (
-                  <div className="border-t border-b py-6" style={{ borderColor: 'rgb(255, 0, 255)' }}>
-                    <h3 className="font-heading text-2xl tracking-wider mb-2">{perfume2.name}</h3>
-                    {perfume2.tagline ? <p className="text-sm opacity-70 mb-4">{perfume2.tagline}</p> : null}
-                    <div className="flex justify-center gap-8 text-sm">
-                      <div>
-                        <span className="opacity-40 text-xs tracking-wider block mb-1">USO</span>
-                        <span>{perfume2.tipo_de_uso || getUsage(perfume2.intensity)}</span>
-                      </div>
-                      <div>
-                        <span className="opacity-40 text-xs tracking-wider block mb-1">INTENSIDAD</span>
-                        <span>{perfume2.intensity}/10</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="h-px bg-white/10" />
-
-              <motion.div
-                key={comboProfileKey}
-                initial={{ opacity: 0, y: 10, filter: 'blur(6px)' }}
-                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                transition={{ duration: 0.35, ease: 'easeOut' }}
-                className="max-w-2xl mx-auto"
-              >
-                {comboProfile ? (
-                  <div className="space-y-5">
-                    <div className="space-y-3">
-                      <div className="text-[0.72rem] tracking-[0.28em] uppercase text-white/42">Perfil de la combinación</div>
-                      <motion.div
-                        className="h-px w-28 mx-auto"
-                        style={{ background: 'linear-gradient(to right, rgba(255,255,255,0.05), rgb(255, 0, 255), rgba(255,255,255,0.05))' }}
-                        initial={{ scaleX: 0, opacity: 0 }}
-                        animate={{ scaleX: 1, opacity: 1 }}
-                        transition={{ duration: 0.4, delay: 0.05 }}
-                      />
-                    </div>
-
-                    <div className="space-y-4">
-                      <h3 className="font-heading text-3xl sm:text-4xl tracking-[0.14em] text-white">
-                        {comboProfile.nickname}
-                      </h3>
-                      <p className="text-base sm:text-lg text-white/74 tracking-[0.08em]">
-                        {comboProfile.summary}
-                      </p>
-                    </div>
-
-                    <div className="space-y-4 max-w-xl mx-auto">
-                      {comboProfile.description.map((paragraph, index) => (
-                        <p
-                          key={`${comboProfileKey}-${index}`}
-                          className={`leading-[1.9] ${index === 0 ? 'text-white/82 text-[1rem]' : 'text-white/62 text-sm uppercase tracking-[0.12em]'}`}
-                        >
-                          {paragraph}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4 max-w-xl mx-auto">
-                    <div className="text-[0.72rem] tracking-[0.28em] uppercase text-white/42">Perfil de la combinación</div>
-                    <p className="text-2xl sm:text-3xl font-heading tracking-[0.14em] text-white/86">
-                      Combiná dos fragancias
-                    </p>
-                    <p className="text-sm sm:text-base text-white/60 leading-[1.9]">
-                      Selecciona dos perfumes distintos para descubrir el subtítulo, la bajada y la descripción completa de la combinación.
-                    </p>
-                  </div>
-                )}
-              </motion.div>
-
-              <div className="space-y-4 max-w-lg mx-auto">
-                <ul className="space-y-2 text-sm opacity-80">
-                  <li className="flex items-center justify-center gap-2">
-                    <span style={{ color: 'rgb(255, 0, 255)' }}>•</span>
-                    <span>X2 perfumes a elección</span>
-                  </li>
-                  <li className="flex items-center justify-center gap-2">
-                    <span style={{ color: 'rgb(255, 0, 255)' }}>•</span>
-                    <span>Envío gratis a todo el país</span>
-                  </li>
-                  <li className="flex items-center justify-center gap-2">
-                    <span style={{ color: 'rgb(255, 0, 255)' }}>•</span>
-                    <span>2 cuotas sin interes</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="pt-4">
-                <div className="flex items-baseline justify-center gap-3 mb-6 flex-wrap">
-                  <span className="text-5xl tracking-tight">
-                    ${perfume1 && perfume2 ? (perfume1.price + perfume2.price).toLocaleString('es-AR') : '—'}
-                  </span>
-                  <span className="text-sm opacity-60">ARS</span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleAddCombo}
-                  disabled={!perfume1 || !perfume2}
-                  className="group relative overflow-hidden border border-[rgb(255,0,255)] text-white px-12 py-4 text-sm tracking-widest transition-all duration-300 hover:text-black disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <span className="relative z-10">AGREGAR COMBO AL CARRITO</span>
-                  <div className="absolute inset-0 bg-[rgb(255,0,255)] transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
-                </button>
-              </div>
+          {/* Slot 1 */}
+          <div>
+            <div className="font-jakarta" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
+              <span style={{ width: 20, height: 20, borderRadius: '50%', border: '0.5px solid #00e5ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00e5ff', fontSize: '9px', flexShrink: 0 }}>1</span>
+              Primera fragancia
             </div>
+            {renderSelector(selectedPerfume1, setSelectedPerfume1)}
+          </div>
+
+          {/* Slot 2 */}
+          <div style={{ borderTop: '0.5px solid var(--sol-line)', paddingTop: '24px' }}>
+            <div className="font-jakarta" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
+              <span style={{ width: 20, height: 20, borderRadius: '50%', border: '0.5px solid var(--sol-line-mid)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--sol-ink-dim)', fontSize: '9px', flexShrink: 0 }}>2</span>
+              Segunda fragancia
+            </div>
+            {renderSelector(selectedPerfume2, setSelectedPerfume2)}
+          </div>
+
+          {/* Profile */}
+          <div style={{ borderTop: '0.5px solid var(--sol-line)', paddingTop: '32px' }}>
+            <motion.div
+              key={comboProfileKey}
+              initial={{ opacity: 0, y: 10, filter: 'blur(6px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+            >
+              {comboProfile ? (
+                <div>
+                  <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: '#e040fb', marginBottom: '10px' }}>
+                    Perfil de la combinación
+                  </div>
+                  <h3 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(22px, 5vw, 32px)', letterSpacing: '-0.02em', color: 'var(--sol-ink)', marginBottom: '12px' }}>
+                    {comboProfile.nickname}
+                  </h3>
+                  <p className="font-jost" style={{ fontStyle: 'italic', fontSize: '16px', color: 'var(--sol-green-dim)', marginBottom: '16px' }}>
+                    {comboProfile.summary}
+                  </p>
+                  {comboProfile.description?.map((par, i) => (
+                    <p key={i} className="font-jakarta" style={{ fontSize: i === 0 ? '14px' : '12px', lineHeight: 1.7, color: i === 0 ? 'var(--sol-ink-dim)' : 'var(--sol-muted)', marginBottom: '10px' }}>
+                      {par}
+                    </p>
+                  ))}
+                </div>
+              ) : (
+                <div>
+                  <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '10px' }}>
+                    Perfil de la combinación
+                  </div>
+                  <h3 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(20px, 4vw, 28px)', color: 'var(--sol-ink-dim)', marginBottom: '12px' }}>
+                    Combiná dos fragancias
+                  </h3>
+                  <p className="font-jakarta" style={{ fontSize: '13px', lineHeight: 1.7, color: 'var(--sol-muted)' }}>
+                    Seleccioná dos perfumes distintos para descubrir el subtítulo y descripción completa de la combinación.
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          </div>
+
+          {/* Price + CTA */}
+          <div style={{ borderTop: '0.5px solid var(--sol-line)', paddingTop: '28px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
+              {[
+                'X2 perfumes a elección',
+                'Envío gratis a todo el país',
+                '2 cuotas sin interés',
+              ].map(item => (
+                <span key={item} className="font-jakarta" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '9px', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--sol-ink-dim)', border: '0.5px solid var(--sol-line)', padding: '5px 10px' }}>
+                  <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#00e5ff', flexShrink: 0 }} />
+                  {item}
+                </span>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '20px' }}>
+              <span className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(32px, 7vw, 48px)', letterSpacing: '-0.025em', color: 'var(--sol-ink)', lineHeight: 1 }}>
+                {perfume1 && perfume2 ? `$${(perfume1.price + perfume2.price).toLocaleString('es-AR')}` : '—'}
+              </span>
+              <span className="font-jakarta" style={{ fontSize: '10px', color: 'var(--sol-muted)', letterSpacing: '0.18em' }}>ARS</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAddCombo}
+              disabled={!perfume1 || !perfume2}
+              className="font-jakarta"
+              style={{
+                display: 'flex', width: '100%', maxWidth: 480, alignItems: 'center', justifyContent: 'center', gap: '10px',
+                padding: '18px', background: '#00e5ff', color: 'var(--sol-bg)',
+                border: 'none', fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em',
+                textTransform: 'uppercase', cursor: 'pointer', transition: 'opacity 0.3s',
+                opacity: (!perfume1 || !perfume2) ? 0.4 : 1,
+              }}
+              onMouseEnter={e => { if (perfume1 && perfume2) e.currentTarget.style.opacity = '0.85'; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = (!perfume1 || !perfume2) ? '0.4' : '1'; }}
+            >
+              Agregar combo al carrito →
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Combo collection showcase ─────────────────────────────────────────────────
+function ComboCollectionShowcase() {
+  const slides = [
+    { src: mediaUrl('all-products/large/all-perfumes-vidrio.webp'), alt: 'Colección completa Solution en vidrio' },
+    { src: mediaUrl('all-products/large/perfumes.webp'), alt: 'Colección completa Solution' },
+  ];
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setActiveIndex(prev => (prev + 1) % slides.length);
+    }, 5000);
+    return () => window.clearInterval(interval);
+  }, [slides.length]);
+
+  return (
+    <div style={{ position: 'relative', width: '100%', maxWidth: 540, margin: '0 auto' }}>
+      <motion.div
+        style={{ position: 'absolute', inset: 0, borderRadius: 30, filter: 'blur(70px)', background: 'radial-gradient(circle at center, rgba(0,229,255,0.12) 0%, rgba(0,0,0,0) 78%)' }}
+        animate={{ opacity: [0.12, 0.18, 0.12], scale: [0.985, 1.02, 0.985] }}
+        transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <div style={{ position: 'relative', zIndex: 1, overflow: 'hidden', borderRadius: 30, border: '0.5px solid var(--sol-line)', background: '#050505', boxShadow: '0 24px 70px rgba(0,0,0,0.44)' }}>
+        <div style={{ position: 'relative', aspectRatio: '4/5', overflow: 'hidden' }}>
+          {slides.map((slide, index) => (
+            <motion.div key={slide.src} style={{ position: 'absolute', inset: 0 }} initial={false}
+              animate={{ opacity: activeIndex === index ? 1 : 0 }}
+              transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <motion.img src={slide.src} alt="" aria-hidden style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.12)', filter: 'blur(22px)', opacity: 0.28 }} draggable={false} />
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.28)' }} />
+              <div style={{ position: 'absolute', inset: 0 }}>
+                <motion.img src={slide.src} alt={slide.alt} style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center' }}
+                  animate={{ scale: activeIndex === index ? 1.01 : 1.02 }}
+                  transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+                  draggable={false}
+                />
+              </div>
+            </motion.div>
+          ))}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(0,0,0,0.10) 0%,rgba(0,0,0,0.04) 38%,rgba(0,0,0,0.22) 100%)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: 16, left: 16, borderRadius: 100, border: '0.5px solid var(--sol-line)', background: 'rgba(0,0,0,0.35)', padding: '6px 14px', backdropFilter: 'blur(8px)' }}>
+            <p className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)' }}>
+              Colección completa
+            </p>
+          </div>
+          <div style={{ position: 'absolute', bottom: 16, right: 16, display: 'flex', alignItems: 'center', gap: '6px', borderRadius: 100, border: '0.5px solid var(--sol-line)', background: 'rgba(0,0,0,0.35)', padding: '6px 12px', backdropFilter: 'blur(8px)' }}>
+            {slides.map((_, index) => (
+              <motion.span key={index} style={{ display: 'block', height: 5, borderRadius: 100 }}
+                animate={{ width: activeIndex === index ? 18 : 6, opacity: activeIndex === index ? 1 : 0.35, backgroundColor: activeIndex === index ? '#fff' : 'rgba(255,255,255,0.6)' }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              />
+            ))}
           </div>
         </div>
       </div>
-    </motion.section>
+    </div>
   );
 }

@@ -96,6 +96,23 @@ async function markOrderFailed({ orderId, message, currentAttempts }) {
     if (error) console.error(`[gestionar.dispatcher] markOrderFailed ${orderId}:`, error.message);
 }
 
+// Gestionar suele devolver { message: '...' } con info útil dentro de campos como
+// `errors`, `details` o `invalidRows`. Si raw es solo { message } no aporta nada,
+// pero cuando trae estructura la serializamos para que el admin la vea en
+// orders.gestionar_error y los logs del server tengan el JSON completo.
+function buildDetailedMessage(err) {
+    const base = String(err?.message || 'Error desconocido');
+    const raw = err?.raw;
+    if (!raw || typeof raw !== 'object') return base;
+    try {
+        const rawStr = JSON.stringify(raw);
+        if (rawStr === JSON.stringify({ message: base })) return base;
+        return `${base} | raw: ${rawStr.slice(0, 700)}`;
+    } catch {
+        return base;
+    }
+}
+
 /**
  * Levanta órdenes paid con shipping_provider=gestionar y push pendiente, arma
  * el Excel de Gestionar y las sube en lote.
@@ -126,11 +143,17 @@ async function dispatchPendingOrders({ limit = 50, orderId = null } = {}) {
         // Si buildFullfilmentExcel está stubeado (fase 8 bloqueada), marcamos
         // todas las órdenes con el error y volvemos. El admin lo ve y reintenta
         // cuando llegue el template del Excel.
+        const detailedMessage = buildDetailedMessage(err);
+        console.error(
+            '[gestionar.dispatcher] buildFullfilmentExcel falló:',
+            detailedMessage,
+            err.raw ? `\nraw: ${JSON.stringify(err.raw, null, 2)}` : '',
+        );
         await Promise.all(
             ordersWithItems.map((o) =>
                 markOrderFailed({
                     orderId: o.id,
-                    message: err.message,
+                    message: detailedMessage,
                     currentAttempts: o.gestionar_attempts,
                 }),
             ),
@@ -139,7 +162,7 @@ async function dispatchPendingOrders({ limit = 50, orderId = null } = {}) {
             picked: pending.length,
             succeeded: 0,
             failed: pending.length,
-            errors: [{ stage: 'buildExcel', message: err.message }],
+            errors: [{ stage: 'buildExcel', message: detailedMessage, raw: err.raw || null }],
         };
     }
 
@@ -151,11 +174,21 @@ async function dispatchPendingOrders({ limit = 50, orderId = null } = {}) {
             type: 'fullfilment',
         });
     } catch (err) {
+        const detailedMessage = buildDetailedMessage(err);
+        // Log siempre el raw completo (sin truncar) — Gestionar suele meter en
+        // `errors` o `invalidRows` qué fila/columna rechazó el validador.
+        console.error(
+            '[gestionar.dispatcher] registerNotLinkedPackages falló para órdenes',
+            ordersWithItems.map((o) => o.id).join(', '),
+            '— status:', err.status,
+            '— message:', err.message,
+            err.raw ? `\nraw: ${JSON.stringify(err.raw, null, 2)}` : '',
+        );
         await Promise.all(
             ordersWithItems.map((o) =>
                 markOrderFailed({
                     orderId: o.id,
-                    message: err.message,
+                    message: detailedMessage,
                     currentAttempts: o.gestionar_attempts,
                 }),
             ),
@@ -164,7 +197,7 @@ async function dispatchPendingOrders({ limit = 50, orderId = null } = {}) {
             picked: pending.length,
             succeeded: 0,
             failed: pending.length,
-            errors: [{ stage: 'upload', message: err.message, raw: err.raw || null }],
+            errors: [{ stage: 'upload', message: detailedMessage, raw: err.raw || null }],
         };
     }
 

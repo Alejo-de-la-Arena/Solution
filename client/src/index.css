@@ -1,5 +1,415 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
+/* ════════════════════════════════════════════════════════
+   SOLUTION HOME — Design system tokens + complex CSS
+   Prefix: sol-  (evita conflictos con el resto del sitio)
+   ════════════════════════════════════════════════════════ */
+
+:root {
+  --sol-bg:         #060606;
+  --sol-bg-card:    #0b0b0b;
+  --sol-ink:        #f4f1ec;
+  --sol-ink-dim:    #b8b3a9;
+  --sol-muted:      #6e6a62;
+  --sol-muted-2:    #3a3833;
+  --sol-line:       rgba(244,241,236,0.08);
+  --sol-line-mid:   rgba(244,241,236,0.14);
+  --sol-line-str:   rgba(244,241,236,0.28);
+  --sol-green:         #00e5ff;
+  --sol-green-dim:     rgba(0,229,255,0.45);
+  --sol-green-soft:    rgba(0,229,255,0.06);
+  --sol-magenta:       #e040fb;
+  --sol-magenta-soft:  rgba(224,64,251,0.06);
+  --sol-ease:          cubic-bezier(0.22,0.61,0.36,1);
+}
+
+/* ── Ticker ── */
+@keyframes sol-ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.sol-ticker-track {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  line-height: 1;
+  animation: sol-ticker 13s linear infinite;
+  will-change: transform;
+  white-space: nowrap;
+}
+@media (max-width: 767px) {
+  .sol-ticker-track {
+    animation-duration: 15s;
+  }
+}
+
+/* ── Pulse (LIVE badge) ── */
+@keyframes sol-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+.sol-video-live::before {
+  content: '';
+  display: inline-block;
+  width: 5px; height: 5px;
+  background: var(--sol-green);
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: 1px;
+  animation: sol-pulse 2s ease-in-out infinite;
+}
+
+/* ── Ring pulse (play button) ── */
+@keyframes sol-ring {
+  0%   { transform: scale(1);   opacity: 0.5; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+.sol-video-play {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 62px; height: 62px;
+  border: 0.5px solid var(--sol-line-str);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2;
+  transition: transform 0.5s var(--sol-ease), border-color 0.4s var(--sol-ease);
+}
+.sol-video-play::before {
+  content: '';
+  position: absolute; inset: -1px;
+  border: 0.5px solid var(--sol-line);
+  border-radius: 50%;
+  animation: sol-ring 3s ease-out infinite;
+}
+.sol-video-play::after {
+  content: '';
+  width: 0; height: 0;
+  border-style: solid;
+  border-width: 8px 0 8px 13px;
+  border-color: transparent transparent transparent var(--sol-ink);
+  margin-left: 3px;
+}
+.sol-video:hover .sol-video-play {
+  transform: translate(-50%,-50%) scale(1.06);
+  border-color: var(--sol-green);
+}
+
+/* Video: grid overlay */
+.sol-video::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0, transparent 14px,
+    rgba(244,241,236,0.012) 14px, rgba(244,241,236,0.012) 15px
+  );
+  pointer-events: none;
+}
+
+/* ── Pilar toggle +/− ── */
+.sol-pilar-toggle {
+  position: relative;
+  width: 20px; height: 20px;
+  flex-shrink: 0;
+}
+.sol-pilar-toggle::before,
+.sol-pilar-toggle::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  background: var(--sol-ink-dim);
+  transition: transform 0.4s var(--sol-ease), background 0.4s var(--sol-ease);
+}
+.sol-pilar-toggle::before {
+  width: 12px; height: 0.5px;
+  transform: translate(-50%,-50%);
+}
+.sol-pilar-toggle::after {
+  width: 0.5px; height: 12px;
+  transform: translate(-50%,-50%);
+}
+.sol-pilar.sol-open .sol-pilar-toggle::after  { transform: translate(-50%,-50%) scaleY(0); }
+.sol-pilar.sol-open .sol-pilar-toggle::before { background: var(--sol-green); }
+
+/* ── Pilar green bottom line ── */
+.sol-pilar-line {
+  position: absolute;
+  left: 0; right: 0; bottom: -0.5px;
+  height: 0.5px;
+  background: var(--sol-green);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.6s var(--sol-ease);
+}
+.sol-pilar.sol-open .sol-pilar-line { transform: scaleX(1); }
+
+/* ── CSS bottle highlight strip ── */
+.sol-bottle-body {
+  position: relative;
+}
+.sol-bottle-body::before {
+  content: '';
+  position: absolute;
+  top: 8%; left: 14%; width: 12%; bottom: 14%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0));
+  border-radius: 1px;
+}
+
+/* ── Prod card hover ── */
+.sol-prod-card:hover {
+  border-color: var(--sol-line-mid);
+}
+.sol-prod-card:hover .sol-bottle {
+  transform: translateY(-4px);
+}
+.sol-prod-card:hover .sol-prod-add {
+  background: var(--sol-ink);
+  color: var(--sol-bg);
+  border-color: var(--sol-ink);
+}
+
+/* ── CTA final radial glow ── */
+.sol-cta-final::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(80% 60% at 50% 100%, var(--sol-green-soft) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ── CTA eyebrow decorative lines ── */
+.sol-cta-eyebrow::before,
+.sol-cta-eyebrow::after {
+  content: '';
+  display: inline-block;
+  width: 20px; height: 0.5px;
+  background: var(--sol-line-mid);
+  vertical-align: middle;
+  margin: 0 12px 2px;
+}
+
+/* ── Test prod dot ── */
+.sol-test-prod::before {
+  content: '';
+  display: inline-block;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--sol-green);
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+
+/* ── Footer hecho-en-argentina dot ── */
+.sol-arg::before {
+  content: '';
+  display: inline-block;
+  width: 5px; height: 5px;
+  background: var(--sol-green);
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+
+/* ── Reveal on scroll ── */
+.sol-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.9s var(--sol-ease), transform 0.9s var(--sol-ease);
+}
+.sol-reveal.sol-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── Scroll containers: no scrollbar ── */
+.sol-scroll::-webkit-scrollbar { display: none; }
+.sol-scroll { scrollbar-width: none; }
+
+/* ── Product scroll: forced padding so Tailwind reset can't strip it ── */
+.sol-prod-scroll {
+  --sol-prod-edge-offset: var(--sol-section-px);
+  padding-left:  var(--sol-prod-edge-offset) !important;
+  padding-right: var(--sol-prod-edge-offset) !important;
+  box-sizing: border-box !important;
+}
+@media (min-width: 1281px) {
+  /* Align first/last card with the sol-container edge on wide viewports */
+  .sol-prod-scroll {
+    --sol-prod-edge-offset: calc((100vw - 1280px) / 2 + var(--sol-section-px));
+  }
+}
+
+/* ── TrustBar responsive ── */
+.sol-trust-item   { padding: 26px 14px; }
+.sol-trust-title  { font-size: 14px; }
+.sol-trust-sub    { font-size: 10px; }
+.sol-trust-icon   { display: block; }
+.sol-trust-icon-lg { display: none !important; }
+@media (min-width: 768px) {
+  .sol-trust-item    { padding: 36px 28px; }
+  .sol-trust-title   { font-size: 18px !important; }
+  .sol-trust-sub     { font-size: 11px !important; }
+  .sol-trust-icon    { display: none !important; }
+  .sol-trust-icon-lg { display: block !important; }
+}
+
+/* ── Btn hover arrow nudge ── */
+.sol-btn:hover .sol-arrow { transform: translateX(4px); }
+.sol-arrow { display: inline-block; transition: transform 0.4s var(--sol-ease); }
+
+/* ── Wholesale CTAs: stack full-width on mobile, row on desktop ── */
+.sol-wholesale-ctas {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sol-wholesale-ctas > * {
+  width: 100%;
+  box-sizing: border-box;
+}
+@media (min-width: 640px) {
+  .sol-wholesale-ctas {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .sol-wholesale-ctas > * {
+    width: auto;
+  }
+}
+
+/* ── Reduced motion overrides ── */
+@media (prefers-reduced-motion: reduce) {
+  .sol-ticker-track      { animation: none; }
+  .sol-video-live::before { animation: none; }
+  .sol-video-play::before { animation: none; }
+  .sol-reveal            { opacity: 1 !important; transform: none !important; }
+}
+
+/* ── Layout heights ── */
+:root {
+  --sol-ticker-h:   40px;
+  --sol-nav-h:      56px;
+  /* Navbar element sizes */
+  --sol-nav-logo-fs: 12px;
+  --sol-nav-icon-sz: 18px;
+  --sol-ham-w:       20px;
+}
+@media (min-width: 1024px) {
+  :root {
+    --sol-nav-h:       68px;
+    --sol-nav-logo-fs: 15px;
+    --sol-nav-icon-sz: 22px;
+    --sol-ham-w:       26px;
+  }
+}
+
+/* ── Responsive spacing tokens ── */
+:root {
+  --sol-section-px: 22px;
+  --sol-section-py: 64px;
+}
+@media (min-width: 768px) {
+  :root { --sol-section-px: 40px; }
+}
+@media (min-width: 1024px) {
+  :root {
+    --sol-section-px: 72px;
+    --sol-section-py: 96px;
+  }
+}
+
+/* ── Max-width container ── */
+.sol-container {
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+/* ── Navbar: responsive visibility ── */
+.sol-nav-desktop   { display: none; }
+.sol-nav-mob-icons { display: flex; }
+@media (min-width: 768px) {
+  .sol-nav-desktop   { display: flex; }
+  .sol-nav-mob-icons { display: none; }
+}
+
+/* ── Hero: 2-col grid on desktop ── */
+@media (min-width: 1024px) {
+  .sol-hero-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas:
+      "meta  video"
+      "head  video"
+      "ctas  video";
+    column-gap: 80px;
+    align-items: start;
+  }
+  .sol-hero-meta  { grid-area: meta; }
+  .sol-hero-head  { grid-area: head; }
+  .sol-hero-video { grid-area: video; margin-bottom: 0 !important; aspect-ratio: 16/9 !important; }
+  .sol-hero-ctas  { grid-area: ctas; padding-top: 40px; }
+}
+
+/* ── Products: wider cards on desktop ── */
+@media (min-width: 1024px) {
+  .sol-prod-card { width: 300px !important; }
+}
+
+/* ── Tienda product card: always 1-col, centered ── */
+.sol-prod-tienda-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+}
+
+/* ── Filter pills: mobile scroll, desktop center ── */
+.sol-filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.sol-filter-pills::-webkit-scrollbar { display: none; }
+.sol-filter-pill {
+  padding: 6px 14px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+@media (min-width: 768px) {
+  .sol-filter-pills {
+    justify-content: center;
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+  .sol-filter-pill {
+    padding: 12px 24px;
+    font-size: 13px;
+  }
+}
+
+/* ── Benefits grid: 1 col mobile, 3 cols desktop ── */
+.sol-benefits-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  background: var(--sol-line);
+}
+@media (min-width: 768px) {
+  .sol-benefits-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ── Testimonials: wider cards on desktop ── */
+@media (min-width: 1024px) {
+  .sol-test-card { flex-basis: 380px !important; min-width: 380px !important; }
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -374,10 +784,101 @@
   }
 }
 
+/* ─────────────  PRODUCT PAGE LAYOUT  ─────────────────────────────────────── */
+
+/* Hero container — single col mobile, 2-col desktop */
+.sol-prod-hero {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+@media (min-width: 1024px) {
+  .sol-prod-hero {
+    display: grid;
+    grid-template-columns: 55fr 45fr;
+    align-items: start;
+    border-bottom: 0.5px solid var(--sol-line);
+  }
+  .sol-prod-img-panel {
+    position: sticky;
+    top: calc(var(--sol-nav-h, 56px) + var(--sol-ticker-h, 40px));
+    border-right: 0.5px solid var(--sol-line);
+  }
+}
+
+/* Stage: portrait always (good for narrow column too) */
+.sol-prod-stage {
+  aspect-ratio: 4 / 5;
+  max-height: 85vh;
+}
+
+/* Product page full-width sections container */
+.sol-prod-below {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* h1 always left-aligned on product page */
+.sol-prod-h1 {
+  text-align: left !important;
+}
+
+/* Spin keyframe for loading screen */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─────────────  MOBILE: CENTER ALL HEADINGS (solo home)  ──────────────────── */
+/* Scopeado bajo .home-page: estas reglas son del rediseño de la home y NO
+   deben afectar headings genéricos del resto del sitio (checkout, etc.). */
+@media (max-width: 767px) {
+  .home-page h1, .home-page h2, .home-page h3 {
+    text-align: center;
+  }
+  .home-page h2 {
+    font-size: clamp(30px, 7.8vw, 36px) !important;
+  }
+  /* Section header rows → stack vertically, centered */
+  .sol-section-head {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  .sol-section-head > div:first-child {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+/* ─────────────  TESTIMONIALS AUTO-SCROLL  ─────────────────────────────────── */
+@keyframes sol-test-autoscroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.sol-test-track {
+  display: flex;
+  gap: 20px;
+  width: max-content;
+  animation: sol-test-autoscroll 42s linear infinite;
+  will-change: transform;
+}
+.sol-test-track:hover {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sol-test-track { animation: none; }
+}
+
+/* ─────────────  FONT-JMONO FALLBACK (safety net) ──────────────────────────── */
+.font-jmono {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
    Checkout · estilos del rediseño cyberpunk (cards numeradas, sticky summary,
-   inputs con glow, trust badges). Usa font-heading (Montserrat) y font-mono
-   (monospace nativo) de Tailwind, sin importar fuentes nuevas.
+   inputs con glow, trust badges). Restaurados: el rediseño de la home había
+   eliminado este bloque de index.css, dejando el checkout sin estilos.
+   Todas las clases son específicas del checkout — no afectan la home.
    ───────────────────────────────────────────────────────────────────────── */
 
 /* Grilla sutil de fondo */

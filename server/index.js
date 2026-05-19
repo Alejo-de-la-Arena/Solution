@@ -20,6 +20,9 @@ console.log('[boot] Nave M2M:', {
 });
 
 // Middleware
+// trust proxy: detrás del proxy de Railway, sin esto req.ip devuelve la IP
+// interna del proxy en lugar de la del comprador (necesaria para CAPI).
+app.set('trust proxy', true);
 app.use(morgan('dev'));
 app.use(cors({ origin: true }));
 

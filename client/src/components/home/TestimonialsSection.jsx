@@ -1,151 +1,165 @@
-
-import { motion } from 'motion/react';
-import { useScrollMotion } from '../../hooks/useScrollMotion';
+import { useReveal } from '../../hooks/useReveal';
 
 const TESTIMONIALS = [
   {
-    name: 'Andrés Ferrero',
-    city: 'Buenos Aires',
-    initial: 'A',
-    quote:
-      'Les compre cuando vendían equivalencias y ahora con los perfumes nuevos, probé el Red Desire y el Black, ambos muy buenos, recomiendo!',
+    name: 'Andrés Ferrero', city: 'Buenos Aires', initial: 'A',
+    quote: 'Les compre cuando vendían equivalencias y ahora con los perfumes nuevos, probé el Red Desire y el Black, ambos muy buenos, recomiendo!',
   },
   {
-    name: 'Sebastian Carmona',
-    city: 'Rosario',
-    initial: 'S',
-    quote:
-      'Si te gustan los perfumes dulces recomiendo el Yellow Bloom, tiene un parecido al Erba pura',
+    name: 'Sebastian Carmona', city: 'Rosario', initial: 'S',
+    quote: 'Si te gustan los perfumes dulces recomiendo el Yellow Bloom, tiene un parecido al Erba pura',
   },
   {
-    name: 'Franco Belligoi',
-    city: 'Córdoba',
-    initial: 'F',
-    quote:
-      'Compre el White ice y cumple con la descripción, super versátil y fresco para usar durante el dia',
+    name: 'Franco Belligoi', city: 'Córdoba', initial: 'F',
+    quote: 'Compre el White ice y cumple con la descripción, super versátil y fresco para usar durante el dia',
   },
   {
-    name: 'Nicolás Méndez',
-    city: 'Buenos Aires',
-    initial: 'N',
-    quote:
-      'Buena atención, Buen producto',
+    name: 'Nicolás Méndez', city: 'Buenos Aires', initial: 'N',
+    quote: 'Buena atención, Buen producto',
   },
   {
-    name: 'Ezequiel Zotto',
-    city: 'Mendoza',
-    initial: 'E',
-    quote:
-      'Elegí el Deep Blue y cumplió 100%, pero lo que me compro fue el envase, original y practico para llevar durante el día',
+    name: 'Ezequiel Zotto', city: 'Mendoza', initial: 'E',
+    quote: 'Elegí el Deep Blue y cumplió 100%, pero lo que me compro fue el envase, original y practico para llevar durante el día',
   },
   {
-    name: 'Patricia Montone',
-    city: 'Mar del Plata',
-    initial: 'P',
-    quote:
-      'Compre el combo de 2 para regalarle a mi hijo, están barbaros, recomiendo!',
+    name: 'Patricia Montone', city: 'Mar del Plata', initial: 'P',
+    quote: 'Compre el combo de 2 para regalarle a mi hijo, están barbaros, recomiendo!',
   },
 ];
 
 // Duplicate for seamless infinite loop
-const ITEMS = [...TESTIMONIALS, ...TESTIMONIALS];
+const LOOP_CARDS = [...TESTIMONIALS, ...TESTIMONIALS];
 
-export default function TestimonialsSection() {
-  const { ref, motionProps } = useScrollMotion();
-
+function TestCard({ t }) {
   return (
-    <section
-      ref={ref}
-      className="relative py-24 border-t border-white/10 bg-black text-white overflow-hidden"
+    <div
+      className="sol-test-card"
+      style={{
+        flex: '0 0 320px',
+        minHeight: '220px',
+        background: 'var(--sol-bg-card)',
+        border: '0.5px solid var(--sol-line)',
+        padding: '32px 26px',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
     >
-      {/* Background glow */}
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[70vw] max-w-3xl h-48 blur-[90px] opacity-25"
-          style={{
-            background:
-              'radial-gradient(ellipse at 20% 50%, rgba(0,255,255,0.3) 0%, transparent 55%), radial-gradient(ellipse at 80% 50%, rgba(255,0,255,0.2) 0%, transparent 55%)',
-          }}
-        />
+      {/* Large green quote mark */}
+      <div
+        className="font-jost"
+        style={{ fontSize: '56px', lineHeight: 0.5, color: 'var(--sol-magenta)', marginBottom: '18px', fontWeight: 300 }}
+        aria-hidden
+      >
+        "
       </div>
 
-      <div className="relative">
-        {/* Header */}
-        <motion.div
-          {...motionProps}
-          className="text-center mb-14 space-y-3 px-4"
-        >
-          <p className="text-xs tracking-[0.4em] opacity-40 uppercase">Testimonios</p>
-          <h2 className="text-2xl sm:text-3xl font-heading tracking-wider opacity-70">
-            Lo que dicen nuestros clientes
-          </h2>
-        </motion.div>
-
-        {/* Infinite scroll track */}
-        <motion.div
-          {...motionProps}
-          transition={{ ...motionProps.transition, delay: 0.1 }}
-          className="relative"
-        >
-          {/* Edge fades */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-black to-transparent z-10" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-black to-transparent z-10" />
-
-          {/* Scrolling container */}
-          <div className="overflow-hidden">
-            <motion.div
-              className="flex gap-5 w-max"
-              animate={{ x: ['0%', '-50%'] }}
-              transition={{
-                duration: 30,
-                ease: 'linear',
-                repeat: Infinity,
-              }}
-            >
-              {ITEMS.map((t, index) => (
-                <div
-                  key={`${t.name}-${index}`}
-                  className="w-[320px] sm:w-[340px] lg:w-[380px] shrink-0 py-2 px-1"
-                >
-                  <TestimonialCard t={t} />
-                </div>
-              ))}
-            </motion.div>
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-function TestimonialCard({ t }) {
-  return (
-    <div className="relative h-full rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm flex flex-col gap-4">
-      {/* Quote mark */}
-      <span className="text-5xl leading-none text-white/15 font-serif select-none">"</span>
-
-      {/* Quote text */}
-      <p className="text-sm text-white/75 leading-relaxed flex-1">
+      {/* Quote */}
+      <p
+        className="font-jakarta"
+        style={{ fontSize: '14px', lineHeight: 1.65, color: 'var(--sol-ink)', fontWeight: 500, marginBottom: '28px', flex: 1 }}
+      >
         {t.quote}
       </p>
 
-      {/* Author */}
-      <div className="flex items-center gap-3 pt-4 border-t border-white/10">
-        <div className="w-9 h-9 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-xs font-semibold text-white/60 shrink-0">
-          {t.initial}
-        </div>
-        <div>
-          <p className="text-xs font-medium text-white/80 tracking-wide">{t.name}</p>
-          <p className="text-[10px] text-white/40">{t.city}</p>
-        </div>
-        <div className="ml-auto flex gap-0.5">
-          {[...Array(5)].map((_, i) => (
-            <svg key={i} className="w-3 h-3 text-[rgb(0,255,255)]" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
-          ))}
+      {/* Meta */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'space-between',
+          gap: '12px',
+          paddingTop: '18px',
+          borderTop: '0.5px solid var(--sol-line)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
+          {/* Avatar */}
+          <div
+            className="font-jost"
+            style={{
+              flexShrink: 0,
+              width: '32px', height: '32px',
+              borderRadius: '50%',
+              border: '0.5px solid var(--sol-line-str)',
+              background: 'var(--sol-bg)',
+              color: 'var(--sol-ink)',
+              fontSize: '11px',
+              letterSpacing: '0.05em',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+            aria-hidden
+          >
+            {t.initial}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div
+              className="font-jost"
+              style={{ fontSize: '13px', fontWeight: 600, color: 'var(--sol-ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+            >
+              {t.name}
+            </div>
+            <div
+              className="font-jakarta"
+              style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+            >
+              {t.city}
+            </div>
+          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TestimonialsSection() {
+  const headRef = useReveal();
+
+  return (
+    <section
+      style={{
+        borderBottom: '0.5px solid var(--sol-line)',
+        background: 'var(--sol-bg)',
+        color: 'var(--sol-ink)',
+        paddingTop: 'var(--sol-section-py)',
+        paddingBottom: 'var(--sol-section-py)',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Section head */}
+      <div
+        ref={headRef}
+        className="sol-reveal sol-section-head"
+        style={{
+          display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+          marginBottom: '40px',
+          padding: '0 var(--sol-section-px)',
+          maxWidth: 1280, marginLeft: 'auto', marginRight: 'auto',
+        }}
+      >
+        <div>
+          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
+            Voces reales
+          </div>
+          <h2 className="font-jost" style={{ fontWeight: 400, fontSize: 'clamp(26px, 5vw, 40px)', lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--sol-ink)', marginTop: '12px' }}>
+            Lo que dicen<br />
+            <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>quienes lo usan</em>.
+          </h2>
+        </div>
+        <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-magenta)', flexShrink: 0 }}>§ 03</div>
+      </div>
+
+      {/* Auto-scrolling track — edge to edge, no clipping on right */}
+      <div
+        style={{ overflow: 'hidden', paddingLeft: 'var(--sol-section-px)', paddingBottom: '8px' }}
+        aria-label="Testimonios de clientes"
+      >
+        <div className="sol-test-track">
+          {LOOP_CARDS.map((t, i) => (
+            <TestCard key={`${t.name}-${i}`} t={t} />
+          ))}
+        </div>
+      </div>
+
+    </section>
   );
 }
