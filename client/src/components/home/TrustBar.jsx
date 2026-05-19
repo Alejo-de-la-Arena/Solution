@@ -16,7 +16,7 @@ const ITEMS = [
         <path d="M3 10h18"/>
       </svg>
     ),
-    title: '12 cuotas',
+    title: '2 cuotas',
     sub: 'Mercado Pago\nsin interés',
   },
   {
