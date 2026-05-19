@@ -54,12 +54,12 @@ const SLUG_META = {
 };
 
 const FILTER_PILLS = [
-  { key: 'all',      label: 'Todas',    dot: 'var(--sol-ink-dim)' },
-  { key: 'noche',    label: 'Noche',    dot: '#c0392b' },
-  { key: 'salida',   label: 'Salida',   dot: '#888888' },
-  { key: 'dia',      label: 'Día',      dot: '#e6a72f' },
-  { key: 'trabajo',  label: 'Trabajo',  dot: '#378add' },
-  { key: 'gym',      label: 'Gym',      dot: '#0dd3b8' },
+  { key: 'all',      label: 'Todas',                dot: 'var(--sol-ink-dim)' },
+  { key: 'noche',    label: 'Noche y citas',         dot: '#c0392b' },
+  { key: 'salida',   label: 'Eventos y salidas',     dot: '#888888' },
+  { key: 'dia',      label: 'Sunset y encuentros',   dot: '#e6a72f' },
+  { key: 'trabajo',  label: 'Oficina y reuniones',   dot: '#378add' },
+  { key: 'gym',      label: 'Rutina diaria',         dot: '#0dd3b8' },
 ];
 
 function momentoKey(slug) {
@@ -191,22 +191,20 @@ function TiendaHero() {
           </p>
         </div>
 
-        {/* Stats strip */}
-        <div ref={statsRef} className="sol-reveal" style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'flex-start', borderTop: '0.5px solid var(--sol-line)', paddingTop: '28px', gap: '16px' }}>
-          {[
-            { n: '05', l: 'Fragancias\nactivas' },
-            { n: '60ml', l: 'Eau de\nParfum' },
-            { n: '30d', l: 'Garantía\ntotal' },
-          ].map((s, i) => (
-            <div key={i} style={{ textAlign: 'center' }}>
-              <div className="font-jost" style={{ fontSize: 'clamp(24px, 5vw, 36px)', fontWeight: 300, letterSpacing: '-0.02em', color: 'var(--sol-magenta)', lineHeight: 1 }}>
-                {s.n}
-              </div>
-              <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginTop: '6px', whiteSpace: 'pre-line', lineHeight: 1.5 }}>
-                {s.l}
-              </div>
-            </div>
-          ))}
+        {/* Scroll indicator */}
+        <div ref={statsRef} className="sol-reveal" style={{ borderTop: '0.5px solid var(--sol-line)', paddingTop: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+          <p className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', margin: 0 }}>
+            Conocé nuestra colección
+          </p>
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ color: '#00e5ff', display: 'flex', alignItems: 'center' }}
+          >
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M12 5v14M5 12l7 7 7-7" />
+            </svg>
+          </motion.div>
         </div>
 
       </div>
@@ -255,17 +253,62 @@ function MomentFilter({ pills, active, onChange }) {
   );
 }
 
+// ─── Reference tag with sweep-fill hover ──────────────────────────────────────
+function ReferenceTag({ reference, accent }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '10px',
+        padding: '10px 20px', marginBottom: '28px',
+        border: `1px solid ${accent}`,
+        position: 'relative', overflow: 'hidden', cursor: 'default',
+      }}
+    >
+      {/* Sweep fill */}
+      <motion.div
+        style={{ position: 'absolute', inset: 0, background: accent, transformOrigin: 'left center', zIndex: 0 }}
+        animate={{ scaleX: hovered ? 1 : 0 }}
+        transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+      />
+      <motion.span
+        animate={{ color: hovered ? '#000' : accent }}
+        transition={{ duration: 0.3 }}
+        style={{ position: 'relative', zIndex: 1, fontSize: '13px', lineHeight: 1 }}
+      >
+        →
+      </motion.span>
+      <motion.span
+        className="font-jakarta"
+        animate={{ color: hovered ? 'rgba(0,0,0,0.55)' : 'var(--sol-muted)' }}
+        transition={{ duration: 0.3 }}
+        style={{ position: 'relative', zIndex: 1, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase' }}
+      >
+        Referencia:
+      </motion.span>
+      <motion.span
+        className="font-jost"
+        animate={{ color: hovered ? '#000' : accent }}
+        transition={{ duration: 0.3 }}
+        style={{ position: 'relative', zIndex: 1, fontSize: '17px', fontWeight: 600, letterSpacing: '-0.01em' }}
+      >
+        {reference}
+      </motion.span>
+    </div>
+  );
+}
+
 // ─── Product card ──────────────────────────────────────────────────────────────
 function ProductCard({ perfume, index, altView }) {
   const { addToCart } = useCart();
   const slug     = (perfume.slug || '').trim().toLowerCase();
   const meta     = SLUG_META[slug] || {};
   const accent   = perfume.accent_color || ACCENT_COLORS[index] || 'var(--sol-green)';
-  const accentGlow = `${accent}22`;
   const isFeatured = meta.featured || slug === 'red-desire';
   const price    = perfume.price ? `$${Number(perfume.price).toLocaleString('es-AR')}` : '';
   const idx      = String(index + 1).padStart(2, '0');
-  const notes    = meta.notes || [];
   const cardRef  = useReveal();
 
   return (
@@ -274,7 +317,8 @@ function ProductCard({ perfume, index, altView }) {
       className="sol-reveal"
       style={{
         borderBottom: '0.5px solid var(--sol-line)',
-        background: 'var(--sol-bg)',
+        borderLeft: `3px solid ${accent}`,
+        background: `radial-gradient(ellipse 55% 35% at 0% 0%, ${accent}06 0%, var(--sol-bg) 65%)`,
         position: 'relative',
       }}
     >
@@ -306,25 +350,9 @@ function ProductCard({ perfume, index, altView }) {
           )}
         </div>
 
-        {/* Reference — prominently styled with accent */}
+        {/* Reference — sweep-fill on hover */}
         {meta.reference && (
-          <div
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '8px',
-              padding: '8px 14px', marginBottom: '28px',
-              border: `0.5px solid ${accent}55`,
-              background: accentGlow,
-              position: 'relative', overflow: 'hidden',
-            }}
-          >
-            <span style={{ color: accent, fontSize: '12px', lineHeight: 1 }}>→</span>
-            <span className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
-              Referencia:
-            </span>
-            <span className="font-jost" style={{ fontSize: '14px', fontWeight: 500, color: accent, letterSpacing: '-0.01em' }}>
-              {meta.reference}
-            </span>
-          </div>
+          <ReferenceTag reference={meta.reference} accent={accent} />
         )}
 
         {/* "Más vendido" badge */}
@@ -642,7 +670,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                   <h3 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(22px, 5vw, 32px)', letterSpacing: '-0.02em', color: 'var(--sol-ink)', marginBottom: '12px' }}>
                     {comboProfile.nickname}
                   </h3>
-                  <p className="font-jost" style={{ fontStyle: 'italic', fontSize: '16px', color: 'var(--sol-green-dim)', marginBottom: '16px' }}>
+                  <p className="font-jost" style={{ fontStyle: 'italic', fontSize: '16px', color: '#b000d0', marginBottom: '16px' }}>
                     {comboProfile.summary}
                   </p>
                   {comboProfile.description?.map((par, i) => (
@@ -696,7 +724,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
               className="font-jakarta"
               style={{
                 display: 'flex', width: '100%', maxWidth: 480, alignItems: 'center', justifyContent: 'center', gap: '10px',
-                padding: '18px', background: '#00e5ff', color: 'var(--sol-bg)',
+                padding: '18px', background: '#00e5ff', color: '#000',
                 border: 'none', fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em',
                 textTransform: 'uppercase', cursor: 'pointer', transition: 'opacity 0.3s',
                 opacity: (!perfume1 || !perfume2) ? 0.4 : 1,
@@ -758,6 +786,11 @@ function ComboCollectionShowcase() {
           <div style={{ position: 'absolute', top: 16, left: 16, borderRadius: 100, border: '0.5px solid var(--sol-line)', background: 'rgba(0,0,0,0.35)', padding: '6px 14px', backdropFilter: 'blur(8px)' }}>
             <p className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)' }}>
               Colección completa
+            </p>
+          </div>
+          <div style={{ position: 'absolute', bottom: 16, left: 16, borderRadius: 100, border: '0.5px solid rgba(224,64,251,0.4)', background: 'rgba(224,64,251,0.15)', padding: '6px 14px', backdropFilter: 'blur(8px)' }}>
+            <p className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#e040fb' }}>
+              Combo personalizable
             </p>
           </div>
           <div style={{ position: 'absolute', bottom: 16, right: 16, display: 'flex', alignItems: 'center', gap: '6px', borderRadius: 100, border: '0.5px solid var(--sol-line)', background: 'rgba(0,0,0,0.35)', padding: '6px 12px', backdropFilter: 'blur(8px)' }}>
