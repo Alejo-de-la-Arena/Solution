@@ -22,6 +22,10 @@ import AdminUsuarios from './pages/admin/AdminUsuarios';
 import AdminPedidos from './pages/admin/AdminPedidos';
 import AdminProductos from './pages/admin/AdminProductos';
 import AdminGestionar from './pages/admin/AdminGestionar';
+import AdminCalculadora from './pages/admin/AdminCalculadora';
+import CalculadoraReporte from './pages/admin/calculadora/Reporte';
+import CalculadoraCostos from './pages/admin/calculadora/Costos';
+import CalculadoraGastos from './pages/admin/calculadora/Gastos';
 
 import Tienda from './pages/Tienda';
 import Producto from './pages/Producto';
@@ -66,6 +70,11 @@ function AppRoutes() {
           <Route path="pedidos" element={<AdminPedidos />} />
           <Route path="productos" element={<AdminProductos />} />
           <Route path="gestionar" element={<AdminGestionar />} />
+          <Route path="calculadora" element={<AdminCalculadora />}>
+            <Route index element={<CalculadoraReporte />} />
+            <Route path="costos" element={<CalculadoraCostos />} />
+            <Route path="gastos" element={<CalculadoraGastos />} />
+          </Route>
         </Route>
         <Route path="/set-password" element={<SetPassword />} />
         <Route path="*" element={<Navigate to="/" replace />} />
