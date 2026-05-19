@@ -145,7 +145,6 @@ export default function TestimonialsSection() {
             <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>quienes lo usan</em>.
           </h2>
         </div>
-        <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-magenta)', flexShrink: 0 }}>§ 03</div>
       </div>
 
       {/* Auto-scrolling track — edge to edge, no clipping on right */}

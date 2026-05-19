@@ -172,7 +172,6 @@ function TiendaHero() {
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sol-green)', display: 'inline-block' }} />
             la Tienda
           </div>
-          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-magenta)' }}>§ 02</div>
         </div>
 
         {/* Headline */}
@@ -318,6 +317,7 @@ function ProductCard({ perfume, index, altView }) {
       style={{
         borderBottom: '0.5px solid var(--sol-line)',
         borderLeft: `3px solid ${accent}`,
+        borderRight: `3px solid ${accent}`,
         background: `radial-gradient(ellipse 55% 35% at 0% 0%, ${accent}06 0%, var(--sol-bg) 65%)`,
         position: 'relative',
       }}
@@ -633,7 +633,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
           <ComboCollectionShowcase />
 
           {/* Builder block — max-width centered */}
-          <div style={{ maxWidth: 640, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          <div style={{ maxWidth: 640, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '32px', textAlign: 'center' }}>
 
           {/* Selector container — bordered form-like box */}
           <div style={{ border: '0.5px solid var(--sol-line)', maxWidth: 480, margin: '0 auto', width: '100%' }}>
@@ -714,7 +714,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
 
           {/* Price + CTA */}
           <div style={{ borderTop: '0.5px solid var(--sol-line)', paddingTop: '28px' }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px', justifyContent: 'center' }}>
               {[
                 'X2 perfumes a elección',
                 'Envío gratis a todo el país',
@@ -727,7 +727,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
               ))}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '20px', justifyContent: 'center' }}>
               <span className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(32px, 7vw, 48px)', letterSpacing: '-0.025em', color: 'var(--sol-ink)', lineHeight: 1 }}>
                 {perfume1 && perfume2 ? `$${(perfume1.price + perfume2.price).toLocaleString('es-AR')}` : '—'}
               </span>
@@ -740,7 +740,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
               disabled={!perfume1 || !perfume2}
               className="font-jakarta"
               style={{
-                display: 'flex', width: '100%', maxWidth: 480, alignItems: 'center', justifyContent: 'center', gap: '10px',
+                display: 'flex', width: '100%', maxWidth: 480, margin: '0 auto', alignItems: 'center', justifyContent: 'center', gap: '10px',
                 padding: '18px', background: '#00e5ff', color: '#000',
                 border: 'none', fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em',
                 textTransform: 'uppercase', cursor: 'pointer', transition: 'opacity 0.3s',

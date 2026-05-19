@@ -702,7 +702,6 @@ export default function Producto() {
                 <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
                   Familia olfativa
                 </div>
-                <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', color: 'var(--accent)' }}>§ 04</div>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {family.map(f => (
@@ -794,7 +793,6 @@ export default function Producto() {
                   <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>quienes lo usan</em>.
                 </h2>
               </div>
-              <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', color: 'var(--sol-magenta)' }}>§ 05</div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {data.testimonials.map((t, i) => (
