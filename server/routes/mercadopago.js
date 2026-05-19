@@ -4,6 +4,8 @@ const crypto = require('crypto');
 const { supabase } = require('../lib/supabase');
 const { sendPaymentConfirmationEmail, sendAdminSaleNotificationEmail } = require('../services/email');
 const { sendPurchaseEvent } = require('../services/metaCapi');
+const { attachCogsToOrderItemRows } = require('../lib/orderItems');
+const { extractFinancialsFromMpPayment, upsertOrderFinancials } = require('../lib/orderFinancials');
 
 const router = express.Router();
 const MP_API = 'https://api.mercadopago.com';
@@ -338,6 +340,19 @@ async function applyPaymentToDb(orderRowId, payment, { sendEmailIfPaid }) {
 
   console.log(`[MP] Orden ${orderRowId} → ${nextStatus} (payment ${payment?.id})`);
 
+  // Calculadora: capturar desglose financiero (fees, taxes, neto) del payment.
+  // Aislado en try/catch: un fallo acá NO debe romper el flujo del cobro.
+  if (nextStatus === 'paid') {
+    try {
+      const financials = extractFinancialsFromMpPayment(payment);
+      if (financials) {
+        await upsertOrderFinancials(orderRowId, 'mercadopago', financials, payment);
+      }
+    } catch (finErr) {
+      console.error('[MP] upsertOrderFinancials falló (no crítico):', finErr);
+    }
+  }
+
   // CAPI Purchase: fuente PRIMARIA del evento. Desacoplado del email — se
   // dispara aunque la orden no tenga email o el envío de email falle.
   if (nextStatus === 'paid') {
@@ -574,7 +589,8 @@ router.post('/mercadopago/create-order', async (req, res) => {
     quantity: i.quantity,
     unit_price: i.unit_price,
   }));
-  const { error: itemsErr } = await supabase.from('order_items').insert(rows);
+  const rowsWithCogs = await attachCogsToOrderItemRows(rows);
+  const { error: itemsErr } = await supabase.from('order_items').insert(rowsWithCogs);
   if (itemsErr) console.error('[MP] Error guardando items:', itemsErr);
 
   const idempotencyKey = crypto.randomUUID();
@@ -787,7 +803,8 @@ router.post('/mercadopago/create-preference', async (req, res) => {
     quantity: i.quantity,
     unit_price: i.unit_price,
   }));
-  const { error: itemsErr } = await supabase.from('order_items').insert(rows);
+  const rowsWithCogs = await attachCogsToOrderItemRows(rows);
+  const { error: itemsErr } = await supabase.from('order_items').insert(rowsWithCogs);
   if (itemsErr) console.error('[MP] Error guardando items:', itemsErr);
 
   const baseCallbackUrl = (callback_url || '').trim() || 'https://solutionperfumes.com/checkout';
@@ -977,7 +994,8 @@ router.post('/mercadopago/process-card-payment', async (req, res) => {
       quantity: i.quantity,
       unit_price: i.unit_price,
     }));
-    const { error: itemsErr } = await supabase.from('order_items').insert(rows);
+    const rowsWithCogs = await attachCogsToOrderItemRows(rows);
+    const { error: itemsErr } = await supabase.from('order_items').insert(rowsWithCogs);
     if (itemsErr) console.error('[MP] Error guardando items:', itemsErr);
 
     order = newOrder;

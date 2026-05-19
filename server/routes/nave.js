@@ -3,6 +3,8 @@ const axios = require('axios');
 const { supabase } = require('../lib/supabase');
 const { applyTestMode } = require('../lib/testMode');
 const { sendPaymentConfirmationEmail, sendAdminSaleNotificationEmail } = require('../services/email');
+const { attachCogsToOrderItemRows } = require('../lib/orderItems');
+const { extractFinancialsFromNavePayment, upsertOrderFinancials } = require('../lib/orderFinancials');
 
 const router = express.Router();
 
@@ -179,7 +181,8 @@ router.post('/nave/create-payment', async (req, res) => {
     if (orderErr) { console.error('[Nave] Error creando orden:', orderErr); return res.status(500).json({ error: 'Error al crear la orden' }); }
 
     const rows = tmItems.map((i) => ({ order_id: order.id, product_id: i.product_id, quantity: i.quantity, unit_price: i.unit_price }));
-    const { error: itemsErr } = await supabase.from('order_items').insert(rows);
+    const rowsWithCogs = await attachCogsToOrderItemRows(rows);
+    const { error: itemsErr } = await supabase.from('order_items').insert(rowsWithCogs);
     if (itemsErr) console.error('[Nave] Error guardando items:', itemsErr);
 
     // ── 2. Token Nave ──
@@ -332,6 +335,19 @@ async function handleNaveWebhook(req, res) {
     if (error) { console.error('[Nave Webhook] Error actualizando orden:', error); return; }
 
     console.log(`[Nave Webhook] Orden ${external_payment_id} → ${orderStatus}`);
+
+    // Calculadora: capturar desglose financiero del payment Nave (fee, taxes, neto).
+    // Aislado en try/catch: un fallo acá NO debe romper el flujo del cobro.
+    if (orderStatus === 'paid') {
+      try {
+        const financials = extractFinancialsFromNavePayment(payment);
+        if (financials) {
+          await upsertOrderFinancials(external_payment_id, 'nave', financials, payment);
+        }
+      } catch (finErr) {
+        console.error('[Nave Webhook] upsertOrderFinancials falló (no crítico):', finErr);
+      }
+    }
 
     const needCustomerEmail = !prevOrder.payment_confirmation_email_sent_at;
     const needAdminEmail = !prevOrder.admin_notification_sent_at;
