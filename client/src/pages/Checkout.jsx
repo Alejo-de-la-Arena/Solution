@@ -117,10 +117,10 @@ function SectionHeader({ n, title, status, right }) {
 }
 
 // ── Field wrapper: label monoespaciado uppercase + asterisco cyan ─────────
-function Field({ id, label, required, hint, span = 1, children }) {
+function Field({ id, label, required, hint, span = 1, labelStyle, children }) {
   return (
     <div style={{ gridColumn: `span ${span} / span ${span}` }}>
-      <label className="label" htmlFor={id}>
+      <label className="label" htmlFor={id} style={labelStyle}>
         {label}{required && <span className="req">*</span>}
         {hint && (
           <span className="ml-auto text-[10px] text-white/30 normal-case tracking-normal">
@@ -897,7 +897,7 @@ export default function Checkout() {
                     <input id="address2" className="field" placeholder="Piso 2, Depto B"
                       value={form.address2} onChange={handleChange} />
                   </Field>
-                  <Field id="zip" label="Código postal" required span={1}>
+                  <Field id="zip" label="Código postal" required span={1} labelStyle={{ fontSize: '9px' }}>
                     <input id="zip" className="field" placeholder="1414"
                       value={form.zip} onChange={handleChange} />
                   </Field>
