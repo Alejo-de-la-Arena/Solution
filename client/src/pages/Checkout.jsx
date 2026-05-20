@@ -869,7 +869,7 @@ export default function Checkout() {
                     <input id="email" type="email" className="field" placeholder="tu@email.com"
                       value={form.email} onChange={handleChange} required />
                   </Field>
-                  <Field id="name" label="Nombre y apellido" required>
+                  <Field id="name" label="Nombre y apellido" required span={2}>
                     <input id="name" className="field" placeholder="Nombre Apellido"
                       value={form.name} onChange={handleChange} required />
                   </Field>
@@ -888,30 +888,31 @@ export default function Checkout() {
                   status={addressDone ? 'done' : ''}
                   right={<span className="text-[10px] text-[rgb(0,255,255)] uppercase tracking-widest">🇦🇷 ARG</span>}
                 />
-                <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field id="address" label="Calle y número" span={2}>
+                <div className="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <Field id="address" label="Calle y número" span={3}>
                     <input id="address" className="field" placeholder="Av. Siempre Viva 742"
                       value={form.address} onChange={handleChange} />
                   </Field>
-                  <Field id="address2" label="Piso / Depto" hint="Opcional" span={2}>
+                  <Field id="address2" label="Piso / Depto" hint="Opcional" span={3}>
                     <input id="address2" className="field" placeholder="Piso 2, Depto B"
                       value={form.address2} onChange={handleChange} />
                   </Field>
-                  <Field id="city" label="Ciudad" required>
-                    <input id="city" className="field" value={form.city} onChange={handleChange} />
+                  <Field id="city" label="Ciudad" required span={2}>
+                    <input id="city" className="field" placeholder="Mar del Plata"
+                      value={form.city} onChange={handleChange} />
                   </Field>
-                  <Field id="zip" label="Código postal" required>
+                  <Field id="zip" label="Código postal" required span={1}>
                     <input id="zip" className="field" placeholder="1414"
                       value={form.zip} onChange={handleChange} />
                   </Field>
-                  <Field id="state" label="Provincia" required span={2}>
+                  <Field id="state" label="Provincia" required span={3}>
                     <select id="state" className="field appearance-none cursor-pointer"
                       value={form.state} onChange={handleChange}>
                       <option value="">Seleccioná una provincia</option>
                       {PROVINCIAS.map((p) => <option key={p} value={p}>{p}</option>)}
                     </select>
                   </Field>
-                  <Field id="notes" label="Comentarios para la entrega" hint="Opcional" span={2}>
+                  <Field id="notes" label="Comentarios para la entrega" hint="Opcional" span={3}>
                     <input id="notes" className="field" placeholder="Horario preferido, referencias..."
                       value={form.notes} onChange={handleChange} />
                   </Field>
