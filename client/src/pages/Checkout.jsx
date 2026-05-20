@@ -897,13 +897,13 @@ export default function Checkout() {
                     <input id="address2" className="field" placeholder="Piso 2, Depto B"
                       value={form.address2} onChange={handleChange} />
                   </Field>
-                  <Field id="city" label="Ciudad" required span={4}>
-                    <input id="city" className="field" placeholder="Mar del Plata"
-                      value={form.city} onChange={handleChange} />
-                  </Field>
                   <Field id="zip" label="Código postal" required span={1}>
                     <input id="zip" className="field" placeholder="1414"
                       value={form.zip} onChange={handleChange} />
+                  </Field>
+                  <Field id="city" label="Ciudad" required span={4}>
+                    <input id="city" className="field" placeholder="Mar del Plata"
+                      value={form.city} onChange={handleChange} />
                   </Field>
                   <Field id="state" label="Provincia" required span={5}>
                     <select id="state" className="field appearance-none cursor-pointer"
