@@ -14,6 +14,7 @@ import NaveEmbed from '../components/checkout/NaveEmbed';
 import { trackInitiateCheckout, captureAttributionData, getAttributionForServer, getUTMsForServer } from '../lib/metaPixel';
 import { getTrackedOrder, saveTrackedOrder, updateTrackedOrderStatus } from '../services/orderTracking';
 import { firePurchaseEvent } from '../lib/firePurchaseEvent';
+import { getCrossedPrice } from '../lib/crossedPrices';
 
 const PROVINCIAS = [
   'CABA', 'Buenos Aires', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba',
@@ -209,9 +210,21 @@ function OrderSummaryCard({
                   <h3 className="font-heading text-[13px] tracking-[0.12em] text-white pr-2 leading-snug">
                     {item.name}
                   </h3>
-                  <p className="text-sm text-white whitespace-nowrap tabular-nums">
-                    ${(item.price * item.quantity).toLocaleString('es-AR')}
-                  </p>
+                  <div className="text-right flex-shrink-0">
+                    {(() => {
+                      const cp = getCrossedPrice(item.slug);
+                      if (!cp) return null;
+                      const crossedN = parseInt(cp.replace(/\D/g, ''), 10);
+                      return (
+                        <p className="text-[11px] text-white/40 line-through tabular-nums">
+                          ${(crossedN * item.quantity).toLocaleString('es-AR')}
+                        </p>
+                      );
+                    })()}
+                    <p className="text-sm text-white whitespace-nowrap tabular-nums">
+                      ${(item.price * item.quantity).toLocaleString('es-AR')}
+                    </p>
+                  </div>
                 </div>
                 <p className="text-[11px] text-white/45 mt-0.5">60ml · Eau de Parfum</p>
               </div>

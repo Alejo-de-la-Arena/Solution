@@ -8,6 +8,7 @@ import { getComboProfile, normalizeComboKey } from '../data/comboProfiles';
 import { mediaUrl } from '../lib/mediaUrl';
 import { getStoreProductImages } from '../lib/storeProductImages';
 import { useCart } from '../contexts/CartContext';
+import { getCrossedPrice, CROSSED_PRICES } from '../lib/crossedPrices';
 
 // ─── Static per-slug data ──────────────────────────────────────────────────────
 const SLUG_META = {
@@ -389,6 +390,13 @@ function ProductCard({ perfume, index, altView }) {
           <div style={{ paddingTop: '24px', borderTop: '0.5px solid var(--sol-line)', textAlign: 'center' }}>
             {/* Price */}
             <div style={{ marginBottom: '6px' }}>
+              {getCrossedPrice(slug) && (
+                <div style={{ marginBottom: '2px' }}>
+                  <span className="font-jakarta" style={{ fontSize: '12px', color: 'var(--sol-muted)', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
+                    {getCrossedPrice(slug)} ARS
+                  </span>
+                </div>
+              )}
               <span className="font-jost" style={{ fontSize: 'clamp(28px, 6vw, 40px)', fontWeight: 300, letterSpacing: '-0.025em', color: 'var(--sol-ink)' }}>
                 {price}
               </span>
@@ -727,11 +735,25 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
               ))}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '20px', justifyContent: 'center' }}>
-              <span className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(32px, 7vw, 48px)', letterSpacing: '-0.025em', color: 'var(--sol-ink)', lineHeight: 1 }}>
-                {perfume1 && perfume2 ? `$${(perfume1.price + perfume2.price).toLocaleString('es-AR')}` : '—'}
-              </span>
-              <span className="font-jakarta" style={{ fontSize: '10px', color: 'var(--sol-muted)', letterSpacing: '0.18em' }}>ARS</span>
+            <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+              {perfume1 && perfume2 && (() => {
+                const cp1 = CROSSED_PRICES[(perfume1.slug || '').toLowerCase().trim()];
+                const cp2 = CROSSED_PRICES[(perfume2.slug || '').toLowerCase().trim()];
+                const crossedSum = cp1 && cp2 ? cp1 + cp2 : null;
+                return crossedSum ? (
+                  <div style={{ marginBottom: '4px' }}>
+                    <span className="font-jakarta" style={{ fontSize: '13px', color: 'var(--sol-muted)', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
+                      ${crossedSum.toLocaleString('es-AR')} ARS
+                    </span>
+                  </div>
+                ) : null;
+              })()}
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', justifyContent: 'center' }}>
+                <span className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(32px, 7vw, 48px)', letterSpacing: '-0.025em', color: 'var(--sol-ink)', lineHeight: 1 }}>
+                  {perfume1 && perfume2 ? `$${(perfume1.price + perfume2.price).toLocaleString('es-AR')}` : '—'}
+                </span>
+                <span className="font-jakarta" style={{ fontSize: '10px', color: 'var(--sol-muted)', letterSpacing: '0.18em' }}>ARS</span>
+              </div>
             </div>
 
             <button

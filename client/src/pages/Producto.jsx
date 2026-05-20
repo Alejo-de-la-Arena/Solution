@@ -6,6 +6,7 @@ import { useCart } from '../contexts/CartContext';
 import { mediaUrl } from '../lib/mediaUrl';
 import { getProductGalleryMedia } from '../lib/productGalleryMedia';
 import { trackViewContent } from '../lib/metaPixel';
+import { getCrossedPrice } from '../lib/crossedPrices';
 
 // ─── Per-slug static content (copy, badges, reference, testimonials) ──────────
 const SLUG_DATA = {
@@ -727,10 +728,19 @@ export default function Producto() {
             <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(100% 70% at 50% 0%, var(--accent-soft) 0%, transparent 60%)', pointerEvents: 'none' }} />
 
             {/* Price */}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '8px', position: 'relative' }}>
-              <div className="font-jost" style={{ fontWeight: 300, fontSize: '42px', letterSpacing: '-0.025em', color: 'var(--sol-ink)', lineHeight: 1 }}>
-                {price}
-                <small className="font-jakarta" style={{ fontSize: '11px', color: 'var(--sol-muted)', letterSpacing: '0.18em', marginLeft: '4px' }}>ARS</small>
+            <div style={{ marginBottom: '8px', position: 'relative' }}>
+              {getCrossedPrice(slug) && (
+                <div style={{ marginBottom: '4px' }}>
+                  <span className="font-jakarta" style={{ fontSize: '13px', color: 'var(--sol-muted)', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
+                    {getCrossedPrice(slug)} ARS
+                  </span>
+                </div>
+              )}
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                <div className="font-jost" style={{ fontWeight: 300, fontSize: '42px', letterSpacing: '-0.025em', color: 'var(--sol-ink)', lineHeight: 1 }}>
+                  {price}
+                  <small className="font-jakarta" style={{ fontSize: '11px', color: 'var(--sol-muted)', letterSpacing: '0.18em', marginLeft: '4px' }}>ARS</small>
+                </div>
               </div>
             </div>
             <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '22px', position: 'relative' }}>
