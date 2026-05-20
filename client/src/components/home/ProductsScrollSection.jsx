@@ -314,9 +314,9 @@ export default function ProductsScrollSection() {
         <div
           ref={headRef}
           className="sol-reveal sol-section-head"
-          style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          <div>
+          <div style={{ textAlign: 'center' }}>
             <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
               La colección
             </div>

@@ -698,13 +698,13 @@ export default function Producto() {
 
           {/* Family pills */}
           {family.length > 0 && (
-            <div style={{ padding: '32px 22px', ...SEC }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '20px' }}>
+            <div style={{ padding: '32px 22px', ...SEC, textAlign: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'baseline', marginBottom: '20px' }}>
                 <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
                   Familia olfativa
                 </div>
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
                 {family.map(f => (
                   <span key={f} className="font-jakarta" style={{
                     fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase',
@@ -723,14 +723,14 @@ export default function Producto() {
           )}
 
           {/* Buy block */}
-          <div style={{ padding: '36px 22px 32px', ...SEC, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ padding: '36px 22px 32px', ...SEC, position: 'relative', overflow: 'hidden', textAlign: 'center' }}>
             {/* Glow */}
             <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(100% 70% at 50% 0%, var(--accent-soft) 0%, transparent 60%)', pointerEvents: 'none' }} />
 
             {/* Price */}
             <div style={{ marginBottom: '8px', position: 'relative' }}>
               {getCrossedPrice(slug) && (
-                <div style={{ marginBottom: '4px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span className="font-jakarta" style={{ fontSize: '13px', color: 'var(--sol-muted)', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
                     {getCrossedPrice(slug)} ARS
                   </span>
@@ -739,7 +739,7 @@ export default function Producto() {
                   </span>
                 </div>
               )}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', justifyContent: 'center' }}>
                 <div className="font-jost" style={{ fontWeight: 300, fontSize: '42px', letterSpacing: '-0.025em', color: 'var(--sol-ink)', lineHeight: 1 }}>
                   {price}
                   <small className="font-jakarta" style={{ fontSize: '11px', color: 'var(--sol-muted)', letterSpacing: '0.18em', marginLeft: '4px' }}>ARS</small>

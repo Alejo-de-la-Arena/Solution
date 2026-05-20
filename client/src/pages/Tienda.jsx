@@ -391,7 +391,7 @@ function ProductCard({ perfume, index, altView }) {
             {/* Price */}
             <div style={{ marginBottom: '6px' }}>
               {getCrossedPrice(slug) && (
-                <div style={{ marginBottom: '4px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                   <span className="font-jakarta" style={{ fontSize: '12px', color: 'var(--sol-muted)', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
                     {getCrossedPrice(slug)} ARS
                   </span>
@@ -644,10 +644,10 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
           <ComboCollectionShowcase />
 
           {/* Builder block — max-width centered */}
-          <div style={{ maxWidth: 640, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '32px', textAlign: 'center' }}>
+          <div style={{ maxWidth: 900, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '32px', textAlign: 'center' }}>
 
           {/* Selector container — bordered form-like box */}
-          <div style={{ border: '0.5px solid var(--sol-line)', maxWidth: 480, margin: '0 auto', width: '100%' }}>
+          <div style={{ border: '0.5px solid var(--sol-line)', maxWidth: 680, margin: '0 auto', width: '100%' }}>
 
             {/* Header row */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '0.5px solid var(--sol-line)' }}>
@@ -765,7 +765,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
               disabled={!perfume1 || !perfume2}
               className="font-jakarta"
               style={{
-                display: 'flex', width: '100%', maxWidth: 480, margin: '0 auto', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                display: 'flex', width: '100%', maxWidth: 680, margin: '0 auto', alignItems: 'center', justifyContent: 'center', gap: '10px',
                 padding: '18px', background: '#00e5ff', color: '#000',
                 border: 'none', fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em',
                 textTransform: 'uppercase', cursor: 'pointer', transition: 'opacity 0.3s',
