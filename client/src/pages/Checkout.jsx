@@ -864,7 +864,7 @@ export default function Checkout() {
               {/* 01 — CONTACTO */}
               <section className="card-section">
                 <SectionHeader n="01" title="Contacto" status={contactDone ? 'done' : ''} />
-                <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Field id="email" label="Email" required span={2}>
                     <input id="email" type="email" className="field" placeholder="tu@email.com"
                       value={form.email} onChange={handleChange} required />

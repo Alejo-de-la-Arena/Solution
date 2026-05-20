@@ -730,9 +730,12 @@ export default function Producto() {
             {/* Price */}
             <div style={{ marginBottom: '8px', position: 'relative' }}>
               {getCrossedPrice(slug) && (
-                <div style={{ marginBottom: '4px' }}>
+                <div style={{ marginBottom: '4px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                   <span className="font-jakarta" style={{ fontSize: '13px', color: 'var(--sol-muted)', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
                     {getCrossedPrice(slug)} ARS
+                  </span>
+                  <span className="font-jakarta" style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', color: 'var(--sol-bg)', background: 'var(--accent)', padding: '3px 8px', borderRadius: '9999px' }}>
+                    30% OFF
                   </span>
                 </div>
               )}
