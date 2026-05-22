@@ -33,13 +33,13 @@
   align-items: center;
   height: 100%;
   line-height: 1;
-  animation: sol-ticker 13s linear infinite;
+  animation: sol-ticker 18s linear infinite;
   will-change: transform;
   white-space: nowrap;
 }
 @media (max-width: 767px) {
   .sol-ticker-track {
-    animation-duration: 15s;
+    animation-duration: 21s;
   }
 }
 
