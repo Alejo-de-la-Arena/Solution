@@ -322,7 +322,7 @@ async function applyPaymentToDb(orderRowId, payment, { sendEmailIfPaid }) {
 
   const { data: prevOrder, error: prevErr } = await supabase
     .from('orders')
-    .select('id, status, customer_email, customer_name, customer_phone, total, currency, payment_confirmation_email_sent_at, admin_notification_sent_at, fbclid, fbp, fbc, meta_fbclid_ts, meta_client_ip_address, meta_client_user_agent, meta_capi_purchase_sent_at')
+    .select('id, status, customer_email, customer_name, customer_phone, total, currency, payment_confirmation_email_sent_at, fbclid, fbp, fbc, meta_fbclid_ts, meta_client_ip_address, meta_client_user_agent, meta_capi_purchase_sent_at')
     .eq('id', orderRowId)
     .maybeSingle();
   if (prevErr || !prevOrder) {
@@ -337,6 +337,14 @@ async function applyPaymentToDb(orderRowId, payment, { sendEmailIfPaid }) {
   }
 
   console.log(`[MP] Orden ${orderRowId} → ${nextStatus} (payment ${payment?.id})`);
+
+  // CAPI Purchase: fuente PRIMARIA del evento. Desacoplado del email — se
+  // dispara aunque la orden no tenga email o el envío de email falle.
+  if (nextStatus === 'paid') {
+    await fireCapiPurchaseOnce(orderRowId, prevOrder, {
+      eventTime: paidAtToEpoch(payment?.date_approved),
+    });
+  }
 
   // CAPI Purchase: fuente PRIMARIA del evento. Desacoplado del email — se
   // dispara aunque la orden no tenga email o el envío de email falle.
@@ -397,7 +405,7 @@ async function applyMpOrderToDb(orderRowId, mpOrder, { sendEmailIfPaid }) {
 
   const { data: prevOrder, error: prevErr } = await supabase
     .from('orders')
-    .select('id, status, customer_email, customer_name, customer_phone, total, currency, payment_confirmation_email_sent_at, admin_notification_sent_at, payment_method, fbclid, fbp, fbc, meta_fbclid_ts, meta_client_ip_address, meta_client_user_agent, meta_capi_purchase_sent_at')
+    .select('id, status, customer_email, customer_name, customer_phone, total, currency, payment_confirmation_email_sent_at, payment_method, fbclid, fbp, fbc, meta_fbclid_ts, meta_client_ip_address, meta_client_user_agent, meta_capi_purchase_sent_at')
     .eq('id', orderRowId)
     .maybeSingle();
 
@@ -413,6 +421,13 @@ async function applyMpOrderToDb(orderRowId, mpOrder, { sendEmailIfPaid }) {
   }
 
   console.log(`[MP] Orden ${orderRowId} → ${nextStatus} (mp ${mpOrder?.id})`);
+
+  // CAPI Purchase: fuente PRIMARIA del evento. Desacoplado del email.
+  if (nextStatus === 'paid') {
+    await fireCapiPurchaseOnce(orderRowId, prevOrder, {
+      eventTime: paidAtToEpoch(mpOrder?.last_updated_date || mpOrder?.created_date),
+    });
+  }
 
   // CAPI Purchase: fuente PRIMARIA del evento. Desacoplado del email.
   if (nextStatus === 'paid') {

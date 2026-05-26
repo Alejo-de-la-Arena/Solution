@@ -3,6 +3,7 @@ const router = express.Router();
 const { supabase } = require('../lib/supabase');
 const { applyTestMode } = require('../lib/testMode');
 const { sendOrderEmail } = require('../services/email');
+const { attachCogsToOrderItemRows } = require('../lib/orderItems');
 
 /**
  * POST /api/checkout
@@ -115,8 +116,9 @@ router.post('/', async (req, res) => {
     quantity: i.quantity,
     unit_price: i.unit_price,
   }));
+  const rowsWithCogs = await attachCogsToOrderItemRows(rows);
 
-  const { error: itemsErr } = await supabase.from('order_items').insert(rows);
+  const { error: itemsErr } = await supabase.from('order_items').insert(rowsWithCogs);
   if (itemsErr) {
     console.error('Checkout order_items error:', itemsErr);
     return res.status(500).json({ error: 'Error al guardar los ítems de la orden' });

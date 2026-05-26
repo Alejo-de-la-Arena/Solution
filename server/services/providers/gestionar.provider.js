@@ -385,7 +385,9 @@ async function buildFullfilmentExcel({ orders } = {}) {
         const codigoPostal = normalizeCP(order.shipping_postal_code);
         const coverage = lookupCP(order.shipping_postal_code);
         const localidad = coverage?.partido || (order.shipping_city || '').trim();
-        const telefono = (order.customer_phone || '').trim();
+        // Gestionar valida `telefono` con regex digit-only de 6 a 20 caracteres.
+        // El "+", espacios y guiones rompen el validador → sanitizamos a dígitos.
+        const telefono = (order.customer_phone || '').replace(/\D/g, '');
         const correo = (order.customer_email || '').trim();
         const fechaVenta = toExcelDate(order.created_at || new Date());
         const observaciones = (order.shipping_notes || '').trim();

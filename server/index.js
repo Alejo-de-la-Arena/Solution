@@ -30,6 +30,7 @@ app.use(cors({ origin: true }));
 const gestionarRouter = require('./routes/gestionar');
 const checkoutRouter = require('./routes/checkout');
 const adminRouter = require('./routes/admin');
+const financeRouter = require('./routes/finance');
 const naveRouter = require('./routes/nave');
 const mercadopagoRouter = require('./routes/mercadopago');
 const correoRouter = require('./routes/correo');
@@ -85,6 +86,8 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/gestionar', gestionarRouter);
 app.use('/api/checkout', checkoutRouter);
+// finance debe ir ANTES de adminRouter para que /api/admin/finance/* matchee acá
+app.use('/api/admin/finance', financeRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api', naveRouter);
 app.use('/api', mercadopagoRouter);
