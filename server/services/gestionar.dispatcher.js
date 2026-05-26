@@ -170,7 +170,7 @@ async function dispatchPendingOrders({ limit = 50, orderId = null } = {}) {
     try {
         response = await gestionarProvider.registerNotLinkedPackages({
             excelBuffer,
-            condition: 'Nueva Venta',
+            condition: 'nueva venta',
             type: 'fullfilment',
         });
     } catch (err) {
