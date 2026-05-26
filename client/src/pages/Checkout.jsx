@@ -14,6 +14,7 @@ import NaveEmbed from '../components/checkout/NaveEmbed';
 import { trackInitiateCheckout, captureAttributionData, getAttributionForServer, getUTMsForServer } from '../lib/metaPixel';
 import { getTrackedOrder, saveTrackedOrder, updateTrackedOrderStatus } from '../services/orderTracking';
 import { firePurchaseEvent } from '../lib/firePurchaseEvent';
+import { getCrossedPrice } from '../lib/crossedPrices';
 
 const PROVINCIAS = [
   'CABA', 'Buenos Aires', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba',
@@ -116,10 +117,10 @@ function SectionHeader({ n, title, status, right }) {
 }
 
 // ── Field wrapper: label monoespaciado uppercase + asterisco cyan ─────────
-function Field({ id, label, required, hint, span = 1, children }) {
+function Field({ id, label, required, hint, span = 1, labelStyle, children }) {
   return (
     <div style={{ gridColumn: `span ${span} / span ${span}` }}>
-      <label className="label" htmlFor={id}>
+      <label className="label" htmlFor={id} style={labelStyle}>
         {label}{required && <span className="req">*</span>}
         {hint && (
           <span className="ml-auto text-[10px] text-white/30 normal-case tracking-normal">
@@ -209,9 +210,21 @@ function OrderSummaryCard({
                   <h3 className="font-heading text-[13px] tracking-[0.12em] text-white pr-2 leading-snug">
                     {item.name}
                   </h3>
-                  <p className="text-sm text-white whitespace-nowrap tabular-nums">
-                    ${(item.price * item.quantity).toLocaleString('es-AR')}
-                  </p>
+                  <div className="text-right flex-shrink-0">
+                    {(() => {
+                      const cp = getCrossedPrice(item.slug);
+                      if (!cp) return null;
+                      const crossedN = parseInt(cp.replace(/\D/g, ''), 10);
+                      return (
+                        <p className="text-[11px] text-white/40 line-through tabular-nums">
+                          ${(crossedN * item.quantity).toLocaleString('es-AR')}
+                        </p>
+                      );
+                    })()}
+                    <p className="text-sm text-white whitespace-nowrap tabular-nums">
+                      ${(item.price * item.quantity).toLocaleString('es-AR')}
+                    </p>
+                  </div>
                 </div>
                 <p className="text-[11px] text-white/45 mt-0.5">60ml · Eau de Parfum</p>
               </div>
@@ -851,16 +864,16 @@ export default function Checkout() {
               {/* 01 — CONTACTO */}
               <section className="card-section">
                 <SectionHeader n="01" title="Contacto" status={contactDone ? 'done' : ''} />
-                <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Field id="email" label="Email" required span={2}>
                     <input id="email" type="email" className="field" placeholder="tu@email.com"
                       value={form.email} onChange={handleChange} required />
                   </Field>
-                  <Field id="name" label="Nombre y apellido" required>
+                  <Field id="name" label="Nombre y apellido" required span={2}>
                     <input id="name" className="field" placeholder="Nombre Apellido"
                       value={form.name} onChange={handleChange} required />
                   </Field>
-                  <Field id="phone" label="Teléfono" hint="Para coordinar envío">
+                  <Field id="phone" label="Teléfono" hint="Para coordinar envío" span={2}>
                     <input id="phone" type="tel" className="field" placeholder="11 1234-5678"
                       value={form.phone} onChange={handleChange} />
                   </Field>
@@ -875,30 +888,31 @@ export default function Checkout() {
                   status={addressDone ? 'done' : ''}
                   right={<span className="text-[10px] text-[rgb(0,255,255)] uppercase tracking-widest">🇦🇷 ARG</span>}
                 />
-                <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field id="address" label="Calle y número" span={2}>
+                <div className="p-5 grid grid-cols-1 sm:grid-cols-5 gap-4">
+                  <Field id="address" label="Calle y número" span={5}>
                     <input id="address" className="field" placeholder="Av. Siempre Viva 742"
                       value={form.address} onChange={handleChange} />
                   </Field>
-                  <Field id="address2" label="Piso / Depto" hint="Opcional" span={2}>
+                  <Field id="address2" label="Piso / Depto" hint="Opcional" span={5}>
                     <input id="address2" className="field" placeholder="Piso 2, Depto B"
                       value={form.address2} onChange={handleChange} />
                   </Field>
-                  <Field id="city" label="Ciudad" required>
-                    <input id="city" className="field" value={form.city} onChange={handleChange} />
-                  </Field>
-                  <Field id="zip" label="Código postal" required>
+                  <Field id="zip" label="Código postal" required span={1} labelStyle={{ fontSize: '9px' }}>
                     <input id="zip" className="field" placeholder="1414"
                       value={form.zip} onChange={handleChange} />
                   </Field>
-                  <Field id="state" label="Provincia" required span={2}>
+                  <Field id="city" label="Ciudad" required span={4}>
+                    <input id="city" className="field" placeholder="Mar del Plata"
+                      value={form.city} onChange={handleChange} />
+                  </Field>
+                  <Field id="state" label="Provincia" required span={5}>
                     <select id="state" className="field appearance-none cursor-pointer"
                       value={form.state} onChange={handleChange}>
                       <option value="">Seleccioná una provincia</option>
                       {PROVINCIAS.map((p) => <option key={p} value={p}>{p}</option>)}
                     </select>
                   </Field>
-                  <Field id="notes" label="Comentarios para la entrega" hint="Opcional" span={2}>
+                  <Field id="notes" label="Comentarios para la entrega" hint="Opcional" span={5}>
                     <input id="notes" className="field" placeholder="Horario preferido, referencias..."
                       value={form.notes} onChange={handleChange} />
                   </Field>

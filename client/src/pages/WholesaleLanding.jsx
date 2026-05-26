@@ -74,7 +74,6 @@ function WholesaleStats() {
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sol-green)', display: 'inline-block' }} />
             En números
           </div>
-          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-magenta)' }}>§ 02</div>
         </div>
         {/* Stats row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px', background: 'var(--sol-line)' }}>
@@ -139,7 +138,6 @@ function ComoFunciona() {
               <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sol-green)', display: 'inline-block' }} />
               Proceso
             </div>
-            <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-magenta)' }}>§ 04</div>
           </div>
           <h2 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(28px, 5vw, 48px)', lineHeight: 1.1, letterSpacing: '-0.025em', color: 'var(--sol-ink)', maxWidth: 520 }}>
             Cómo funciona<br />
@@ -249,7 +247,6 @@ function WholesaleTestimonials() {
               <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sol-green)', display: 'inline-block' }} />
               Revendedores
             </div>
-            <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-magenta)' }}>§ 07</div>
           </div>
           <h2 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(28px, 5vw, 48px)', lineHeight: 1.1, letterSpacing: '-0.025em', color: 'var(--sol-ink)', maxWidth: 460 }}>
             Lo que dicen<br />
@@ -275,7 +272,6 @@ function AccessEyebrow() {
           <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sol-green)', display: 'inline-block' }} />
           Acceso
         </div>
-        <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-magenta)' }}>§ 08</div>
       </div>
     </div>
   );

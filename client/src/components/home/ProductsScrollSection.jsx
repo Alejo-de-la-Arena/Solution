@@ -302,21 +302,15 @@ export default function ProductsScrollSection() {
         color: 'var(--sol-ink)',
       }}
     >
-      {/* Section head — inside max-width container */}
-      <div
-        style={{
-          maxWidth: 1280,
-          margin: '0 auto',
-          padding: '0 var(--sol-section-px)',
-          marginBottom: '40px',
-        }}
-      >
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)' }}>
+
+        {/* Section head */}
         <div
           ref={headRef}
           className="sol-reveal sol-section-head"
-          style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '40px' }}
         >
-          <div>
+          <div style={{ textAlign: 'center' }}>
             <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
               La colección
             </div>
@@ -325,30 +319,26 @@ export default function ProductsScrollSection() {
               <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>Cinco momentos.</em>
             </h2>
           </div>
-          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-magenta)' }}>§ 02</div>
         </div>
-      </div>
 
-      {/* Horizontal scroll track — full-bleed, first card aligns with title */}
-      <div
-        ref={scrollRef}
-        className="sol-scroll sol-prod-scroll"
-        style={{
-          display: 'flex',
-          gap: `${CARD_GAP}px`,
-          overflowX: 'auto',
-          scrollSnapType: 'x mandatory',
-          paddingBottom: '8px',
-          WebkitOverflowScrolling: 'touch',
-        }}
-      >
-        {products.length === 0
-          ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
-          : products.map((p) => <ProductCard key={p.slug} product={p} />)}
-      </div>
+        {/* Horizontal scroll track — contained in max-width */}
+        <div
+          ref={scrollRef}
+          className="sol-scroll"
+          style={{
+            display: 'flex',
+            gap: `${CARD_GAP}px`,
+            overflowX: 'auto',
+            scrollSnapType: 'x mandatory',
+            paddingBottom: '8px',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
+          {products.length === 0
+            ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
+            : products.map((p) => <ProductCard key={p.slug} product={p} />)}
+        </div>
 
-      {/* Dots + footer row — inside max-width container */}
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)' }}>
         {/* Scroll dots */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '24px' }}>
           {Array.from({ length: dotCount }).map((_, i) => (
@@ -380,6 +370,7 @@ export default function ProductsScrollSection() {
             Ver la colección completa
           </Link>
         </div>
+
       </div>
     </section>
   );

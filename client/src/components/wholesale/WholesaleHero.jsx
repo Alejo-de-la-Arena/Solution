@@ -40,7 +40,6 @@ export default function WholesaleHero() {
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sol-green)', display: 'inline-block' }} />
             Programa Mayorista
           </div>
-          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-magenta)' }}>§ 01</div>
         </div>
 
         {/* Headline */}

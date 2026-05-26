@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react';
 
 const ITEMS = [
   'Envío a todo el país',
-  'Hasta 2 cuotas con Mercado Pago',
+  '30% OFF EN TODAS LAS FRAGANCIAS',
+  'Cuotas sin interés con Mercado Pago',
   'Garantía 30 días',
   'Producción argentina',
 ];

@@ -88,9 +88,6 @@ export default function PilaresSection() {
               <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>nos sostienen</em>.
             </h2>
           </div>
-          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-magenta)' }}>
-            § 01
-          </div>
         </div>
 
         {/* Accordion */}

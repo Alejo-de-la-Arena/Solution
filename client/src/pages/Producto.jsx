@@ -6,6 +6,7 @@ import { useCart } from '../contexts/CartContext';
 import { mediaUrl } from '../lib/mediaUrl';
 import { getProductGalleryMedia } from '../lib/productGalleryMedia';
 import { trackViewContent } from '../lib/metaPixel';
+import { getCrossedPrice } from '../lib/crossedPrices';
 
 // ─── Per-slug static content (copy, badges, reference, testimonials) ──────────
 const SLUG_DATA = {
@@ -466,7 +467,7 @@ export default function Producto() {
                       animate={{ opacity: 1, scale: 1.02, filter: 'blur(0px)' }}
                       exit={{ opacity: 0, scale: 0.98, filter: 'blur(6px)' }}
                       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                      autoPlay muted loop playsInline
+                      controls loop playsInline
                     />
                   ) : activeItem && (
                     <motion.img
@@ -521,7 +522,7 @@ export default function Producto() {
                     }}
                   >
                     {item.kind === 'video'
-                      ? <video src={src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted playsInline preload="metadata" />
+                      ? <video src={src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} playsInline preload="metadata" />
                       : <img src={src} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     }
                   </button>
@@ -697,14 +698,13 @@ export default function Producto() {
 
           {/* Family pills */}
           {family.length > 0 && (
-            <div style={{ padding: '32px 22px', ...SEC }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '20px' }}>
+            <div style={{ padding: '32px 22px', ...SEC, textAlign: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'baseline', marginBottom: '20px' }}>
                 <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
                   Familia olfativa
                 </div>
-                <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', color: 'var(--accent)' }}>§ 04</div>
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
                 {family.map(f => (
                   <span key={f} className="font-jakarta" style={{
                     fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase',
@@ -723,15 +723,27 @@ export default function Producto() {
           )}
 
           {/* Buy block */}
-          <div style={{ padding: '36px 22px 32px', ...SEC, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ padding: '36px 22px 32px', ...SEC, position: 'relative', overflow: 'hidden', textAlign: 'center' }}>
             {/* Glow */}
             <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(100% 70% at 50% 0%, var(--accent-soft) 0%, transparent 60%)', pointerEvents: 'none' }} />
 
             {/* Price */}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '8px', position: 'relative' }}>
-              <div className="font-jost" style={{ fontWeight: 300, fontSize: '42px', letterSpacing: '-0.025em', color: 'var(--sol-ink)', lineHeight: 1 }}>
-                {price}
-                <small className="font-jakarta" style={{ fontSize: '11px', color: 'var(--sol-muted)', letterSpacing: '0.18em', marginLeft: '4px' }}>ARS</small>
+            <div style={{ marginBottom: '8px', position: 'relative' }}>
+              {getCrossedPrice(slug) && (
+                <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <span className="font-jakarta" style={{ fontSize: '13px', color: 'var(--sol-muted)', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
+                    {getCrossedPrice(slug)} ARS
+                  </span>
+                  <span className="font-jakarta" style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', color: 'var(--sol-bg)', background: 'var(--accent)', padding: '3px 8px', borderRadius: '9999px' }}>
+                    30% OFF
+                  </span>
+                </div>
+              )}
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', justifyContent: 'center' }}>
+                <div className="font-jost" style={{ fontWeight: 300, fontSize: '42px', letterSpacing: '-0.025em', color: 'var(--sol-ink)', lineHeight: 1 }}>
+                  {price}
+                  <small className="font-jakarta" style={{ fontSize: '11px', color: 'var(--sol-muted)', letterSpacing: '0.18em', marginLeft: '4px' }}>ARS</small>
+                </div>
               </div>
             </div>
             <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '22px', position: 'relative' }}>
@@ -794,7 +806,6 @@ export default function Producto() {
                   <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>quienes lo usan</em>.
                 </h2>
               </div>
-              <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', color: 'var(--sol-magenta)' }}>§ 05</div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {data.testimonials.map((t, i) => (

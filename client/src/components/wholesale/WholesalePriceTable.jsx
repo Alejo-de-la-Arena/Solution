@@ -25,7 +25,6 @@ export default function WholesalePriceTable() {
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sol-green)', display: 'inline-block' }} />
             Precios
           </div>
-          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'var(--sol-magenta)' }}>§ 06</div>
         </div>
         <motion.h2
           initial={{ opacity: 0, y: 14 }}
