@@ -1,0 +1,55 @@
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Migration: Enable RLS on public.carts and public.cart_items
+--
+-- Context
+-- -------
+-- These tables were created manually in the Supabase dashboard and are NOT used
+-- by any application code. The cart is stored entirely in localStorage on the
+-- client and only persisted to `orders` + `order_items` at checkout time (via
+-- the backend with the service_role key, which bypasses RLS entirely).
+--
+-- Security issues fixed
+-- ----------------------
+-- 1. RLS Disabled in Public — public.carts
+-- 2. RLS Disabled in Public — public.cart_items
+-- 3. Sensitive Columns Exposed — public.carts (column: session_id)
+--    → session_id is only exposed when RLS is OFF and the table is queryable
+--      by anon. Enabling RLS (with no permissive policies) makes the table
+--      completely inaccessible to anon/authenticated roles, hiding the column.
+--
+-- Policy design
+-- -------------
+-- Because no application code (frontend or backend) queries these tables,
+-- the correct policy set is: NONE. In PostgreSQL Row Level Security, enabling
+-- RLS with zero PERMISSIVE policies results in a default-deny for every row
+-- for every role. This is the most secure state for an unused table.
+--
+-- The backend's service_role key is exempt from RLS by Supabase design, so
+-- any future server-side access would still work without policy changes.
+--
+-- Safe to run on a live production database:
+-- - No data is modified or deleted
+-- - No columns are changed
+-- - No existing policies are dropped (none exist on these tables)
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- 1. Enable RLS on public.carts
+--    With no permissive policies below, this defaults to deny-all for every
+--    role. The session_id column (and all other columns) become inaccessible
+--    to anon and authenticated roles, resolving the sensitive column exposure.
+ALTER TABLE public.carts ENABLE ROW LEVEL SECURITY;
+
+-- 2. Enable RLS on public.cart_items
+--    Same rationale: no application code touches this table, so deny-all is
+--    the correct and safest posture.
+ALTER TABLE public.cart_items ENABLE ROW LEVEL SECURITY;
+
+-- No PERMISSIVE policies are created because:
+--   • No frontend code reads or writes carts / cart_items.
+--   • No backend code reads or writes carts / cart_items.
+--   • The service_role key (used by all backend Supabase calls) bypasses RLS
+--     and would continue to work if these tables are used in the future.
+--   • Adding unused permissive policies would only widen the attack surface.
+--
+-- If cart persistence is added to the database in the future, add policies here
+-- following the pattern used in 20250209000001_wholesale_applications_policies.sql.
