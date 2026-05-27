@@ -18,7 +18,8 @@ async function applyAdminTestMode(req, cleanItems, shippingCost, { tag = '' } = 
     return { items: cleanItems, shipping: shippingCost, applied: false };
   }
   const items = cleanItems.map((i) => ({ ...i, unit_price: ADMIN_TEST_UNIT_PRICE }));
-  console.warn(
+  // console.log (no warn) → Railway lo categoriza como [inf] y evita que parezca un error en los logs.
+  console.log(
     `[ADMIN_TEST]${tag ? ' ' + tag : ''} override: unit_price=${ADMIN_TEST_UNIT_PRICE}, shipping_cost=0 (original shipping=${shippingCost})`
   );
   return { items, shipping: 0, applied: true };

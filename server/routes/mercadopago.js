@@ -347,14 +347,6 @@ async function applyPaymentToDb(orderRowId, payment, { sendEmailIfPaid }) {
     });
   }
 
-  // CAPI Purchase: fuente PRIMARIA del evento. Desacoplado del email — se
-  // dispara aunque la orden no tenga email o el envío de email falle.
-  if (nextStatus === 'paid') {
-    await fireCapiPurchaseOnce(orderRowId, prevOrder, {
-      eventTime: paidAtToEpoch(payment?.date_approved),
-    });
-  }
-
   const needCustomerEmail = !prevOrder.payment_confirmation_email_sent_at;
   // En compras admin-test no avisamos al admin (evita spam de pruebas);
   // el email al cliente sí va, porque el "cliente" es el mismo admin.
@@ -424,13 +416,6 @@ async function applyMpOrderToDb(orderRowId, mpOrder, { sendEmailIfPaid }) {
   }
 
   console.log(`[MP] Orden ${orderRowId} → ${nextStatus} (mp ${mpOrder?.id})`);
-
-  // CAPI Purchase: fuente PRIMARIA del evento. Desacoplado del email.
-  if (nextStatus === 'paid') {
-    await fireCapiPurchaseOnce(orderRowId, prevOrder, {
-      eventTime: paidAtToEpoch(mpOrder?.last_updated_date || mpOrder?.created_date),
-    });
-  }
 
   // CAPI Purchase: fuente PRIMARIA del evento. Desacoplado del email.
   if (nextStatus === 'paid') {
@@ -1168,15 +1153,30 @@ async function handleMercadoPagoWebhookCore(req, res) {
     }
   }
 
+  // MP envía notificaciones en dos formatos en paralelo:
+  //   - Webhooks v2 (recomendado): body { data: { id }, type }, query data.id + type
+  //   - IPN/topics (legacy):       query id + topic
+  // Aceptamos ambos. Si devolvemos 4xx a los legacy, MP los reintenta indefinidamente.
   const qDataId = req.query['data.id'];
   const dataIdRaw =
     body?.data?.id
     || (Array.isArray(qDataId) ? qDataId[0] : qDataId)
-    || req.query.data_id;
+    || req.query.data_id
+    || req.query.id;
   const dataId = dataIdRaw != null ? String(dataIdRaw).trim() : '';
 
+  const rawEventType = body?.type || req.query.type || req.query.topic || '';
+  const eventType = String(rawEventType).toLowerCase();
+
+  // merchant_order es un wrapper que agrupa los payments del mismo carrito.
+  // Lo ignoramos: el evento útil llega por separado como type=payment.
+  // Respondemos 200 para que MP no reintente.
+  if (eventType === 'merchant_order') {
+    return res.sendStatus(200);
+  }
+
   if (!dataId) {
-    console.warn('[MP Webhook] Sin data.id en body ni query');
+    console.warn('[MP Webhook] Sin data.id ni id en body/query (topic=' + eventType + ')');
     return res.status(400).json({ error: 'Missing data.id' });
   }
 
@@ -1205,8 +1205,6 @@ async function handleMercadoPagoWebhookCore(req, res) {
     console.error('[MP Webhook]', e.message);
     return;
   }
-
-  const eventType = (body?.type || '').toLowerCase();
 
   try {
     if (eventType === 'payment') {
