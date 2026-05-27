@@ -1,15 +1,25 @@
 const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
 /**
+ * Devuelve los headers de auth si se pasa un access_token de Supabase.
+ * Si el server detecta un admin, aplica el modo prueba ($150/item, envío $0).
+ */
+function authHeaders(accessToken) {
+  return accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+}
+
+/**
  * Crea una orden retail en el servidor (flujo legacy sin pasarela).
  * @param {Object} payload - customer_name, customer_email, customer_phone?, shipping_*, items: [{ product_id, quantity, unit_price }]
+ * @param {Object} [opts]
+ * @param {string} [opts.accessToken] - Token de Supabase del usuario logueado (admin → precios de prueba).
  * @returns {Promise<{ order: Object }>}
  */
-export async function createCheckoutOrder(payload) {
+export async function createCheckoutOrder(payload, { accessToken } = {}) {
   const url = `${API_URL}/api/checkout`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders(accessToken) },
     body: JSON.stringify(payload),
   });
   const data = await res.json().catch(() => ({}));
@@ -24,13 +34,15 @@ export async function createCheckoutOrder(payload) {
 /**
  * Crea una orden + intención de pago Nave.
  * @param {Object} payload - Same as createCheckoutOrder but items also include name/description
+ * @param {Object} [opts]
+ * @param {string} [opts.accessToken]
  * @returns {Promise<{ order_id, payment_request_id, checkout_url, iframe_url, qr_data }>}
  */
-export async function createNavePayment(payload) {
+export async function createNavePayment(payload, { accessToken } = {}) {
   const url = `${API_URL}/api/nave/create-payment`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders(accessToken) },
     body: JSON.stringify(payload),
   });
   const data = await res.json().catch(() => ({}));
@@ -84,13 +96,15 @@ export function getCheckoutPaymentProvider() {
 /**
  * Mercado Pago: crea orden DB + preferencia MP (para Payment Brick con wallet).
  * @param {Object} payload - Checkout payload + callback_url
+ * @param {Object} [opts]
+ * @param {string} [opts.accessToken]
  * @returns {Promise<{ order_id: string, preference_id: string|null }>}
  */
-export async function createMPPreference(payload) {
+export async function createMPPreference(payload, { accessToken } = {}) {
   const url = `${API_URL}/api/mercadopago/create-preference`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders(accessToken) },
     body: JSON.stringify(payload),
   });
   const data = await res.json().catch(() => ({}));
@@ -107,12 +121,14 @@ export async function createMPPreference(payload) {
  * @param {Object} payload - { ...checkoutPayload, mp_payment, device_id?, mp_public_key?, order_id? }
  *                           Si se pasa `order_id`, reutiliza la orden existente (reintento).
  *                           Si no, se crea la orden con el resto de los campos del checkout.
+ * @param {Object} [opts]
+ * @param {string} [opts.accessToken]
  */
-export async function processMPCardPayment(payload) {
+export async function processMPCardPayment(payload, { accessToken } = {}) {
   const url = `${API_URL}/api/mercadopago/process-card-payment`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders(accessToken) },
     body: JSON.stringify(payload),
   });
   const data = await res.json().catch(() => ({}));
@@ -128,11 +144,11 @@ export async function processMPCardPayment(payload) {
 /**
  * @deprecated Usar createMPPreference + processMPCardPayment
  */
-export async function createMPOrder(payload) {
+export async function createMPOrder(payload, { accessToken } = {}) {
   const url = `${API_URL}/api/mercadopago/create-order`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders(accessToken) },
     body: JSON.stringify(payload),
   });
   const data = await res.json().catch(() => ({}));

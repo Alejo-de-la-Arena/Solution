@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../lib/supabase');
-const { applyTestMode } = require('../lib/testMode');
+const { applyAdminTestMode } = require('../lib/testMode');
 const { sendOrderEmail } = require('../services/email');
 const { attachCogsToOrderItemRows } = require('../lib/orderItems');
 
@@ -64,7 +64,7 @@ router.post('/', async (req, res) => {
   }
 
   const shippingInput = shipping_cost != null ? Number(shipping_cost) : 0;
-  const { items: tmItems, shipping: tmShipping } = applyTestMode(cleanItems, shippingInput, { tag: '[Retail]' });
+  const { items: tmItems, shipping: tmShipping, applied: isAdminTest } = await applyAdminTestMode(req, cleanItems, shippingInput, { tag: '[Retail]' });
   const subtotal = tmItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
   const shipping = tmShipping;
   const orderTotal = subtotal + shipping;
@@ -97,6 +97,7 @@ router.post('/', async (req, res) => {
     shipping_customer_id: (shipping_customer_id || '').trim() || null,
     shipping_quote_payload: shipping_quote_payload || null,
     shipping_quote_response: shipping_quote_response || null,
+    is_admin_test: isAdminTest,
   };
 
   const { data: order, error: orderErr } = await supabase
