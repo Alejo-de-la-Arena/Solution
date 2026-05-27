@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../hooks/useAuth';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   createNavePayment,
@@ -15,6 +16,12 @@ import { trackInitiateCheckout, captureAttributionData, getAttributionForServer,
 import { getTrackedOrder, saveTrackedOrder, updateTrackedOrderStatus } from '../services/orderTracking';
 import { firePurchaseEvent } from '../lib/firePurchaseEvent';
 import { getCrossedPrice } from '../lib/crossedPrices';
+
+// Precio por item cuando un admin compra en modo prueba (matchea el override
+// del server en `server/lib/testMode.js`). El server SIEMPRE valida con el
+// bearer token de Supabase, así que esta constante es solo para que la UI
+// muestre el mismo monto que efectivamente se va a cobrar.
+const ADMIN_TEST_UNIT_PRICE = 150;
 
 const PROVINCIAS = [
   'CABA', 'Buenos Aires', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba',
@@ -179,7 +186,7 @@ function TrustBadges() {
 // ── Order summary card (sticky a la derecha en desktop, colapsable en mobile) ─
 function OrderSummaryCard({
   cart, totalPrice, shippingCost, total, providerLabel, shippingLoading,
-  updateQuantity, removeFromCart,
+  updateQuantity, removeFromCart, adminTest,
 }) {
   return (
     <div className="card-section overflow-hidden">
@@ -211,7 +218,7 @@ function OrderSummaryCard({
                     {item.name}
                   </h3>
                   <div className="text-right flex-shrink-0">
-                    {(() => {
+                    {!adminTest && (() => {
                       const cp = getCrossedPrice(item.slug);
                       if (!cp) return null;
                       const crossedN = parseInt(cp.replace(/\D/g, ''), 10);
@@ -221,8 +228,13 @@ function OrderSummaryCard({
                         </p>
                       );
                     })()}
+                    {adminTest && (
+                      <p className="text-[11px] text-white/40 line-through tabular-nums">
+                        ${(item.price * item.quantity).toLocaleString('es-AR')}
+                      </p>
+                    )}
                     <p className="text-sm text-white whitespace-nowrap tabular-nums">
-                      ${(item.price * item.quantity).toLocaleString('es-AR')}
+                      ${((adminTest ? ADMIN_TEST_UNIT_PRICE : item.price) * item.quantity).toLocaleString('es-AR')}
                     </p>
                   </div>
                 </div>
@@ -293,7 +305,17 @@ function LoadingOverlay({ visible }) {
 // ── Main component ────────────────────────────────────────────────────────
 export default function Checkout() {
   const { cart, totalPrice, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { isAdmin, session } = useAuth();
+  const accessToken = session?.access_token || null;
   const [searchParams] = useSearchParams();
+
+  // ── Admin test mode (compra de prueba) ────────────────────────────────
+  // Si está logueado un admin, mostramos y cobramos $150 por item y envío $0.
+  // El server valida el token y aplica el mismo override → si alguien intenta
+  // mandar isAdmin desde el frontend sin token válido, el server lo ignora.
+  const adminItemCount = cart.reduce((n, i) => n + i.quantity, 0);
+  const effectiveUnitPrice = (item) => (isAdmin ? ADMIN_TEST_UNIT_PRICE : item.price);
+  const effectiveSubtotal = isAdmin ? adminItemCount * ADMIN_TEST_UNIT_PRICE : totalPrice;
 
   // Payment state
   const [loading, setLoading] = useState(false);
@@ -518,8 +540,10 @@ export default function Checkout() {
     setPaymentRequestId(null);
   };
 
-  const shippingCost = selectedShipping?.price ?? 0;
-  const grandTotal = totalPrice + shippingCost;
+  const rawShippingCost = selectedShipping?.price ?? 0;
+  // En modo admin-test el envío se cobra $0 (override server-side validado).
+  const shippingCost = isAdmin ? 0 : rawShippingCost;
+  const grandTotal = effectiveSubtotal + shippingCost;
   const hasShippingInputs = form.zip.trim().length >= 4 && form.state.trim().length >= 3;
   const waitingForShippingQuote = hasShippingInputs && (shippingLoading || (!shippingError && !shippingQuote));
   const hasShippingSelection = Boolean(shippingQuote?.provider) && Boolean(selectedShipping?.mode);
@@ -596,11 +620,14 @@ export default function Checkout() {
         shipping_country: 'AR',
         shipping_notes: (form.notes || '').trim() || undefined,
         shipping_method: 'standard',
+        // En modo admin-test mandamos shipping=0 y unit_price=150 para que MP
+        // muestre el monto correcto en el Checkout Pro; el server re-valida con
+        // el bearer token y rechaza el override si no es admin.
         shipping_cost: shippingCost,
         items: itemsWithProductId.map((item) => ({
           product_id: item.productId,
           quantity: item.quantity,
-          unit_price: item.price,
+          unit_price: effectiveUnitPrice(item),
           name: item.name || 'Producto',
         })),
         shipping_provider: selectedShipping?.provider || shippingQuote?.provider || undefined,
@@ -627,10 +654,13 @@ export default function Checkout() {
       // ── Branch: Mercado Pago → Checkout Pro (redirect) ─────────────────
       if (paymentMethod === 'mercadopago') {
         setCheckoutPaymentProvider('mercadopago');
-        const mpData = await createMPPreference({
-          ...basePayload,
-          callback_url: `${window.location.origin}/checkout`,
-        });
+        const mpData = await createMPPreference(
+          {
+            ...basePayload,
+            callback_url: `${window.location.origin}/checkout`,
+          },
+          { accessToken },
+        );
         if (!mpData?.init_point) {
           setError('No se pudo preparar el pago con Mercado Pago. Intentá de nuevo.');
           setLoading(false);
@@ -664,7 +694,7 @@ export default function Checkout() {
       // ── Branch: Nave / Naranja X ─────────────────────────────────────
       const payload = { ...basePayload, callback_url: `${window.location.origin}/checkout?order_id=PLACEHOLDER` };
       setCheckoutPaymentProvider('nave');
-      const data = await createNavePayment(payload);
+      const data = await createNavePayment(payload, { accessToken });
       setResultOrderId(data.order_id);
       if (data.order_id) {
         saveTrackedOrder({
@@ -795,6 +825,15 @@ export default function Checkout() {
       <LoadingOverlay visible={loading} />
 
       <div className="max-w-[1400px] mx-auto px-4 sm:px-8 py-24">
+        {isAdmin && (
+          <div className="mb-6 px-4 py-3 rounded-md border border-yellow-500/40 bg-yellow-500/10 flex items-start gap-3">
+            <span className="text-yellow-300 text-lg leading-none mt-0.5">⚠</span>
+            <div className="text-[12px] text-yellow-100 leading-relaxed">
+              <span className="font-semibold uppercase tracking-widest text-yellow-300">Modo admin de prueba</span>
+              <span className="text-yellow-100/80"> — cada perfume se cobra <span className="font-medium text-white">${ADMIN_TEST_UNIT_PRICE}</span> y el envío <span className="font-medium text-white">$0</span>. Los precios del resumen ya reflejan este override. No se enviará la notificación de "nueva venta" al admin.</span>
+            </div>
+          </div>
+        )}
         {/* Title block */}
         <div className="mb-8 sm:mb-10 flex items-end justify-between gap-6 flex-wrap">
           <div>
@@ -843,13 +882,14 @@ export default function Checkout() {
             <div className="mt-4">
               <OrderSummaryCard
                 cart={cart}
-                totalPrice={totalPrice}
+                totalPrice={effectiveSubtotal}
                 shippingCost={shippingCost}
                 total={grandTotal}
                 providerLabel={providerLabel}
                 shippingLoading={shippingLoading}
                 updateQuantity={updateQuantity}
                 removeFromCart={removeFromCart}
+                adminTest={isAdmin}
               />
             </div>
           )}
@@ -1082,13 +1122,14 @@ export default function Checkout() {
             <div className="sticky top-6 space-y-5">
               <OrderSummaryCard
                 cart={cart}
-                totalPrice={totalPrice}
+                totalPrice={effectiveSubtotal}
                 shippingCost={shippingCost}
                 total={grandTotal}
                 providerLabel={providerLabel}
                 shippingLoading={shippingLoading}
                 updateQuantity={updateQuantity}
                 removeFromCart={removeFromCart}
+                adminTest={isAdmin}
               />
               <TrustBadges />
               <p className="text-[10px] text-white/30 leading-relaxed text-center px-2">

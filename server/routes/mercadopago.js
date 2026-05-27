@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const { supabase } = require('../lib/supabase');
 const { sendPaymentConfirmationEmail, sendAdminSaleNotificationEmail } = require('../services/email');
 const { sendPurchaseEvent } = require('../services/metaCapi');
+const { applyAdminTestMode } = require('../lib/testMode');
 
 const router = express.Router();
 const MP_API = 'https://api.mercadopago.com';
@@ -322,7 +323,7 @@ async function applyPaymentToDb(orderRowId, payment, { sendEmailIfPaid }) {
 
   const { data: prevOrder, error: prevErr } = await supabase
     .from('orders')
-    .select('id, status, customer_email, customer_name, customer_phone, total, currency, payment_confirmation_email_sent_at, fbclid, fbp, fbc, meta_fbclid_ts, meta_client_ip_address, meta_client_user_agent, meta_capi_purchase_sent_at')
+    .select('id, status, customer_email, customer_name, customer_phone, total, currency, payment_confirmation_email_sent_at, admin_notification_sent_at, is_admin_test, fbclid, fbp, fbc, meta_fbclid_ts, meta_client_ip_address, meta_client_user_agent, meta_capi_purchase_sent_at')
     .eq('id', orderRowId)
     .maybeSingle();
   if (prevErr || !prevOrder) {
@@ -355,7 +356,9 @@ async function applyPaymentToDb(orderRowId, payment, { sendEmailIfPaid }) {
   }
 
   const needCustomerEmail = !prevOrder.payment_confirmation_email_sent_at;
-  const needAdminEmail = !prevOrder.admin_notification_sent_at;
+  // En compras admin-test no avisamos al admin (evita spam de pruebas);
+  // el email al cliente sí va, porque el "cliente" es el mismo admin.
+  const needAdminEmail = !prevOrder.admin_notification_sent_at && !prevOrder.is_admin_test;
   if (sendEmailIfPaid && nextStatus === 'paid' && (needCustomerEmail || needAdminEmail)) {
     const itemsForEmail = await buildItemsForEmail(orderRowId);
 
@@ -405,7 +408,7 @@ async function applyMpOrderToDb(orderRowId, mpOrder, { sendEmailIfPaid }) {
 
   const { data: prevOrder, error: prevErr } = await supabase
     .from('orders')
-    .select('id, status, customer_email, customer_name, customer_phone, total, currency, payment_confirmation_email_sent_at, payment_method, fbclid, fbp, fbc, meta_fbclid_ts, meta_client_ip_address, meta_client_user_agent, meta_capi_purchase_sent_at')
+    .select('id, status, customer_email, customer_name, customer_phone, total, currency, payment_confirmation_email_sent_at, admin_notification_sent_at, is_admin_test, payment_method, fbclid, fbp, fbc, meta_fbclid_ts, meta_client_ip_address, meta_client_user_agent, meta_capi_purchase_sent_at')
     .eq('id', orderRowId)
     .maybeSingle();
 
@@ -437,7 +440,8 @@ async function applyMpOrderToDb(orderRowId, mpOrder, { sendEmailIfPaid }) {
   }
 
   const needCustomerEmail = !prevOrder.payment_confirmation_email_sent_at;
-  const needAdminEmail = !prevOrder.admin_notification_sent_at;
+  // En compras admin-test no avisamos al admin (evita spam de pruebas).
+  const needAdminEmail = !prevOrder.admin_notification_sent_at && !prevOrder.is_admin_test;
   if (sendEmailIfPaid && nextStatus === 'paid' && (needCustomerEmail || needAdminEmail)) {
     const itemsForEmail = await buildItemsForEmail(orderRowId);
     const payment = buildSyntheticPaymentForEmail(mpOrder);
@@ -538,8 +542,8 @@ router.post('/mercadopago/create-order', async (req, res) => {
     }));
   if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
 
-  const subtotal = cleanItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
-  const shipping = shippingCostNum;
+  const { items: tmItems, shipping, applied: isAdminTest } = await applyAdminTestMode(req, cleanItems, shippingCostNum, { tag: '[MP-create-order]' });
+  const subtotal = tmItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
   const orderTotal = subtotal + shipping;
   const totalStr = toDecimalString(orderTotal);
 
@@ -571,6 +575,7 @@ router.post('/mercadopago/create-order', async (req, res) => {
     shipping_customer_id: (shipping_customer_id || '').trim() || null,
     shipping_quote_payload: shipping_quote_payload || null,
     shipping_quote_response: shipping_quote_response || null,
+    is_admin_test: isAdminTest,
   };
 
   const { data: order, error: orderErr } = await supabase
@@ -583,7 +588,7 @@ router.post('/mercadopago/create-order', async (req, res) => {
     return res.status(500).json({ error: 'Error al crear la orden' });
   }
 
-  const rows = cleanItems.map((i) => ({
+  const rows = tmItems.map((i) => ({
     order_id: order.id,
     product_id: i.product_id,
     quantity: i.quantity,
@@ -746,8 +751,8 @@ router.post('/mercadopago/create-preference', async (req, res) => {
     }));
   if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
 
-  const subtotal = cleanItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
-  const shipping = shippingCostNum;
+  const { items: tmItems, shipping, applied: isAdminTest } = await applyAdminTestMode(req, cleanItems, shippingCostNum, { tag: '[MP-create-preference]' });
+  const subtotal = tmItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
   const orderTotal = subtotal + shipping;
 
   const orderPayload = {
@@ -778,6 +783,7 @@ router.post('/mercadopago/create-preference', async (req, res) => {
     shipping_customer_id: (shipping_customer_id || '').trim() || null,
     shipping_quote_payload: shipping_quote_payload || null,
     shipping_quote_response: shipping_quote_response || null,
+    is_admin_test: isAdminTest,
     // Atribución Meta capturada en el navegador del comprador (fbclid del
     // anuncio + cookies _fbc/_fbp + IP/UA). Imprescindible para que el evento
     // CAPI Purchase del webhook tenga match quality alto.
@@ -796,7 +802,7 @@ router.post('/mercadopago/create-preference', async (req, res) => {
     return res.status(500).json({ error: 'Error al crear la orden' });
   }
 
-  const rows = cleanItems.map((i) => ({
+  const rows = tmItems.map((i) => ({
     order_id: order.id,
     product_id: i.product_id,
     quantity: i.quantity,
@@ -808,7 +814,7 @@ router.post('/mercadopago/create-preference', async (req, res) => {
   const baseCallbackUrl = (callback_url || '').trim() || 'https://solutionperfumes.com/checkout';
   const isLocalCallback = baseCallbackUrl.startsWith('http://localhost') || baseCallbackUrl.startsWith('http://127.0.0.1');
 
-  const prefItems = cleanItems.map((i) => ({
+  const prefItems = tmItems.map((i) => ({
     title: i.name,
     quantity: i.quantity,
     unit_price: i.unit_price,
@@ -950,8 +956,9 @@ router.post('/mercadopago/process-card-payment', async (req, res) => {
       }));
     if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
 
-    const subtotal = cleanItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
-    const orderTotal = subtotal + shippingCostNum;
+    const { items: tmItems, shipping: tmShipping, applied: isAdminTest } = await applyAdminTestMode(req, cleanItems, shippingCostNum, { tag: '[MP-process-card-payment]' });
+    const subtotal = tmItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
+    const orderTotal = subtotal + tmShipping;
 
     const orderPayload = {
       user_id: null,
@@ -970,7 +977,7 @@ router.post('/mercadopago/process-card-payment', async (req, res) => {
       shipping_country: (shipping_country || '').trim() || 'AR',
       shipping_notes: (shipping_notes || '').trim() || null,
       shipping_method: (shipping_method || '').trim() || 'standard',
-      shipping_cost: shippingCostNum,
+      shipping_cost: tmShipping,
       payment_method: 'mercadopago',
       shipping_provider: shippingProviderClean || null,
       shipping_mode: shippingModeClean || null,
@@ -981,6 +988,7 @@ router.post('/mercadopago/process-card-payment', async (req, res) => {
       shipping_customer_id: (shipping_customer_id || '').trim() || null,
       shipping_quote_payload: shipping_quote_payload || null,
       shipping_quote_response: shipping_quote_response || null,
+      is_admin_test: isAdminTest,
       ...extractMetaAttribution(req),
       ...extractUtmParams(req),
     };
@@ -995,7 +1003,7 @@ router.post('/mercadopago/process-card-payment', async (req, res) => {
       return res.status(500).json({ error: 'Error al crear la orden' });
     }
 
-    const rows = cleanItems.map((i) => ({
+    const rows = tmItems.map((i) => ({
       order_id: newOrder.id,
       product_id: i.product_id,
       quantity: i.quantity,

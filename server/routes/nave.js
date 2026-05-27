@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const { supabase } = require('../lib/supabase');
-const { applyTestMode } = require('../lib/testMode');
+const { applyAdminTestMode } = require('../lib/testMode');
 const { sendPaymentConfirmationEmail, sendAdminSaleNotificationEmail } = require('../services/email');
 const { attachCogsToOrderItemRows } = require('../lib/orderItems');
 const { extractFinancialsFromNavePayment, upsertOrderFinancials } = require('../lib/orderFinancials');
@@ -141,7 +141,7 @@ router.post('/nave/create-payment', async (req, res) => {
     }));
   if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
 
-  const { items: tmItems, shipping: tmShipping } = applyTestMode(cleanItems, shippingCostNum, { tag: '[Nave]' });
+  const { items: tmItems, shipping: tmShipping, applied: isAdminTest } = await applyAdminTestMode(req, cleanItems, shippingCostNum, { tag: '[Nave]' });
   const subtotal = tmItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
   const shipping = tmShipping;
   const orderTotal = subtotal + shipping;
@@ -173,6 +173,7 @@ router.post('/nave/create-payment', async (req, res) => {
       shipping_customer_id: (shipping_customer_id || '').trim() || null,
       shipping_quote_payload: shipping_quote_payload || null,
       shipping_quote_response: shipping_quote_response || null,
+      is_admin_test: isAdminTest,
     };
 
     const { data: order, error: orderErr } = await supabase
@@ -350,7 +351,10 @@ async function handleNaveWebhook(req, res) {
     }
 
     const needCustomerEmail = !prevOrder.payment_confirmation_email_sent_at;
-    const needAdminEmail = !prevOrder.admin_notification_sent_at;
+    // En compras admin-test no avisamos al admin (evita spam de pruebas);
+    // el email de confirmación al cliente sí va, porque el "cliente" es el
+    // mismo admin haciendo la prueba.
+    const needAdminEmail = !prevOrder.admin_notification_sent_at && !prevOrder.is_admin_test;
     if (orderStatus === 'paid' && (needCustomerEmail || needAdminEmail)) {
       const { data: rawItems } = await supabase.from('order_items').select('product_id, quantity, unit_price').eq('order_id', external_payment_id);
       let itemsForEmail = rawItems || [];

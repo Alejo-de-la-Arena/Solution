@@ -1,22 +1,27 @@
-function isTestModeEnabled() {
-  return process.env.TEST_MODE === 'true';
-}
+const { isRequestAdmin } = require('./adminAuth');
 
-function getTestUnitPrice() {
-  const v = Number(process.env.TEST_MODE_UNIT_PRICE);
-  return Number.isFinite(v) && v > 0 ? v : 150;
-}
+const ADMIN_TEST_UNIT_PRICE = 150;
 
-function applyTestMode(cleanItems, shippingCost, { tag = '' } = {}) {
-  if (!isTestModeEnabled()) {
+/**
+ * Si el request viene de un admin autenticado (bearer token validado contra
+ * Supabase), sobrescribe cada item a unit_price=150 y shipping_cost=0 para
+ * que el admin pueda hacer compras de prueba sin gastar plata. Si no es admin,
+ * devuelve los items y shipping intactos.
+ *
+ * Devuelve: { items, shipping, applied: boolean }
+ *  - applied: true si efectivamente se aplicó el override. Usar para marcar
+ *    la orden con is_admin_test=true y skipear notificaciones al admin.
+ */
+async function applyAdminTestMode(req, cleanItems, shippingCost, { tag = '' } = {}) {
+  const isAdmin = await isRequestAdmin(req);
+  if (!isAdmin) {
     return { items: cleanItems, shipping: shippingCost, applied: false };
   }
-  const price = getTestUnitPrice();
-  const items = cleanItems.map((i) => ({ ...i, unit_price: price }));
+  const items = cleanItems.map((i) => ({ ...i, unit_price: ADMIN_TEST_UNIT_PRICE }));
   console.warn(
-    `[TEST_MODE]${tag ? ' ' + tag : ''} override: unit_price=${price}, shipping_cost=0 (original shipping=${shippingCost})`
+    `[ADMIN_TEST]${tag ? ' ' + tag : ''} override: unit_price=${ADMIN_TEST_UNIT_PRICE}, shipping_cost=0 (original shipping=${shippingCost})`
   );
   return { items, shipping: 0, applied: true };
 }
 
-module.exports = { isTestModeEnabled, getTestUnitPrice, applyTestMode };
+module.exports = { applyAdminTestMode, ADMIN_TEST_UNIT_PRICE };
