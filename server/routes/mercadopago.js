@@ -825,6 +825,15 @@ router.post('/mercadopago/create-preference', async (req, res) => {
     statement_descriptor: 'SOLUTION PERFUMES',
   };
 
+  // Sin notification_url MP solo dispara webhooks si está configurado el URL
+  // global en el panel de la app. Si el panel está caído/desactualizado, las
+  // órdenes pagadas por Checkout Pro quedan trabadas en 'payment_initiated'
+  // cuando el cliente no vuelve al back_url success.
+  const publicBase = (process.env.SERVER_PUBLIC_URL || '').trim().replace(/\/$/, '');
+  if (publicBase && !publicBase.startsWith('http://localhost') && !publicBase.startsWith('http://127.0.0.1')) {
+    prefBody.notification_url = `${publicBase}/webhooks/mercadopago`;
+  }
+
   if (!isLocalCallback) {
     prefBody.back_urls = {
       success: `${baseCallbackUrl}?order_id=${order.id}`,
@@ -1216,5 +1225,8 @@ async function handleMercadoPagoWebhookCore(req, res) {
 }
 
 router.handleMercadoPagoWebhook = handleMercadoPagoWebhook;
+router.applyPaymentToDb = applyPaymentToDb;
+router.fetchMpPayment = fetchMpPayment;
+router.getAccessToken = getAccessToken;
 
 module.exports = router;
