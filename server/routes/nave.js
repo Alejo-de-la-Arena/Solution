@@ -108,7 +108,7 @@ router.post('/nave/create-payment', async (req, res) => {
     items, callback_url,
     // ── Campos de cotización de envío ──
     shipping_provider, shipping_mode, shipping_service_type,
-    shipping_is_free, shipping_agency_code, shipping_agency_name,
+    shipping_is_free, shipping_agency_code, shipping_agency_name, shipping_agency_address,
     shipping_customer_id, shipping_quote_payload, shipping_quote_response,
   } = req.body || {};
 
@@ -170,6 +170,7 @@ router.post('/nave/create-payment', async (req, res) => {
       shipping_is_free: shipping_is_free === true || shipping_is_free === 'true' || false,
       shipping_agency_code: (shipping_agency_code || '').trim() || null,
       shipping_agency_name: (shipping_agency_name || '').trim() || null,
+      shipping_agency_address: (shipping_agency_address || '').trim() || null,
       shipping_customer_id: (shipping_customer_id || '').trim() || null,
       shipping_quote_payload: shipping_quote_payload || null,
       shipping_quote_response: shipping_quote_response || null,

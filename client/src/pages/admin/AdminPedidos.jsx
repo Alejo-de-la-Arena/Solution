@@ -698,6 +698,15 @@ function OrderDetailSection({
               </div>
             )}
 
+            {order.shipping_mode === 'branch' && order.shipping_agency_name && (
+              <div className="mt-2 p-2 bg-white/5 border border-white/10 rounded text-xs">
+                <span className="text-white/50 uppercase tracking-widest">Sucursal de retiro</span>
+                <p className="text-white/80 mt-1">{order.shipping_agency_name}</p>
+                {order.shipping_agency_address && <p className="text-white/60">{order.shipping_agency_address}</p>}
+                {order.shipping_agency_code && <p className="text-white/40 font-mono">Cód: {order.shipping_agency_code}</p>}
+              </div>
+            )}
+
             {savedTracking && (
               <div className="mt-2 p-2 bg-emerald-500/10 border border-emerald-500/30 rounded text-xs">
                 <span className="text-emerald-300">✅ Tracking: </span>

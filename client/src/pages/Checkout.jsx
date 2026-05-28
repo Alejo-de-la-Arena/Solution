@@ -10,7 +10,7 @@ import {
   getCheckoutPaymentProvider,
   setCheckoutPaymentProvider,
 } from '../services/checkout';
-import { quoteShipping } from '../services/shipping';
+import { quoteShipping, fetchNearbyCorreoAgencies } from '../services/shipping';
 import NaveEmbed from '../components/checkout/NaveEmbed';
 import { trackInitiateCheckout, captureAttributionData, getAttributionForServer, getUTMsForServer } from '../lib/metaPixel';
 import { getTrackedOrder, saveTrackedOrder, updateTrackedOrderStatus } from '../services/orderTracking';
@@ -86,6 +86,58 @@ function ShippingOptionCard({ option, selected, onSelect }) {
           : <span className="text-white text-sm tabular-nums">${option.price.toLocaleString('es-AR')}</span>}
       </div>
     </button>
+  );
+}
+
+// ── Branch picker (Correo "Retiro en sucursal") ───────────────────────────
+function BranchPicker({ branches, loading, error, selected, onSelect }) {
+  if (loading) {
+    return (
+      <div className="mt-3 flex items-center gap-3 p-3 bg-zinc-900/40 rounded-md border border-white/10">
+        <div className="w-4 h-4 border border-[rgb(0,255,255)] border-t-transparent rounded-full animate-spin flex-shrink-0" />
+        <span className="text-sm text-white/60">Buscando sucursales cercanas...</span>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="mt-3 p-3 bg-amber-900/20 border border-amber-500/30 rounded-md text-sm text-amber-200">
+        No se pudieron cargar las sucursales cercanas. Probá con otro código postal.
+      </div>
+    );
+  }
+  if (!branches || branches.length === 0) {
+    return (
+      <div className="mt-3 p-3 bg-zinc-900/40 border border-white/10 rounded-md text-sm text-white/60">
+        No encontramos sucursales cercanas para ese código postal.
+      </div>
+    );
+  }
+  return (
+    <div className="mt-3 space-y-2">
+      <p className="text-[11px] uppercase tracking-widest text-white/45">Elegí la sucursal de retiro</p>
+      {branches.map((b) => {
+        const isOn = selected?.code === b.code;
+        return (
+          <button
+            key={b.code}
+            type="button"
+            onClick={() => onSelect(b)}
+            className={`ship-opt ${isOn ? 'on' : ''}`}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <span className={`dot ${isOn ? 'on' : ''}`} />
+              <div className="min-w-0 text-left">
+                <div className="text-white text-sm truncate">{b.name}</div>
+                <div className="text-[11px] text-white/45 mt-0.5 truncate">
+                  {[b.address, b.locality, b.postalCode].filter(Boolean).join(' · ')}
+                </div>
+              </div>
+            </div>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -334,6 +386,12 @@ export default function Checkout() {
   const [shippingError, setShippingError] = useState('');
   const [selectedShipping, setSelectedShipping] = useState(null);
 
+  // ── Correo branch (Retiro en sucursal) selection state ────────────────
+  const [branchList, setBranchList] = useState([]);
+  const [branchLoading, setBranchLoading] = useState(false);
+  const [branchError, setBranchError] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState(null);
+
   const [form, setForm] = useState({
     email: '', name: '', phone: '',
     address: '', address2: '',
@@ -352,6 +410,31 @@ export default function Checkout() {
       setSelectedShipping(homeFirst || shippingQuote.options[0]);
     }
   }, [shippingQuote]);
+
+  // ── Fetch nearby Correo branches when "Retiro en sucursal" is selected ─
+  useEffect(() => {
+    if (selectedShipping?.mode !== 'branch') {
+      setBranchList([]);
+      setSelectedBranch(null);
+      setBranchError('');
+      return;
+    }
+    const province = form.state.trim();
+    const postalCode = form.zip.trim();
+    if (!province || postalCode.length < 4) return;
+
+    let cancelled = false;
+    setBranchLoading(true);
+    setBranchError('');
+    setSelectedBranch(null);
+    fetchNearbyCorreoAgencies({ province, postalCode })
+      .then((list) => { if (!cancelled) setBranchList(list); })
+      .catch((err) => { if (!cancelled) { setBranchError(err.message); setBranchList([]); } })
+      .finally(() => { if (!cancelled) setBranchLoading(false); });
+
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedShipping?.id, selectedShipping?.mode, form.state, form.zip]);
 
   // ── Shipping quote debounced trigger ──────────────────────────────────
   const itemsWithProductId = cart.filter((item) => item.productId);
@@ -546,7 +629,11 @@ export default function Checkout() {
   const grandTotal = effectiveSubtotal + shippingCost;
   const hasShippingInputs = form.zip.trim().length >= 4 && form.state.trim().length >= 3;
   const waitingForShippingQuote = hasShippingInputs && (shippingLoading || (!shippingError && !shippingQuote));
-  const hasShippingSelection = Boolean(shippingQuote?.provider) && Boolean(selectedShipping?.mode);
+  const needsBranchSelection = selectedShipping?.mode === 'branch';
+  const hasShippingSelection =
+    Boolean(shippingQuote?.provider)
+    && Boolean(selectedShipping?.mode)
+    && (!needsBranchSelection || Boolean(selectedBranch));
   const isSubmitDisabled =
     loading
     || cart.length === 0
@@ -582,15 +669,16 @@ export default function Checkout() {
       shipping_mode: selectedShipping?.mode || undefined,
       shipping_service_type: selectedShipping?.serviceType || undefined,
       shipping_is_free: shippingQuote?.freeShipping || shippingCost === 0,
-      shipping_agency_code: selectedShipping?.agencyCode || undefined,
-      shipping_agency_name: selectedShipping?.agencyName || undefined,
+      shipping_agency_code: selectedBranch?.code || selectedShipping?.agencyCode || undefined,
+      shipping_agency_name: selectedBranch?.name || selectedShipping?.agencyName || undefined,
+      shipping_agency_address: selectedBranch?.address || undefined,
       shipping_customer_id: shippingQuote?.customerId || undefined,
       shipping_quote_payload: shippingQuote
         ? { parcel: shippingQuote.parcel, selectedOption: selectedShipping }
         : undefined,
       shipping_quote_response: shippingQuote || undefined,
     };
-  }, [cart, form, shippingCost, shippingQuote, selectedShipping]);
+  }, [cart, form, shippingCost, shippingQuote, selectedShipping, selectedBranch]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -602,6 +690,7 @@ export default function Checkout() {
     if (!canSubmit) { setError('Algunos productos no están disponibles. Volvé a la tienda y agregalos de nuevo.'); return; }
     if (!hasShippingInputs) { setError('Completá provincia y código postal para calcular el envío.'); return; }
     if (waitingForShippingQuote) { setError('Esperá a que carguen las opciones de envío antes de pagar.'); return; }
+    if (needsBranchSelection && !selectedBranch) { setError('Seleccioná la sucursal de Correo donde vas a retirar tu pedido.'); return; }
     if (!hasShippingSelection) { setError('Seleccioná una opción de envío para continuar con el pago.'); return; }
 
     setLoading(true);
@@ -634,8 +723,9 @@ export default function Checkout() {
         shipping_mode: selectedShipping?.mode || undefined,
         shipping_service_type: selectedShipping?.serviceType || undefined,
         shipping_is_free: shippingQuote?.freeShipping || shippingCost === 0,
-        shipping_agency_code: selectedShipping?.agencyCode || undefined,
-        shipping_agency_name: selectedShipping?.agencyName || undefined,
+        shipping_agency_code: selectedBranch?.code || selectedShipping?.agencyCode || undefined,
+        shipping_agency_name: selectedBranch?.name || selectedShipping?.agencyName || undefined,
+        shipping_agency_address: selectedBranch?.address || undefined,
         shipping_customer_id: shippingQuote?.customerId || undefined,
         shipping_quote_payload: shippingQuote
           ? { parcel: shippingQuote.parcel, selectedOption: selectedShipping }
@@ -1020,6 +1110,15 @@ export default function Checkout() {
                           />
                         ))}
                       </div>
+                      {selectedShipping?.mode === 'branch' && (
+                        <BranchPicker
+                          branches={branchList}
+                          loading={branchLoading}
+                          error={branchError}
+                          selected={selectedBranch}
+                          onSelect={setSelectedBranch}
+                        />
+                      )}
                     </>
                   )}
 

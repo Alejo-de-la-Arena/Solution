@@ -40,6 +40,7 @@ router.post('/', async (req, res) => {
     shipping_is_free,
     shipping_agency_code,
     shipping_agency_name,
+    shipping_agency_address,
     shipping_customer_id,
     shipping_quote_payload,
     shipping_quote_response,
@@ -94,6 +95,7 @@ router.post('/', async (req, res) => {
     shipping_is_free: shipping_is_free === true || shipping_is_free === 'true' || false,
     shipping_agency_code: (shipping_agency_code || '').trim() || null,
     shipping_agency_name: (shipping_agency_name || '').trim() || null,
+    shipping_agency_address: (shipping_agency_address || '').trim() || null,
     shipping_customer_id: (shipping_customer_id || '').trim() || null,
     shipping_quote_payload: shipping_quote_payload || null,
     shipping_quote_response: shipping_quote_response || null,
@@ -176,7 +178,7 @@ router.get('/track/:orderId', async (req, res) => {
       'nave_card_brand', 'nave_card_last4', 'nave_installments', 'nave_paid_at', 'nave_status_reason',
       'shipping_method', 'shipping_address_line1', 'shipping_address_line2',
       'shipping_city', 'shipping_state', 'shipping_postal_code', 'shipping_country',
-      'shipping_provider', 'shipping_mode', 'shipping_agency_name', 'shipping_cost', 'shipping_is_free',
+      'shipping_provider', 'shipping_mode', 'shipping_agency_name', 'shipping_agency_address', 'shipping_cost', 'shipping_is_free',
     ].join(', '))
     .eq('id', orderId)
     .maybeSingle();

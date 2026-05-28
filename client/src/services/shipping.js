@@ -46,6 +46,23 @@ export async function fetchCorreoAgencies(province) {
 }
 
 /**
+ * Obtiene las 2-3 sucursales de Correo Argentino más cercanas a un CP.
+ * Usado en el checkout cuando el cliente elige "Retiro en sucursal".
+ *
+ * @param {{ province: string, postalCode: string, limit?: number }} args
+ * @returns {Promise<Array<{code, name, address, locality, postalCode, hours}>>}
+ */
+export async function fetchNearbyCorreoAgencies({ province, postalCode, limit = 3 }) {
+    if (!province) throw new Error('provincia requerida');
+    if (!postalCode) throw new Error('código postal requerido');
+    const params = new URLSearchParams({ province, postalCode, limit: String(limit) });
+    const res = await fetch(`${BASE}/api/correo/nearby-agencies?${params.toString()}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al obtener sucursales cercanas');
+    return data.agencies || [];
+}
+
+/**
  * Admin: guardar tracking number y enviar email de seguimiento al cliente.
  */
 export async function saveTrackingNumber({ orderId, trackingNumber }) {

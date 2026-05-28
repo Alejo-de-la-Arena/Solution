@@ -43,7 +43,6 @@ const POSTAL_CODE_MAP = {
     '1606': { partido: 'Vicente López', zona: 2 }, // Carapachay
     '1607': { partido: 'Vicente López', zona: 2 }, // Villa Adelina
     '1612': { partido: 'Vicente López', zona: 2 }, // Olivos
-    '1614': { partido: 'Vicente López', zona: 2 }, // Olivos centro
     '1635': { partido: 'Vicente López', zona: 2 }, // Vicente López
     '1636': { partido: 'Vicente López', zona: 2 }, // Olivos
     '1637': { partido: 'Vicente López', zona: 2 }, // La Lucila
@@ -166,6 +165,7 @@ const POSTAL_CODE_MAP = {
     // ── Malvinas Argentinas ──
     '1610': { partido: 'Malvinas Argentinas', zona: 3 }, // Pablo Nogués / Tortuguitas
     '1613': { partido: 'Malvinas Argentinas', zona: 3 }, // Los Polvorines
+    '1614': { partido: 'Malvinas Argentinas', zona: 3 }, // Villa de Mayo
     '1615': { partido: 'Malvinas Argentinas', zona: 3 }, // Grand Bourg
 
     // ── José C. Paz ──

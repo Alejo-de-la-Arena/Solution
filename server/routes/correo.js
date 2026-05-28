@@ -65,6 +65,27 @@ router.get('/agencies', async (req, res) => {
     }
 });
 
+router.get('/nearby-agencies', async (req, res) => {
+    try {
+        const { province, postalCode, limit } = req.query;
+        if (!province) {
+            return res.status(400).json({ error: 'province es obligatorio', code: 'MISSING_PROVINCE' });
+        }
+        if (!postalCode) {
+            return res.status(400).json({ error: 'postalCode es obligatorio', code: 'MISSING_POSTAL_CODE' });
+        }
+        const parsedLimit = Number(limit);
+        const agencies = await correoProvider.listNearbyAgencies({
+            province,
+            postalCode,
+            limit: Number.isFinite(parsedLimit) ? parsedLimit : 3,
+        });
+        return res.json({ ok: true, agencies });
+    } catch (error) {
+        return handleError(res, error);
+    }
+});
+
 router.post('/quote', async (req, res) => {
     try {
         const { items, address } = req.body || {};

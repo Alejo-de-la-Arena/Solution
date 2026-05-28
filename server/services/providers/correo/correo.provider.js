@@ -154,6 +154,31 @@ async function listAgencies({ province }) {
     }));
 }
 
+/**
+ * Devuelve las sucursales más cercanas a un código postal dentro de una provincia.
+ * Reutiliza listAgencies (que trae todas las de la provincia) y ordena por cercanía
+ * numérica del CP. Se priorizan las que reciben paquetes (packageReception) para que
+ * el retiro en sucursal sea válido; si ninguna lo declara, no se filtra.
+ */
+async function listNearbyAgencies({ province, postalCode, limit = 3 }) {
+    const agencies = await listAgencies({ province });
+
+    const target = parseInt(String(postalCode || '').replace(/\D/g, '').slice(0, 4), 10);
+
+    const receptionCapable = agencies.filter((a) => a.packageReception);
+    const pool = receptionCapable.length > 0 ? receptionCapable : agencies;
+
+    const distance = (a) => {
+        const cp = parseInt(String(a.postalCode || '').replace(/\D/g, '').slice(0, 4), 10);
+        if (!Number.isFinite(cp) || !Number.isFinite(target)) return Number.POSITIVE_INFINITY;
+        return Math.abs(cp - target);
+    };
+
+    return [...pool]
+        .sort((a, b) => distance(a) - distance(b))
+        .slice(0, Math.max(1, limit));
+}
+
 async function createShipment({ order, items, address, agencyCode, deliveryType }) {
     const customerId = await resolveCustomerId();
     const parcel = buildParcelFromItems(items);
@@ -180,6 +205,7 @@ async function tracking({ shippingId }) {
 module.exports = {
     quote,
     listAgencies,
+    listNearbyAgencies,
     createShipment,
     tracking,
     resolveCustomerId,
