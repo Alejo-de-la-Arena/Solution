@@ -593,98 +593,66 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
         </div>
 
         {/* Single-column content */}
-        <div ref={bodyRef} className="sol-reveal" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div ref={bodyRef} className="sol-reveal">
 
-          {/* Showcase image — fuera de la card */}
-          <ComboCollectionShowcase settings={cfg} />
+          {/* Card — único bloque: título, slider, perfil, selectores, precio y CTA */}
+          <div style={{ border: '0.5px solid var(--sol-line)', background: 'var(--sol-bg-card)', borderRadius: '12px', maxWidth: 420, margin: '0 auto', width: '100%', padding: '20px 16px', textAlign: 'center' }}>
 
-          {/* Card — envuelve título, selectores, perfil, precio y CTA */}
-          <div style={{ border: '0.5px solid var(--sol-line)', background: 'var(--sol-bg-card)', borderRadius: '4px', maxWidth: 680, margin: '0 auto', width: '100%', padding: '24px', textAlign: 'center' }}>
-
-            {/* Título */}
-            <h2 className="font-jakarta" style={{ fontSize: 'clamp(18px, 3.5vw, 28px)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.25, color: 'var(--sol-ink)', margin: 0 }}>
+            {/* 1. Título */}
+            <h2 className="font-jakarta" style={{ fontSize: 'clamp(15px, 3.4vw, 20px)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.3, color: 'var(--sol-ink)', margin: 0 }}>
               LLEVÁ 2 PERFUMES SOLUTION + PERFUMERO DE REGALO + ENVÍO GRATIS + 30% OFF
             </h2>
 
-          {/* Selectores */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-            <ComboSelect
-              label={cfg.select_label_1}
-              value={selectedPerfume1}
-              onChange={setSelectedPerfume1}
-              options={orderedPerfumes}
-              optionLabel={optionLabel}
-            />
-            <ComboSelect
-              label={cfg.select_label_2}
-              value={selectedPerfume2}
-              onChange={setSelectedPerfume2}
-              options={orderedPerfumes}
-              optionLabel={optionLabel}
-            />
-          </div>
+            {/* 2. Slider reducido */}
+            <div style={{ marginTop: '12px' }}>
+              <ComboCollectionShowcase settings={cfg} compact maxWidth={240} />
+            </div>
 
-          {/* Profile */}
-          <div style={{ marginTop: '16px' }}>
-            <motion.div
-              key={comboProfileKey}
-              initial={{ opacity: 0, y: 10, filter: 'blur(6px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              transition={{ duration: 0.35, ease: 'easeOut' }}
-            >
-              {comboProfile ? (
-                <div>
-                  <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: '#00e5ff', marginBottom: '10px' }}>
-                    Perfil de la combinación
-                  </div>
-                  <h3 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(28px, 6vw, 42px)', letterSpacing: '-0.02em', color: 'var(--sol-ink)', marginBottom: '12px' }}>
+            {/* 3. Perfil — solo label + nickname */}
+            <div style={{ marginTop: '12px' }}>
+              <motion.div
+                key={comboProfileKey}
+                initial={{ opacity: 0, y: 8, filter: 'blur(6px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+              >
+                <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: comboProfile ? '#00e5ff' : 'var(--sol-muted)', marginBottom: comboProfile ? '6px' : 0 }}>
+                  Perfil de la combinación
+                </div>
+                {comboProfile && (
+                  <h3 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(24px, 5.5vw, 34px)', letterSpacing: '-0.02em', color: 'var(--sol-ink)', margin: 0 }}>
                     {comboProfile.nickname}
                   </h3>
-                  <p className="font-jost" style={{ fontStyle: 'italic', fontSize: '20px', color: '#b000d0', marginBottom: '16px' }}>
-                    {comboProfile.summary}
-                  </p>
-                  {comboProfile.description?.map((par, i) => (
-                    <p key={i} className="font-jakarta" style={{ fontSize: i === 0 ? '16px' : '15px', lineHeight: 1.7, color: i === 0 ? 'var(--sol-ink-dim)' : 'var(--sol-muted)', marginBottom: '10px' }}>
-                      {par}
-                    </p>
-                  ))}
-                </div>
-              ) : (
-                <div>
-                  <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '10px' }}>
-                    Perfil de la combinación
-                  </div>
-                  <h3 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(20px, 4vw, 28px)', color: 'var(--sol-ink-dim)', marginBottom: '12px' }}>
-                    Combiná dos fragancias
-                  </h3>
-                  <p className="font-jakarta" style={{ fontSize: '13px', lineHeight: 1.7, color: 'var(--sol-muted)' }}>
-                    Seleccioná dos perfumes distintos para descubrir el subtítulo y descripción completa de la combinación.
-                  </p>
-                </div>
-              )}
-            </motion.div>
-          </div>
+                )}
+              </motion.div>
+            </div>
 
-          {/* Price + CTA */}
-          <div style={{ marginTop: '12px' }}>
-            {cfg.features?.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px', justifyContent: 'center' }}>
-                {cfg.features.map((item, i) => (
-                  <span key={`${item}-${i}`} className="font-jakarta" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '9px', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--sol-ink-dim)', border: '0.5px solid var(--sol-line)', padding: '5px 10px' }}>
-                    <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#00e5ff', flexShrink: 0 }} />
-                    {item}
-                  </span>
-                ))}
-              </div>
-            )}
+            {/* 4-5. Selectores */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+              <ComboSelect
+                label={cfg.select_label_1}
+                value={selectedPerfume1}
+                onChange={setSelectedPerfume1}
+                options={orderedPerfumes}
+                optionLabel={optionLabel}
+              />
+              <ComboSelect
+                label={cfg.select_label_2}
+                value={selectedPerfume2}
+                onChange={setSelectedPerfume2}
+                options={orderedPerfumes}
+                optionLabel={optionLabel}
+              />
+            </div>
 
-            <div style={{ marginBottom: '12px', textAlign: 'center' }}>
+            {/* 6. Precio */}
+            <div style={{ marginTop: '12px', textAlign: 'center' }}>
               {perfume1 && perfume2 && (() => {
                 const cp1 = CROSSED_PRICES[(perfume1.slug || '').toLowerCase().trim()];
                 const cp2 = CROSSED_PRICES[(perfume2.slug || '').toLowerCase().trim()];
                 const crossedSum = cp1 && cp2 ? cp1 + cp2 : null;
                 return crossedSum ? (
-                  <div style={{ marginBottom: '4px' }}>
+                  <div style={{ marginBottom: '2px' }}>
                     <span className="font-jakarta" style={{ fontSize: '13px', color: 'var(--sol-muted)', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
                       ${crossedSum.toLocaleString('es-AR')} ARS
                     </span>
@@ -692,21 +660,22 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                 ) : null;
               })()}
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', justifyContent: 'center' }}>
-                <span className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(32px, 7vw, 48px)', letterSpacing: '-0.025em', color: 'var(--sol-ink)', lineHeight: 1 }}>
+                <span className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(30px, 7vw, 42px)', letterSpacing: '-0.025em', color: 'var(--sol-ink)', lineHeight: 1 }}>
                   {perfume1 && perfume2 ? `$${(perfume1.price + perfume2.price).toLocaleString('es-AR')}` : '—'}
                 </span>
                 <span className="font-jakarta" style={{ fontSize: '10px', color: 'var(--sol-muted)', letterSpacing: '0.18em' }}>ARS</span>
               </div>
             </div>
 
+            {/* 7. CTA */}
             <button
               type="button"
               onClick={handleAddCombo}
               disabled={!perfume1 || !perfume2}
               className="font-jakarta"
               style={{
-                display: 'flex', width: '100%', maxWidth: 680, margin: '0 auto', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                padding: '18px', background: '#00e5ff', color: '#000',
+                display: 'flex', width: '100%', marginTop: '12px', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                padding: '14px', background: '#00e5ff', color: '#000',
                 border: 'none', fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em',
                 textTransform: 'uppercase', cursor: 'pointer', transition: 'opacity 0.3s',
                 opacity: (!perfume1 || !perfume2) ? 0.4 : 1,
@@ -716,7 +685,6 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
             >
               {cfg.cta_text} →
             </button>
-          </div>
 
           </div>{/* end card */}
         </div>{/* end bodyRef single-column */}
@@ -738,8 +706,8 @@ function ComboSelect({ label, value, onChange, options, optionLabel }) {
           onChange={(e) => onChange(e.target.value)}
           className="font-jakarta sol-combo-select"
           style={{
-            width: '100%', minHeight: '48px',
-            padding: '14px 44px 14px 16px',
+            width: '100%', minHeight: '42px',
+            padding: '10px 40px 10px 14px',
             background: 'var(--sol-bg-card)', color: 'var(--sol-ink)',
             border: '0.5px solid var(--sol-line)', borderRadius: 0,
             fontSize: '13px', letterSpacing: '0.12em', textTransform: 'uppercase',
@@ -762,8 +730,9 @@ function ComboSelect({ label, value, onChange, options, optionLabel }) {
 }
 
 // ─── Combo collection showcase ─────────────────────────────────────────────────
-function ComboCollectionShowcase({ settings }) {
+function ComboCollectionShowcase({ settings, compact = false, maxWidth = 540 }) {
   const cfg = settings || normalizeComboSettings(null);
+  const radius = compact ? 16 : 30;
   const img1 = resolveComboImage(cfg.image_1);
   const img2 = resolveComboImage(cfg.image_2);
   const slides = [
@@ -784,13 +753,13 @@ function ComboCollectionShowcase({ settings }) {
   if (slides.length === 0) return null;
 
   return (
-    <div style={{ position: 'relative', width: '100%', maxWidth: 540, margin: '0 auto' }}>
+    <div style={{ position: 'relative', width: '100%', maxWidth: compact ? `clamp(200px, 60vw, ${maxWidth}px)` : maxWidth, margin: '0 auto' }}>
       <motion.div
-        style={{ position: 'absolute', inset: 0, borderRadius: 30, filter: 'blur(70px)', background: 'radial-gradient(circle at center, rgba(0,229,255,0.12) 0%, rgba(0,0,0,0) 78%)' }}
+        style={{ position: 'absolute', inset: 0, borderRadius: radius, filter: 'blur(70px)', background: 'radial-gradient(circle at center, rgba(0,229,255,0.12) 0%, rgba(0,0,0,0) 78%)' }}
         animate={{ opacity: [0.12, 0.18, 0.12], scale: [0.985, 1.02, 0.985] }}
         transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut' }}
       />
-      <div style={{ position: 'relative', zIndex: 1, overflow: 'hidden', borderRadius: 30, border: '0.5px solid var(--sol-line)', background: '#050505', boxShadow: '0 24px 70px rgba(0,0,0,0.44)' }}>
+      <div style={{ position: 'relative', zIndex: 1, overflow: 'hidden', borderRadius: radius, border: '0.5px solid var(--sol-line)', background: '#050505', boxShadow: compact ? '0 14px 36px rgba(0,0,0,0.4)' : '0 24px 70px rgba(0,0,0,0.44)' }}>
         <div style={{ position: 'relative', aspectRatio: '4/5', overflow: 'hidden' }}>
           {slides.map((slide, index) => (
             <motion.div key={slide.src} style={{ position: 'absolute', inset: 0 }} initial={false}
@@ -809,21 +778,21 @@ function ComboCollectionShowcase({ settings }) {
             </motion.div>
           ))}
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(0,0,0,0.10) 0%,rgba(0,0,0,0.04) 38%,rgba(0,0,0,0.22) 100%)', pointerEvents: 'none' }} />
-          {cfg.showcase_title && (
+          {!compact && cfg.showcase_title && (
             <div style={{ position: 'absolute', top: 16, left: 16, borderRadius: 100, border: '0.5px solid var(--sol-line)', background: 'rgba(0,0,0,0.35)', padding: '6px 14px', backdropFilter: 'blur(8px)' }}>
               <p className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)' }}>
                 {cfg.showcase_title}
               </p>
             </div>
           )}
-          {cfg.showcase_subtitle && (
+          {!compact && cfg.showcase_subtitle && (
             <div style={{ position: 'absolute', bottom: 16, left: 16, borderRadius: 100, border: '0.5px solid rgba(224,64,251,0.4)', background: 'rgba(224,64,251,0.15)', padding: '6px 14px', backdropFilter: 'blur(8px)' }}>
               <p className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#e040fb' }}>
                 {cfg.showcase_subtitle}
               </p>
             </div>
           )}
-          {hasRotation && (
+          {!compact && hasRotation && (
             <div style={{ position: 'absolute', bottom: 16, right: 16, display: 'flex', alignItems: 'center', gap: '6px', borderRadius: 100, border: '0.5px solid var(--sol-line)', background: 'rgba(0,0,0,0.35)', padding: '6px 12px', backdropFilter: 'blur(8px)' }}>
               {slides.map((_, index) => (
                 <motion.span key={index} style={{ display: 'block', height: 5, borderRadius: 100 }}
