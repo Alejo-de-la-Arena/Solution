@@ -21,6 +21,7 @@ import AdminMayoristas from './pages/admin/AdminMayoristas';
 import AdminUsuarios from './pages/admin/AdminUsuarios';
 import AdminPedidos from './pages/admin/AdminPedidos';
 import AdminProductos from './pages/admin/AdminProductos';
+import AdminCombos from './pages/admin/AdminCombos';
 import AdminGestionar from './pages/admin/AdminGestionar';
 import AdminCalculadora from './pages/admin/AdminCalculadora';
 import CalculadoraReporte from './pages/admin/calculadora/Reporte';
@@ -68,6 +69,7 @@ function AppRoutes() {
           <Route path="mayoristas" element={<AdminMayoristas />} />
           <Route path="pedidos" element={<AdminPedidos />} />
           <Route path="productos" element={<AdminProductos />} />
+          <Route path="combos" element={<AdminCombos />} />
           <Route path="gestionar" element={<AdminGestionar />} />
           <Route path="calculadora" element={<AdminCalculadora />}>
             <Route index element={<CalculadoraReporte />} />

@@ -43,6 +43,17 @@
   }
 }
 
+/* ── Combo native select ── */
+.sol-combo-select:focus {
+  border-color: #00e5ff !important;
+}
+.sol-combo-select option {
+  background: var(--sol-bg-card);
+  color: var(--sol-ink);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 /* ── Pulse (LIVE badge) ── */
 @keyframes sol-pulse {
   0%, 100% { opacity: 1; }

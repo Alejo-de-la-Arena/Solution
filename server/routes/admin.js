@@ -716,6 +716,109 @@ router.delete('/products/:id/videos/:videoId', async (req, res) => {
 });
 
 // ===========================================================================
+// COMBO SETTINGS (sección combo editable de /tienda — singleton)
+// ===========================================================================
+
+const COMBO_TEXT_FIELDS = [
+  'title', 'subtitle', 'description',
+  'showcase_title', 'showcase_subtitle', 'image_1_url', 'image_2_url',
+  'select_label_1', 'select_label_2', 'cta_text',
+];
+const COMBO_JSON_FIELDS = ['badges_json', 'options_json', 'features_json'];
+
+async function fetchComboSingleton() {
+  return supabase
+    .from('combo_settings')
+    .select('*')
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+}
+
+/** GET /api/admin/combo — devuelve el singleton (aunque esté inactivo). */
+router.get('/combo', async (req, res) => {
+  const user = await assertAdmin(req, res);
+  if (!user) return;
+
+  const { data, error } = await fetchComboSingleton();
+  if (error) {
+    console.error('[admin] GET /combo:', error);
+    return res.status(500).json({ error: 'No se pudo leer combo_settings' });
+  }
+  return res.json({ combo: data });
+});
+
+/** PATCH /api/admin/combo — actualiza el singleton. */
+router.patch('/combo', async (req, res) => {
+  const user = await assertAdmin(req, res);
+  if (!user) return;
+
+  const body = req.body || {};
+  const update = {};
+  for (const f of COMBO_TEXT_FIELDS) {
+    if (f in body) update[f] = body[f] === '' ? null : body[f];
+  }
+  for (const f of COMBO_JSON_FIELDS) {
+    if (f in body) update[f] = body[f]; // arrays/objects → jsonb
+  }
+  if ('is_active' in body) update.is_active = !!body.is_active;
+
+  if (Object.keys(update).length === 0) {
+    return res.status(400).json({ error: 'Nada para actualizar' });
+  }
+
+  const { data: existing, error: fErr } = await fetchComboSingleton();
+  if (fErr) {
+    console.error('[admin] PATCH /combo (fetch):', fErr);
+    return res.status(500).json({ error: 'No se pudo leer combo_settings' });
+  }
+  if (!existing) {
+    return res.status(404).json({ error: 'combo_settings no inicializado' });
+  }
+
+  const { error: upErr } = await supabase
+    .from('combo_settings')
+    .update(update)
+    .eq('id', existing.id);
+  if (upErr) {
+    console.error('[admin] PATCH /combo:', upErr);
+    return res.status(500).json({ error: 'No se pudo actualizar el combo' });
+  }
+
+  const { data } = await fetchComboSingleton();
+  return res.json({ combo: data });
+});
+
+/**
+ * POST /api/admin/combo/image — sube imagen del combo al bucket de productos.
+ * multipart/form-data: file. Devuelve { path, url }. El admin guarda `path` en
+ * image_1_url / image_2_url (se resuelve con mediaUrl en la tienda).
+ */
+router.post('/combo/image', productImageUpload.single('file'), async (req, res) => {
+  const user = await assertAdmin(req, res);
+  if (!user) return;
+
+  if (!req.file) return res.status(400).json({ error: 'Falta archivo (file)' });
+
+  const ext = extForMime(req.file.mimetype);
+  const storagePath = `combo/${crypto.randomUUID()}.${ext}`;
+
+  const { error: upErr } = await supabase.storage
+    .from(PRODUCTS_BUCKET)
+    .upload(storagePath, req.file.buffer, {
+      contentType: req.file.mimetype,
+      upsert: false,
+    });
+  if (upErr) {
+    console.error('[admin] combo image upload:', upErr);
+    return res.status(502).json({ error: 'No se pudo subir la imagen' });
+  }
+
+  const { data: pub } = supabase.storage.from(PRODUCTS_BUCKET).getPublicUrl(storagePath);
+  return res.json({ image: { path: storagePath, url: pub?.publicUrl || null } });
+});
+
+// ===========================================================================
 // GESTIONAR (logística — fullfilment)
 // ===========================================================================
 
