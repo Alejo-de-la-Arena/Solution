@@ -190,21 +190,21 @@ function TiendaHero() {
         {/* Headline */}
         <h1
           className="font-jost"
-          style={{ fontWeight: 300, fontSize: 'clamp(36px, 9vw, 72px)', lineHeight: 1.0, letterSpacing: '-0.03em', color: 'var(--sol-ink)', marginBottom: '24px', textAlign: 'center' }}
+          style={{ fontWeight: 300, fontSize: 'clamp(44px, 10.5vw, 88px)', lineHeight: 1.02, letterSpacing: '-0.03em', color: 'var(--sol-ink)', marginBottom: '24px', textAlign: 'center' }}
         >
-          Cinco<br />fragancias.<br />
-          <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>Tu momento.</em>
+          <span style={{ display: 'block' }}>Cinco fragancias.</span>
+          <em style={{ display: 'block', fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>Tu momento.</em>
         </h1>
 
         {/* Sub */}
-        <div ref={subRef} className="sol-reveal" style={{ maxWidth: 480, marginBottom: '48px', margin: '0 auto 48px', textAlign: 'center' }}>
-          <p className="font-jakarta" style={{ fontSize: '14px', lineHeight: 1.75, color: 'var(--sol-muted)' }}>
+        <div ref={subRef} className="sol-reveal" style={{ maxWidth: 520, marginBottom: '28px', margin: '0 auto 28px', textAlign: 'center' }}>
+          <p className="font-jakarta" style={{ fontSize: '16px', lineHeight: 1.7, color: 'var(--sol-muted)' }}>
             Cada perfume sigue la línea de una referencia de nicho reconocida. Elegís el momento, nosotros te decimos cuál usar. Sin marketing vacío.
           </p>
         </div>
 
         {/* Scroll indicator */}
-        <div ref={statsRef} className="sol-reveal" style={{ borderTop: '0.5px solid var(--sol-line)', paddingTop: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+        <div ref={statsRef} className="sol-reveal" style={{ paddingTop: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
           <p className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', margin: 0 }}>
             Conocé nuestra colección
           </p>
@@ -577,7 +577,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
     const opt = cfg.options?.[slug];
     const name = (opt?.name || p.name || '').trim();
     const reference = (opt?.reference || SLUG_META[slug]?.reference || '').trim();
-    return reference ? `${name} / ${reference}` : name;
+    return reference ? `${reference} / ${name}` : name;
   }
 
   return (
@@ -591,27 +591,35 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
             Oferta especial · Combo
           </div>
           <h2 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(30px, 7vw, 52px)', lineHeight: 1.03, letterSpacing: '-0.025em', color: 'var(--sol-ink)' }}>
-            {cfg.title}<br />
-            <em style={{ fontStyle: 'italic', color: '#e040fb', fontWeight: 300 }}>{cfg.subtitle}</em>
+            <span style={{ display: 'block', marginBottom: '6px' }}>{cfg.title}</span>
+            <em style={{ display: 'block', fontStyle: 'italic', color: '#e040fb', fontWeight: 300 }}>{cfg.subtitle}</em>
           </h2>
 
-          {/* Benefit badges */}
+          {/* Benefit badges — 3 columnas con íconos */}
           {cfg.badges?.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', marginTop: '22px' }}>
-              {cfg.badges.map((badge, i) => {
-                const dot = i % 2 === 0 ? '#00e5ff' : '#e040fb';
-                return (
-                  <span key={`${badge}-${i}`} className="font-jakarta" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-ink-dim)', border: '0.5px solid var(--sol-line-mid)', borderRadius: '9999px', padding: '7px 14px' }}>
-                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: dot, flexShrink: 0 }} />
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cfg.badges.length}, 1fr)`, maxWidth: 480, margin: '26px auto 0' }}>
+              {cfg.badges.map((badge, i) => (
+                <div
+                  key={`${badge}-${i}`}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
+                    padding: '4px 12px', textAlign: 'center',
+                    borderRight: i < cfg.badges.length - 1 ? '0.5px solid var(--sol-line)' : 'none',
+                  }}
+                >
+                  <span style={{ color: '#00e5ff', display: 'flex' }}>
+                    <ComboBadgeIcon index={i} />
+                  </span>
+                  <span className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--sol-muted)', lineHeight: 1.4 }}>
                     {badge}
                   </span>
-                );
-              })}
+                </div>
+              ))}
             </div>
           )}
 
           {cfg.description && (
-            <p className="font-jakarta" style={{ fontSize: '13px', lineHeight: 1.7, color: 'var(--sol-muted)', maxWidth: 480, margin: '18px auto 0' }}>
+            <p className="font-jakarta" style={{ fontSize: '16px', lineHeight: 1.7, color: 'var(--sol-muted)', maxWidth: 500, margin: '22px auto 0' }}>
               {cfg.description}
             </p>
           )}
@@ -670,17 +678,17 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
             >
               {comboProfile ? (
                 <div>
-                  <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: '#e040fb', marginBottom: '10px' }}>
+                  <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: '#00e5ff', marginBottom: '10px' }}>
                     Perfil de la combinación
                   </div>
-                  <h3 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(22px, 5vw, 32px)', letterSpacing: '-0.02em', color: 'var(--sol-ink)', marginBottom: '12px' }}>
+                  <h3 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(28px, 6vw, 42px)', letterSpacing: '-0.02em', color: 'var(--sol-ink)', marginBottom: '12px' }}>
                     {comboProfile.nickname}
                   </h3>
-                  <p className="font-jost" style={{ fontStyle: 'italic', fontSize: '16px', color: '#b000d0', marginBottom: '16px' }}>
+                  <p className="font-jost" style={{ fontStyle: 'italic', fontSize: '20px', color: '#b000d0', marginBottom: '16px' }}>
                     {comboProfile.summary}
                   </p>
                   {comboProfile.description?.map((par, i) => (
-                    <p key={i} className="font-jakarta" style={{ fontSize: i === 0 ? '14px' : '12px', lineHeight: 1.7, color: i === 0 ? 'var(--sol-ink-dim)' : 'var(--sol-muted)', marginBottom: '10px' }}>
+                    <p key={i} className="font-jakarta" style={{ fontSize: i === 0 ? '16px' : '15px', lineHeight: 1.7, color: i === 0 ? 'var(--sol-ink-dim)' : 'var(--sol-muted)', marginBottom: '10px' }}>
                       {par}
                     </p>
                   ))}
@@ -758,6 +766,42 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
         </div>{/* end bodyRef single-column */}
       </div>
     </section>
+  );
+}
+
+// ─── Combo benefit icons (por posición: 0 regalo · 1 envío · 2 descuento) ──────
+function ComboBadgeIcon({ index }) {
+  const common = { width: 26, height: 26, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.3, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
+  if (index === 0) {
+    // Regalo
+    return (
+      <svg {...common}>
+        <polyline points="20 12 20 22 4 22 4 12" />
+        <rect x="2" y="7" width="20" height="5" />
+        <line x1="12" y1="22" x2="12" y2="7" />
+        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+      </svg>
+    );
+  }
+  if (index === 1) {
+    // Envío (camión)
+    return (
+      <svg {...common}>
+        <rect x="1" y="3" width="15" height="13" />
+        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+        <circle cx="5.5" cy="18.5" r="2.5" />
+        <circle cx="18.5" cy="18.5" r="2.5" />
+      </svg>
+    );
+  }
+  // Descuento (porcentaje)
+  return (
+    <svg {...common}>
+      <line x1="19" y1="5" x2="5" y2="19" />
+      <circle cx="6.5" cy="6.5" r="2.5" />
+      <circle cx="17.5" cy="17.5" r="2.5" />
+    </svg>
   );
 }
 
