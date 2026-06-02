@@ -577,99 +577,55 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
     const opt = cfg.options?.[slug];
     const name = (opt?.name || p.name || '').trim();
     const reference = (opt?.reference || SLUG_META[slug]?.reference || '').trim();
-    return reference ? `${reference} / ${name}` : name;
+    return reference ? `${name} / ${reference}` : name;
   }
 
   return (
     <section id="combo" style={{ background: 'var(--sol-bg)', color: 'var(--sol-ink)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)', borderBottom: '0.5px solid var(--sol-line)' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)' }}>
 
-        {/* Head — centered */}
-        <div ref={headRef} className="sol-reveal" style={{ marginBottom: '40px', paddingBottom: '32px', borderBottom: '0.5px solid var(--sol-line)', textAlign: 'center' }}>
-          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: '#e040fb', marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+        {/* Label — encima de la card, centrado */}
+        <div ref={headRef} className="sol-reveal" style={{ marginBottom: '20px', textAlign: 'center' }}>
+          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: '#e040fb', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#e040fb', display: 'inline-block' }} />
-            Oferta especial · Combo
+            Oferta Día del Padre · Combo
           </div>
-          <h2 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(30px, 7vw, 52px)', lineHeight: 1.03, letterSpacing: '-0.025em', color: 'var(--sol-ink)' }}>
-            <span style={{ display: 'block', marginBottom: '6px' }}>{cfg.title}</span>
-            <em style={{ display: 'block', fontStyle: 'italic', color: '#e040fb', fontWeight: 300 }}>{cfg.subtitle}</em>
-          </h2>
-
-          {/* Benefit badges — 3 columnas con íconos */}
-          {cfg.badges?.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cfg.badges.length}, 1fr)`, maxWidth: 480, margin: '26px auto 0' }}>
-              {cfg.badges.map((badge, i) => (
-                <div
-                  key={`${badge}-${i}`}
-                  style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
-                    padding: '4px 12px', textAlign: 'center',
-                    borderRight: i < cfg.badges.length - 1 ? '0.5px solid var(--sol-line)' : 'none',
-                  }}
-                >
-                  <span style={{ color: '#00e5ff', display: 'flex' }}>
-                    <ComboBadgeIcon index={i} />
-                  </span>
-                  <span className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--sol-muted)', lineHeight: 1.4 }}>
-                    {badge}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {cfg.description && (
-            <p className="font-jakarta" style={{ fontSize: '16px', lineHeight: 1.7, color: 'var(--sol-muted)', maxWidth: 500, margin: '22px auto 0' }}>
-              {cfg.description}
-            </p>
-          )}
         </div>
 
         {/* Single-column content */}
-        <div ref={bodyRef} className="sol-reveal" style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+        <div ref={bodyRef} className="sol-reveal" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-          {/* Showcase image */}
+          {/* Showcase image — fuera de la card */}
           <ComboCollectionShowcase settings={cfg} />
 
-          {/* Builder block — max-width centered */}
-          <div style={{ maxWidth: 900, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '32px', textAlign: 'center' }}>
+          {/* Card — envuelve título, selectores, perfil, precio y CTA */}
+          <div style={{ border: '0.5px solid var(--sol-line)', background: 'var(--sol-bg-card)', borderRadius: '4px', maxWidth: 680, margin: '0 auto', width: '100%', padding: '24px', textAlign: 'center' }}>
 
-          {/* Selector container — bordered form-like box */}
-          <div style={{ border: '0.5px solid var(--sol-line)', maxWidth: 680, margin: '0 auto', width: '100%' }}>
+            {/* Título */}
+            <h2 className="font-jakarta" style={{ fontSize: 'clamp(18px, 3.5vw, 28px)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.25, color: 'var(--sol-ink)', margin: 0 }}>
+              LLEVÁ 2 PERFUMES SOLUTION + PERFUMERO DE REGALO + ENVÍO GRATIS + 30% OFF
+            </h2>
 
-            {/* Header row */}
-            <div style={{ padding: '16px 18px', borderBottom: '0.5px solid var(--sol-line)', textAlign: 'left' }}>
-              <span className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#e040fb' }}>
-                Armá tu combo
-              </span>
-            </div>
-
-            {/* Slot 1 */}
-            <div style={{ padding: '18px' }}>
-              <ComboSelect
-                label={cfg.select_label_1}
-                value={selectedPerfume1}
-                onChange={setSelectedPerfume1}
-                options={orderedPerfumes}
-                optionLabel={optionLabel}
-              />
-            </div>
-
-            {/* Slot 2 */}
-            <div style={{ padding: '18px', borderTop: '0.5px solid var(--sol-line)' }}>
-              <ComboSelect
-                label={cfg.select_label_2}
-                value={selectedPerfume2}
-                onChange={setSelectedPerfume2}
-                options={orderedPerfumes}
-                optionLabel={optionLabel}
-              />
-            </div>
-
-          </div>{/* end selector container */}
+          {/* Selectores */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+            <ComboSelect
+              label={cfg.select_label_1}
+              value={selectedPerfume1}
+              onChange={setSelectedPerfume1}
+              options={orderedPerfumes}
+              optionLabel={optionLabel}
+            />
+            <ComboSelect
+              label={cfg.select_label_2}
+              value={selectedPerfume2}
+              onChange={setSelectedPerfume2}
+              options={orderedPerfumes}
+              optionLabel={optionLabel}
+            />
+          </div>
 
           {/* Profile */}
-          <div style={{ borderTop: '0.5px solid var(--sol-line)', paddingTop: '32px' }}>
+          <div style={{ marginTop: '16px' }}>
             <motion.div
               key={comboProfileKey}
               initial={{ opacity: 0, y: 10, filter: 'blur(6px)' }}
@@ -710,9 +666,9 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
           </div>
 
           {/* Price + CTA */}
-          <div style={{ borderTop: '0.5px solid var(--sol-line)', paddingTop: '28px' }}>
+          <div style={{ marginTop: '12px' }}>
             {cfg.features?.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px', justifyContent: 'center' }}>
                 {cfg.features.map((item, i) => (
                   <span key={`${item}-${i}`} className="font-jakarta" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '9px', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--sol-ink-dim)', border: '0.5px solid var(--sol-line)', padding: '5px 10px' }}>
                     <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#00e5ff', flexShrink: 0 }} />
@@ -722,7 +678,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
               </div>
             )}
 
-            <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+            <div style={{ marginBottom: '12px', textAlign: 'center' }}>
               {perfume1 && perfume2 && (() => {
                 const cp1 = CROSSED_PRICES[(perfume1.slug || '').toLowerCase().trim()];
                 const cp2 = CROSSED_PRICES[(perfume2.slug || '').toLowerCase().trim()];
@@ -762,46 +718,10 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
             </button>
           </div>
 
-          </div>{/* end builder block */}
+          </div>{/* end card */}
         </div>{/* end bodyRef single-column */}
       </div>
     </section>
-  );
-}
-
-// ─── Combo benefit icons (por posición: 0 regalo · 1 envío · 2 descuento) ──────
-function ComboBadgeIcon({ index }) {
-  const common = { width: 26, height: 26, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.3, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
-  if (index === 0) {
-    // Regalo
-    return (
-      <svg {...common}>
-        <polyline points="20 12 20 22 4 22 4 12" />
-        <rect x="2" y="7" width="20" height="5" />
-        <line x1="12" y1="22" x2="12" y2="7" />
-        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
-        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
-      </svg>
-    );
-  }
-  if (index === 1) {
-    // Envío (camión)
-    return (
-      <svg {...common}>
-        <rect x="1" y="3" width="15" height="13" />
-        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
-        <circle cx="5.5" cy="18.5" r="2.5" />
-        <circle cx="18.5" cy="18.5" r="2.5" />
-      </svg>
-    );
-  }
-  // Descuento (porcentaje)
-  return (
-    <svg {...common}>
-      <line x1="19" y1="5" x2="5" y2="19" />
-      <circle cx="6.5" cy="6.5" r="2.5" />
-      <circle cx="17.5" cy="17.5" r="2.5" />
-    </svg>
   );
 }
 
