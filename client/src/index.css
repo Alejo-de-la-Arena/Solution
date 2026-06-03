@@ -48,10 +48,31 @@
   border-color: #00e5ff !important;
 }
 .sol-combo-select option {
-  background: var(--sol-bg-card);
-  color: var(--sol-ink);
+  background: #ffffff;
+  color: #1a1a1a;
   text-transform: none;
   letter-spacing: normal;
+}
+
+/* ── Combo card (responsive width) ── */
+.sol-combo-card {
+  max-width: 420px;
+}
+@media (min-width: 768px) {
+  .sol-combo-card {
+    max-width: 700px;
+  }
+}
+
+/* ── Combo label (responsive size) ── */
+.sol-combo-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+@media (min-width: 768px) {
+  .sol-combo-label {
+    font-size: 18px;
+  }
 }
 
 /* ── Pulse (LIVE badge) ── */

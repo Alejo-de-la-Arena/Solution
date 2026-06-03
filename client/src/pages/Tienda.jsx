@@ -586,7 +586,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
 
         {/* Label — encima de la card, centrado */}
         <div ref={headRef} className="sol-reveal" style={{ marginBottom: '20px', textAlign: 'center' }}>
-          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: '#e040fb', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <div className="font-jakarta sol-combo-label" style={{ letterSpacing: '0.16em', textTransform: 'uppercase', color: '#e040fb', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#e040fb', display: 'inline-block' }} />
             Oferta Día del Padre · Combo
           </div>
@@ -596,12 +596,14 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
         <div ref={bodyRef} className="sol-reveal">
 
           {/* Card — único bloque: título, slider, perfil, selectores, precio y CTA */}
-          <div style={{ border: '0.5px solid var(--sol-line)', background: 'var(--sol-bg-card)', borderRadius: '12px', maxWidth: 420, margin: '0 auto', width: '100%', padding: '20px 16px', textAlign: 'center' }}>
+          <div className="sol-combo-card" style={{ border: '0.5px solid rgba(255, 255, 255, 0.6)', background: 'rgba(245, 242, 238, 0.92)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.18)', borderRadius: '16px', margin: '0 auto', width: '100%', padding: '20px 16px', textAlign: 'center', color: '#1a1a1a' }}>
 
             {/* 1. Título */}
-            <h2 className="font-jakarta" style={{ fontSize: 'clamp(15px, 3.4vw, 20px)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.3, color: 'var(--sol-ink)', margin: 0 }}>
-              LLEVÁ 2 PERFUMES SOLUTION + PERFUMERO DE REGALO + ENVÍO GRATIS + 30% OFF
-            </h2>
+            <p className="font-jakarta" style={{ fontWeight: 700, fontSize: 'clamp(13px, 3vw, 16px)', letterSpacing: '0.06em', lineHeight: 1.6, textAlign: 'center', color: '#1a1a1a', margin: 0 }}>
+              LLEVÁ 2 PERFUMES SOLUTION<br />
+              <span style={{ color: '#00e5ff' }}>+ PERFUMERO DE REGALO</span><br />
+              + ENVÍO GRATIS + 30% OFF
+            </p>
 
             {/* 2. Slider reducido */}
             <div style={{ marginTop: '12px' }}>
@@ -616,11 +618,11 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                 animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                 transition={{ duration: 0.35, ease: 'easeOut' }}
               >
-                <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: comboProfile ? '#00e5ff' : 'var(--sol-muted)', marginBottom: comboProfile ? '6px' : 0 }}>
+                <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: comboProfile ? '#00e5ff' : '#888', marginBottom: comboProfile ? '6px' : 0 }}>
                   Perfil de la combinación
                 </div>
                 {comboProfile && (
-                  <h3 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(24px, 5.5vw, 34px)', letterSpacing: '-0.02em', color: 'var(--sol-ink)', margin: 0 }}>
+                  <h3 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(24px, 5.5vw, 34px)', letterSpacing: '-0.02em', color: '#1a1a1a', margin: 0 }}>
                     {comboProfile.nickname}
                   </h3>
                 )}
@@ -646,24 +648,22 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
             </div>
 
             {/* 6. Precio */}
-            <div style={{ marginTop: '12px', textAlign: 'center' }}>
+            <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center' }}>
               {perfume1 && perfume2 && (() => {
                 const cp1 = CROSSED_PRICES[(perfume1.slug || '').toLowerCase().trim()];
                 const cp2 = CROSSED_PRICES[(perfume2.slug || '').toLowerCase().trim()];
                 const crossedSum = cp1 && cp2 ? cp1 + cp2 : null;
                 return crossedSum ? (
-                  <div style={{ marginBottom: '2px' }}>
-                    <span className="font-jakarta" style={{ fontSize: '13px', color: 'var(--sol-muted)', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
-                      ${crossedSum.toLocaleString('es-AR')} ARS
-                    </span>
-                  </div>
+                  <span className="font-jakarta" style={{ fontSize: '13px', color: '#888', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
+                    ${crossedSum.toLocaleString('es-AR')} ARS
+                  </span>
                 ) : null;
               })()}
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', justifyContent: 'center' }}>
-                <span className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(30px, 7vw, 42px)', letterSpacing: '-0.025em', color: 'var(--sol-ink)', lineHeight: 1 }}>
+                <span className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(30px, 7vw, 42px)', letterSpacing: '-0.025em', color: '#1a1a1a', lineHeight: 1 }}>
                   {perfume1 && perfume2 ? `$${(perfume1.price + perfume2.price).toLocaleString('es-AR')}` : '—'}
                 </span>
-                <span className="font-jakarta" style={{ fontSize: '10px', color: 'var(--sol-muted)', letterSpacing: '0.18em' }}>ARS</span>
+                <span className="font-jakarta" style={{ fontSize: '10px', color: '#666', letterSpacing: '0.18em' }}>ARS</span>
               </div>
             </div>
 
@@ -697,7 +697,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
 function ComboSelect({ label, value, onChange, options, optionLabel }) {
   return (
     <div style={{ textAlign: 'left' }}>
-      <label className="font-jakarta" style={{ display: 'block', fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '8px' }}>
+      <label className="font-jakarta" style={{ display: 'block', fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#888', marginBottom: '8px' }}>
         {label}
       </label>
       <div style={{ position: 'relative' }}>
@@ -708,8 +708,8 @@ function ComboSelect({ label, value, onChange, options, optionLabel }) {
           style={{
             width: '100%', minHeight: '42px',
             padding: '10px 40px 10px 14px',
-            background: 'var(--sol-bg-card)', color: 'var(--sol-ink)',
-            border: '0.5px solid var(--sol-line)', borderRadius: 0,
+            background: 'rgba(255,255,255,0.7)', color: '#1a1a1a',
+            border: '0.5px solid rgba(0,0,0,0.15)', borderRadius: 0,
             fontSize: '13px', letterSpacing: '0.12em', textTransform: 'uppercase',
             appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none',
             cursor: 'pointer', outline: 'none',
