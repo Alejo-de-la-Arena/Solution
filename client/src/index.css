@@ -75,6 +75,16 @@
   }
 }
 
+/* ── Combo perfil label (responsive size) ── */
+.sol-combo-perfil-label {
+  font-size: 10px;
+}
+@media (min-width: 768px) {
+  .sol-combo-perfil-label {
+    font-size: 12px;
+  }
+}
+
 /* ── Pulse (LIVE badge) ── */
 @keyframes sol-pulse {
   0%, 100% { opacity: 1; }

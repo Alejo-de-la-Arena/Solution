@@ -586,9 +586,9 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
 
         {/* Label — encima de la card, centrado */}
         <div ref={headRef} className="sol-reveal" style={{ marginBottom: '20px', textAlign: 'center' }}>
-          <div className="font-jakarta sol-combo-label" style={{ letterSpacing: '0.16em', textTransform: 'uppercase', color: '#e040fb', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <div className="font-jakarta sol-combo-label" style={{ letterSpacing: '0.16em', textTransform: 'uppercase', color: '#e040fb', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '18px', }}>
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#e040fb', display: 'inline-block' }} />
-            Oferta Día del Padre · Combo
+            Oferta Día del Padre
           </div>
         </div>
 
@@ -599,9 +599,9 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
           <div className="sol-combo-card" style={{ border: '0.5px solid rgba(255, 255, 255, 0.6)', background: 'rgba(245, 242, 238, 0.92)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.18)', borderRadius: '16px', margin: '0 auto', width: '100%', padding: '20px 16px', textAlign: 'center', color: '#1a1a1a' }}>
 
             {/* 1. Título */}
-            <p className="font-jakarta" style={{ fontWeight: 700, fontSize: 'clamp(13px, 3vw, 16px)', letterSpacing: '0.06em', lineHeight: 1.6, textAlign: 'center', color: '#1a1a1a', margin: 0 }}>
+            <p className="font-jakarta" style={{ fontWeight: 700, fontSize: 'clamp(16px, 3vw, 18px)', letterSpacing: '0.06em', lineHeight: 1.6, textAlign: 'center', color: '#1a1a1a', margin: 0 }}>
               LLEVÁ 2 PERFUMES SOLUTION<br />
-              <span style={{ color: '#00e5ff' }}>+ PERFUMERO DE REGALO</span><br />
+              <span style={{ color: '#00e5ff', marginLeft: '-8px' }}>+ PERFUMERO DE REGALO</span><br />
               + ENVÍO GRATIS + 30% OFF
             </p>
 
@@ -618,7 +618,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                 animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                 transition={{ duration: 0.35, ease: 'easeOut' }}
               >
-                <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: comboProfile ? '#00e5ff' : '#888', marginBottom: comboProfile ? '6px' : 0 }}>
+                <div className="font-jakarta sol-combo-perfil-label" style={{ letterSpacing: '0.24em', textTransform: 'uppercase', color: comboProfile ? '#e040fb' : '#888', marginBottom: comboProfile ? '6px' : 0 }}>
                   Perfil de la combinación
                 </div>
                 {comboProfile && (
