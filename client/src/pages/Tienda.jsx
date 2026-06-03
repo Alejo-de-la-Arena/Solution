@@ -196,24 +196,14 @@ function TiendaHero() {
           <em style={{ display: 'block', fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>Tu momento.</em>
         </h1>
 
-        {/* Sub */}
-        <div ref={subRef} className="sol-reveal" style={{ maxWidth: 520, marginBottom: '28px', margin: '0 auto 28px', textAlign: 'center' }}>
-          <p className="font-jakarta" style={{ fontSize: '16px', lineHeight: 1.7, color: 'var(--sol-muted)' }}>
-            Cada perfume sigue la línea de una referencia de nicho reconocida. Elegís el momento, nosotros te decimos cuál usar. Sin marketing vacío.
-          </p>
-        </div>
-
         {/* Scroll indicator */}
-        <div ref={statsRef} className="sol-reveal" style={{ paddingTop: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-          <p className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', margin: 0 }}>
-            Conocé nuestra colección
-          </p>
+        <div ref={statsRef} className="sol-reveal" style={{ paddingTop: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <motion.div
-            animate={{ y: [0, 8, 0] }}
+            animate={{ y: [0, 10, 0] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
             style={{ color: '#00e5ff', display: 'flex', alignItems: 'center' }}
           >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M12 5v14M5 12l7 7 7-7" />
             </svg>
           </motion.div>
@@ -586,9 +576,8 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
 
         {/* Label — encima de la card, centrado */}
         <div ref={headRef} className="sol-reveal" style={{ marginBottom: '20px', textAlign: 'center' }}>
-          <div className="font-jakarta sol-combo-label" style={{ letterSpacing: '0.16em', textTransform: 'uppercase', color: '#e040fb', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '18px', }}>
-            <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#e040fb', display: 'inline-block' }} />
-            Oferta Día del Padre
+          <div className="font-jakarta sol-combo-label" style={{ letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--sol-ink)', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            🎁 Oferta Día del Padre · Combo
           </div>
         </div>
 
@@ -601,7 +590,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
             {/* 1. Título */}
             <p className="font-jakarta" style={{ fontWeight: 700, fontSize: 'clamp(16px, 3vw, 18px)', letterSpacing: '0.06em', lineHeight: 1.6, textAlign: 'center', color: '#1a1a1a', margin: 0 }}>
               LLEVÁ 2 PERFUMES SOLUTION<br />
-              <span style={{ color: '#00e5ff', marginLeft: '-8px' }}>+ PERFUMERO DE REGALO</span><br />
+              <span style={{ color: '#1a1a1a', marginLeft: '-9px' }}>+ PERFUMERO DE REGALO</span><br />
               + ENVÍO GRATIS + 30% OFF
             </p>
 
