@@ -197,7 +197,7 @@ function TiendaHero() {
         </h1>
 
         {/* Scroll indicator */}
-        <div ref={statsRef} className="sol-reveal" style={{ paddingTop: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div ref={statsRef} className="sol-reveal" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <motion.div
             animate={{ y: [0, 10, 0] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
