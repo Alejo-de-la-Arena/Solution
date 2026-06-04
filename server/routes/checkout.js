@@ -58,6 +58,7 @@ router.post('/', async (req, res) => {
       product_id: i.product_id,
       quantity: Math.max(1, Math.floor(Number(i.quantity))),
       unit_price: Number(i.unit_price) || 0,
+      combo_tag: (i.combo_tag || '').trim() || null,
     }));
 
   if (cleanItems.length === 0) {
@@ -118,6 +119,7 @@ router.post('/', async (req, res) => {
     product_id: i.product_id,
     quantity: i.quantity,
     unit_price: i.unit_price,
+    combo_tag: i.combo_tag || null,
   }));
   const rowsWithCogs = await attachCogsToOrderItemRows(rows);
 

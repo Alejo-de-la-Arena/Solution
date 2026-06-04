@@ -138,6 +138,7 @@ router.post('/nave/create-payment', async (req, res) => {
       unit_price: Number(i.unit_price) || 0,
       name: i.name || 'Producto',
       description: i.description || '',
+      combo_tag: (i.combo_tag || '').trim() || null,
     }));
   if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
 
@@ -182,7 +183,7 @@ router.post('/nave/create-payment', async (req, res) => {
       .select('id, status, total, currency, created_at').single();
     if (orderErr) { console.error('[Nave] Error creando orden:', orderErr); return res.status(500).json({ error: 'Error al crear la orden' }); }
 
-    const rows = tmItems.map((i) => ({ order_id: order.id, product_id: i.product_id, quantity: i.quantity, unit_price: i.unit_price }));
+    const rows = tmItems.map((i) => ({ order_id: order.id, product_id: i.product_id, quantity: i.quantity, unit_price: i.unit_price, combo_tag: i.combo_tag || null }));
     const rowsWithCogs = await attachCogsToOrderItemRows(rows);
     const { error: itemsErr } = await supabase.from('order_items').insert(rowsWithCogs);
     if (itemsErr) console.error('[Nave] Error guardando items:', itemsErr);

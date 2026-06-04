@@ -524,6 +524,7 @@ router.post('/mercadopago/create-order', async (req, res) => {
       unit_price: Number(i.unit_price) || 0,
       name: i.name || 'Producto',
       description: i.description || '',
+      combo_tag: (i.combo_tag || '').trim() || null,
     }));
   if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
 
@@ -579,6 +580,7 @@ router.post('/mercadopago/create-order', async (req, res) => {
     product_id: i.product_id,
     quantity: i.quantity,
     unit_price: i.unit_price,
+    combo_tag: i.combo_tag || null,
   }));
   const { error: itemsErr } = await supabase.from('order_items').insert(rows);
   if (itemsErr) console.error('[MP] Error guardando items:', itemsErr);
@@ -734,6 +736,7 @@ router.post('/mercadopago/create-preference', async (req, res) => {
       unit_price: Number(i.unit_price) || 0,
       name: i.name || 'Producto',
       description: i.description || '',
+      combo_tag: (i.combo_tag || '').trim() || null,
     }));
   if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
 
@@ -794,6 +797,7 @@ router.post('/mercadopago/create-preference', async (req, res) => {
     product_id: i.product_id,
     quantity: i.quantity,
     unit_price: i.unit_price,
+    combo_tag: i.combo_tag || null,
   }));
   const { error: itemsErr } = await supabase.from('order_items').insert(rows);
   if (itemsErr) console.error('[MP] Error guardando items:', itemsErr);
@@ -940,6 +944,7 @@ router.post('/mercadopago/process-card-payment', async (req, res) => {
         unit_price: Number(i.unit_price) || 0,
         name: i.name || 'Producto',
         description: i.description || '',
+        combo_tag: (i.combo_tag || '').trim() || null,
       }));
     if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
 
@@ -996,6 +1001,7 @@ router.post('/mercadopago/process-card-payment', async (req, res) => {
       product_id: i.product_id,
       quantity: i.quantity,
       unit_price: i.unit_price,
+      combo_tag: i.combo_tag || null,
     }));
     const { error: itemsErr } = await supabase.from('order_items').insert(rows);
     if (itemsErr) console.error('[MP] Error guardando items:', itemsErr);

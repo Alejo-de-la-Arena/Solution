@@ -656,7 +656,23 @@ function OrderDetailSection({
         <ul className="space-y-2">
           {(order.items || []).map((it) => (
             <li key={it.id} className="flex justify-between items-center text-sm border-b border-white/5 pb-2 last:border-0">
-              <span className="text-white/90">{it.quantity} × {it.product_name || it.product_id}</span>
+              <span className="text-white/90 flex items-center gap-2 flex-wrap">
+                {it.quantity} × {it.product_name || it.product_id}
+                {it.combo_tag && (
+                  <span
+                    style={{
+                      background: '#e040fb',
+                      color: '#fff',
+                      fontSize: '10px',
+                      borderRadius: '9999px',
+                      padding: '2px 8px',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {it.combo_tag}
+                  </span>
+                )}
+              </span>
               <span className="text-[rgb(0,255,255)] tabular-nums">{formatMoney(it.quantity * it.unit_price, order.currency)}</span>
             </li>
           ))}

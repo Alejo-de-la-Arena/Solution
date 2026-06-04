@@ -544,8 +544,8 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
   const cfg = settings || normalizeComboSettings(null);
 
   const handleAddCombo = () => {
-    if (perfume1) addToCart(perfume1);
-    if (perfume2) addToCart(perfume2);
+    if (perfume1) addToCart({ ...perfume1, combo_tag: 'Combo Día del Padre' });
+    if (perfume2) addToCart({ ...perfume2, combo_tag: 'Combo Día del Padre' });
   };
 
   const comboProfile    = getComboProfile(selectedPerfume1, selectedPerfume2);

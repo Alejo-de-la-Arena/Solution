@@ -128,7 +128,7 @@ router.get('/orders', async (req, res) => {
   const orderIds = orders.map((o) => o.id);
   const { data: orderItems, error: itemsErr } = await supabase
     .from('order_items')
-    .select('id, order_id, product_id, quantity, unit_price')
+    .select('id, order_id, product_id, quantity, unit_price, combo_tag')
     .in('order_id', orderIds)
     .order('order_id')
     .order('id');
@@ -159,6 +159,7 @@ router.get('/orders', async (req, res) => {
       product_name: productNameById[it.product_id] || null,
       quantity: it.quantity,
       unit_price: it.unit_price,
+      combo_tag: it.combo_tag || null,
     });
   }
 
