@@ -400,7 +400,8 @@ async function sendTrackingEmail({ to, order, trackingNumber, deliveryType, agen
  * Destinatario fijo via env `ADMIN_NOTIFICATION_EMAIL`.
  * Idempotencia controlada en el caller via `orders.admin_notification_sent_at`.
  *
- * @param {{ order: object, items: Array<{ product_id, product_name?, quantity, unit_price }>, payment?: object }} params
+ * Si algún ítem trae `combo_tag`, el email destaca que es una venta del combo.
+ * @param {{ order: object, items: Array<{ product_id, product_name?, quantity, unit_price, combo_tag? }>, payment?: object }} params
  * @returns {Promise<boolean>}
  */
 async function sendAdminSaleNotificationEmail({ order, items, payment }) {
@@ -425,12 +426,18 @@ async function sendAdminSaleNotificationEmail({ order, items, payment }) {
       ? escapeHtml(String(order.payment_method).toUpperCase())
       : '—';
 
+    // ── Detección de combo: si algún ítem trae combo_tag, destacamos la venta ──
+    const comboItems = (items || []).filter((i) => i && i.combo_tag);
+    const comboTag = comboItems.length > 0 ? String(comboItems[0].combo_tag) : '';
+    const isCombo = comboItems.length > 0;
+    const comboBadge = `<span style="display:inline-block;background:#e040fb;color:#ffffff;font-size:10px;font-weight:600;border-radius:9999px;padding:2px 8px;margin-left:8px;vertical-align:middle;">${escapeHtml(comboTag)}</span>`;
+
     const linesHtml = (items || []).map((i) => {
       const itemTotal = Number(i.quantity) * Number(i.unit_price);
       return `
       <tr>
         <td style="padding:12px 0;border-bottom:1px solid #eaeaea;">
-          <p style="margin:0;font-size:14px;color:#111827;font-weight:500;">${escapeHtml(i.product_name || ('Producto ' + i.product_id))}</p>
+          <p style="margin:0;font-size:14px;color:#111827;font-weight:500;">${escapeHtml(i.product_name || ('Producto ' + i.product_id))}${i.combo_tag ? comboBadge : ''}</p>
           <p style="margin:4px 0 0;font-size:12px;color:#6b7280;">Cant: ${Number(i.quantity)} · Unit: ${formatMoneyArs(i.unit_price, order.currency)}</p>
         </td>
         <td style="padding:12px 0;border-bottom:1px solid #eaeaea;text-align:right;font-size:14px;color:#111827;font-weight:500;">
@@ -453,12 +460,20 @@ async function sendAdminSaleNotificationEmail({ order, items, payment }) {
 
     const adminLink = 'https://www.solutionperfumes.com/admin/pedidos';
 
+    const comboBanner = isCombo ? `
+      <div style="background:#fdf4ff;border:1px solid #f0abfc;border-radius:6px;padding:16px;margin-bottom:24px;">
+        <p style="margin:0;font-size:16px;color:#86198f;font-weight:700;">🎁 Venta de ${escapeHtml(comboTag)}</p>
+        <p style="margin:6px 0 0;font-size:13px;color:#a21caf;">Esta orden corresponde al combo — preparar los ${comboItems.length} perfumes que lo componen.</p>
+      </div>` : '';
+
     const body = `
     <tr><td style="padding:40px;">
-      <h2 style="margin:0 0 8px;font-size:22px;color:#111827;">🛒 Nueva venta confirmada</h2>
+      <h2 style="margin:0 0 8px;font-size:22px;color:#111827;">${isCombo ? '🎁' : '🛒'} Nueva venta confirmada</h2>
       <p style="margin:0 0 24px;font-size:14px;color:#6b7280;">
         Se acreditó un pago — preparar el pedido.
       </p>
+
+      ${comboBanner}
 
       <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:16px;margin-bottom:24px;">
         <p style="margin:0;font-size:13px;color:#166534;">Orden <strong>#${escapeHtml(String(order.id))}</strong></p>
@@ -513,7 +528,9 @@ async function sendAdminSaleNotificationEmail({ order, items, payment }) {
     </td></tr>`;
 
     const shortId = String(order.id || '').slice(0, 8);
-    const subject = `🛒 Nueva venta #${shortId} — ${formatMoneyArs(order.total, order.currency)} — Solution`;
+    const subject = isCombo
+      ? `🎁 ${comboTag} #${shortId} — ${formatMoneyArs(order.total, order.currency)} — Solution`
+      : `🛒 Nueva venta #${shortId} — ${formatMoneyArs(order.total, order.currency)} — Solution`;
 
     const out = await postResendEmail({ to, subject, html: emailWrapper(body) });
     if (!out) {

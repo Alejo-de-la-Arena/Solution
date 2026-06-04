@@ -16,7 +16,7 @@ function toDecimalString(num) {
 async function buildItemsForEmail(orderRowId) {
   const { data: rawItems } = await supabase
     .from('order_items')
-    .select('product_id, quantity, unit_price')
+    .select('product_id, quantity, unit_price, combo_tag')
     .eq('order_id', orderRowId);
   let items = rawItems || [];
   const pids = [...new Set(items.map((i) => i.product_id))];

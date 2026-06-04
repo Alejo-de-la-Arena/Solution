@@ -358,7 +358,7 @@ async function handleNaveWebhook(req, res) {
     // mismo admin haciendo la prueba.
     const needAdminEmail = !prevOrder.admin_notification_sent_at && !prevOrder.is_admin_test;
     if (orderStatus === 'paid' && (needCustomerEmail || needAdminEmail)) {
-      const { data: rawItems } = await supabase.from('order_items').select('product_id, quantity, unit_price').eq('order_id', external_payment_id);
+      const { data: rawItems } = await supabase.from('order_items').select('product_id, quantity, unit_price, combo_tag').eq('order_id', external_payment_id);
       let itemsForEmail = rawItems || [];
       const pids = [...new Set(itemsForEmail.map((i) => i.product_id))];
       if (pids.length > 0) {
