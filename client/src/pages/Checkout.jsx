@@ -634,13 +634,18 @@ export default function Checkout() {
     Boolean(shippingQuote?.provider)
     && Boolean(selectedShipping?.mode)
     && (!needsBranchSelection || Boolean(selectedBranch));
+  // La calle es obligatoria solo para envío a domicilio. Para retiro en sucursal
+  // (Correo branch) el paquete se retira en la agencia, así que no la exigimos.
+  const homeAddressMissing =
+    selectedShipping?.mode === 'home' && !form.address.trim();
   const isSubmitDisabled =
     loading
     || cart.length === 0
     || !canSubmit
     || !hasShippingInputs
     || waitingForShippingQuote
-    || !hasShippingSelection;
+    || !hasShippingSelection
+    || homeAddressMissing;
 
   const getCheckoutPayload = useCallback(() => {
     const lineItems = cart.filter((item) => item.productId);
@@ -693,6 +698,7 @@ export default function Checkout() {
     if (waitingForShippingQuote) { setError('Esperá a que carguen las opciones de envío antes de pagar.'); return; }
     if (needsBranchSelection && !selectedBranch) { setError('Seleccioná la sucursal de Correo donde vas a retirar tu pedido.'); return; }
     if (!hasShippingSelection) { setError('Seleccioná una opción de envío para continuar con el pago.'); return; }
+    if (selectedShipping?.mode === 'home' && !form.address.trim()) { setError('Ingresá la calle y número para el envío a domicilio.'); return; }
 
     setLoading(true);
     try {
@@ -1021,7 +1027,7 @@ export default function Checkout() {
                   right={<span className="text-[10px] text-[rgb(0,255,255)] uppercase tracking-widest">🇦🇷 ARG</span>}
                 />
                 <div className="p-5 grid grid-cols-1 sm:grid-cols-5 gap-4">
-                  <Field id="address" label="Calle y número" span={5}>
+                  <Field id="address" label="Calle y número" required={selectedShipping?.mode !== 'branch'} span={5}>
                     <input id="address" className="field" placeholder="Av. Siempre Viva 742"
                       value={form.address} onChange={handleChange} />
                   </Field>

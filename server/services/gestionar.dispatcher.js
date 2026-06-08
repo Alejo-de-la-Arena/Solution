@@ -131,10 +131,45 @@ async function dispatchPendingOrders({ limit = 50, orderId = null } = {}) {
     const orderIds = pending.map((o) => o.id);
     const { itemsByOrder } = await loadItemsForOrders(orderIds);
 
-    const ordersWithItems = pending.map((o) => ({
+    const allOrdersWithItems = pending.map((o) => ({
         ...o,
         items: itemsByOrder[o.id] || [],
     }));
+
+    // El push es en lote: Gestionar rechaza el Excel ENTERO si una sola fila tiene
+    // `direccion` vacía. Aislamos las órdenes sin dirección, las marcamos con su
+    // propio error y seguimos solo con las válidas, así una orden mal cargada no
+    // arrastra a las que sí tienen dirección. `direccion` queda vacía solo cuando
+    // line1 y line2 están ambos vacíos (ver joinAddress en gestionar.provider).
+    const hasAddress = (o) =>
+        Boolean((o.shipping_address_line1 || '').trim() || (o.shipping_address_line2 || '').trim());
+    const invalidOrders = allOrdersWithItems.filter((o) => !hasAddress(o));
+    const ordersWithItems = allOrdersWithItems.filter(hasAddress);
+
+    if (invalidOrders.length > 0) {
+        console.warn(
+            '[gestionar.dispatcher] órdenes sin dirección aisladas del lote:',
+            invalidOrders.map((o) => o.id).join(', '),
+        );
+        await Promise.all(
+            invalidOrders.map((o) =>
+                markOrderFailed({
+                    orderId: o.id,
+                    message: 'Falta la dirección de envío (calle y número). Completala en la orden y reintentá el push.',
+                    currentAttempts: o.gestionar_attempts,
+                }),
+            ),
+        );
+    }
+
+    if (ordersWithItems.length === 0) {
+        return {
+            picked: pending.length,
+            succeeded: 0,
+            failed: invalidOrders.length,
+            errors: invalidOrders.map((o) => ({ orderId: o.id, message: 'Falta dirección de envío' })),
+        };
+    }
 
     let excelBuffer;
     try {
