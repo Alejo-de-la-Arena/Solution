@@ -907,6 +907,24 @@ router.post('/gestionar/dispatch-now', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/admin/metrics
+ * Dashboard de facturación, ventas, ticket promedio y usuarios.
+ * Toda la lógica (incluyendo fronteras de fecha en zona horaria de Argentina)
+ * vive en la función SQL public.admin_billing_metrics(). Requiere Bearer JWT admin.
+ */
+router.get('/metrics', async (req, res) => {
+  const user = await assertAdmin(req, res);
+  if (!user) return;
+
+  const { data, error } = await supabase.rpc('admin_billing_metrics');
+  if (error) {
+    console.error('Admin metrics error:', error);
+    return res.status(500).json({ error: 'Error al calcular métricas' });
+  }
+  return res.json(data || {});
+});
+
 // multer error handler (tamaño, mime, etc.)
 router.use((err, _req, res, next) => {
   if (err instanceof multer.MulterError) {
