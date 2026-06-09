@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 export default function AdminOverview() {
   return (
     <div className="mx-auto max-w-4xl">
@@ -7,17 +9,18 @@ export default function AdminOverview() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[
-          { title: 'Métricas', desc: 'Ventas y conversión (próximamente)' },
-          { title: 'Usuarios', desc: 'Registros y actividad (próximamente)' },
-          { title: 'Pedidos', desc: 'Resumen por canal (próximamente)' },
-        ].map(({ title, desc }) => (
-          <div
+          { title: 'Métricas', desc: 'Facturación y ventas', to: '/admin/metricas' },
+          { title: 'Usuarios', desc: 'Registros y actividad', to: '/admin/usuarios' },
+          { title: 'Pedidos', desc: 'Resumen por canal', to: '/admin/pedidos' },
+        ].map(({ title, desc, to }) => (
+          <Link
             key={title}
-            className="border border-white/20 rounded-lg p-6 bg-white/[0.02]"
+            to={to}
+            className="border border-white/20 rounded-lg p-6 bg-white/[0.02] transition-colors hover:border-[rgb(255,0,255)]/50 hover:bg-white/[0.04]"
           >
             <h2 className="text-lg font-heading tracking-wider text-white/90 mb-2">{title}</h2>
             <p className="text-white/50 text-sm">{desc}</p>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

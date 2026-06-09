@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, NavLink, Link } from 'react-router-dom';
+import { Outlet, NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 
 const ChartIcon = (props) => (
   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
@@ -7,6 +7,12 @@ const ChartIcon = (props) => (
     <rect x="5" y="11" width="3.2" height="7" />
     <rect x="10.4" y="7" width="3.2" height="11" />
     <rect x="15.8" y="13" width="3.2" height="5" />
+  </svg>
+);
+
+const ChevronLeftIcon = (props) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <polyline points="15 18 9 12 15 6" />
   </svg>
 );
 
@@ -21,9 +27,20 @@ const navItems = [
   { to: '/admin/calculadora', end: false, label: 'Calculadora' },
 ];
 
+/** Nombre de la sección actual según el pathname (para la flecha de volver en mobile). */
+function sectionLabel(pathname) {
+  const match = navItems.find((it) => pathname === it.to || pathname.startsWith(`${it.to}/`));
+  return match ? match.label : 'Volver';
+}
+
 export default function AdminLayout() {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // En mobile, mostrar flecha "volver" en todas las secciones menos el root /admin.
+  const isAdminRoot = location.pathname === '/admin' || location.pathname === '/admin/';
 
   return (
     <div className="min-h-screen bg-black text-white flex">
@@ -79,6 +96,19 @@ export default function AdminLayout() {
         </div>
       </aside>
       <main className="flex-1 px-4 md:px-8 py-20 overflow-auto">
+        {/* Flecha volver — solo mobile, oculta en el root /admin */}
+        {!isAdminRoot && (
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="Volver atrás"
+            className="md:hidden fixed top-3 left-16 z-50 flex items-center gap-1 text-sm bg-transparent border-0 p-0"
+            style={{ color: 'var(--sol-muted)' }}
+          >
+            <ChevronLeftIcon className="flex-shrink-0" />
+            {sectionLabel(location.pathname)}
+          </button>
+        )}
         <Outlet />
       </main>
     </div>
