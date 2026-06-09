@@ -150,7 +150,7 @@ export default function AdminMetrics() {
         transition={{ duration: 0.35, delay: 0.05 }}
         className="text-3xl sm:text-4xl font-heading tracking-wider mb-4"
       >
-        Métricas
+        Ingresos
       </motion.h1>
       <motion.p
         initial={{ opacity: 0, y: 8 }}
@@ -196,10 +196,10 @@ export default function AdminMetrics() {
           </Block>
 
           {/* BLOQUE 3 — USUARIOS */}
-          <Block title="Usuarios" cols="md:grid-cols-4" delay={0.22}>
-            <MetricCard label="Usuarios totales" value={formatInt(metrics.users_total)} primary accent />
-            <MetricCard label="Nuevos hoy" value={formatInt(metrics.users_today)} />
-            <MetricCard label="Nuevos este mes" value={formatInt(metrics.users_this_month)} />
+          <Block title="Compradores" cols="md:grid-cols-4" delay={0.22}>
+            <MetricCard label="Compradores únicos" value={formatInt(metrics.users_total)} primary accent />
+            <MetricCard label="Compradores hoy" value={formatInt(metrics.users_today)} />
+            <MetricCard label="Compradores este mes" value={formatInt(metrics.users_this_month)} />
             <MetricCard label="Mes anterior" value={formatInt(metrics.users_last_month)} />
           </Block>
 
