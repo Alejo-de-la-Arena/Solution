@@ -3,6 +3,41 @@ const gestionarProvider = require('./providers/gestionar.provider');
 
 const SOFT_LOCK_MINUTES = 5;
 
+// Cada combo (2 perfumes, cada uno un order_item con `combo_tag`) incluye un
+// perfumero de regalo que Gestionar tiene cargado en su catálogo con este SKU.
+// Lo sumamos como una línea más del fulfillment para que Gestionar sepa que hay
+// que despacharlo. Configurable por env por si el código cambia en Gestionar.
+const COMBO_GIFT_SKU = (process.env.GESTIONAR_COMBO_GIFT_SKU || 'PER-S-SOL-UTI').trim();
+const COMBO_PERFUMES_PER_UNIT = 2; // un combo = 2 perfumes → 1 perfumero
+
+/**
+ * Suma el perfumero de regalo a las órdenes que traen combo. Calcula cuántos
+ * combos hay (cantidad total de items con `combo_tag` / 2, ya que cada combo son
+ * 2 perfumes) y agrega una línea con el SKU del perfumero y esa cantidad. Sin
+ * combo —o sin SKU de perfumero configurado— devuelve los items sin cambios.
+ */
+function appendComboGiftItems(items) {
+    if (!COMBO_GIFT_SKU) return items;
+    const comboUnits = (items || []).reduce(
+        (sum, it) => sum + (it && it.combo_tag ? (Number(it.quantity) || 0) : 0),
+        0,
+    );
+    if (comboUnits <= 0) return items;
+    const perfumeroQty = Math.max(1, Math.round(comboUnits / COMBO_PERFUMES_PER_UNIT));
+    return [
+        ...items,
+        {
+            product_id: null,
+            quantity: perfumeroQty,
+            unit_price: 0,
+            sku: COMBO_GIFT_SKU,
+            name: 'Perfumero de regalo (combo)',
+            gestionar_product_id: null,
+            combo_tag: null,
+        },
+    ];
+}
+
 async function loadPendingOrders({ limit, orderId = null }) {
     let query = supabase
         .from('orders')
@@ -39,7 +74,7 @@ async function loadItemsForOrders(orderIds) {
 
     const { data: items, error: itemsErr } = await supabase
         .from('order_items')
-        .select('order_id, product_id, quantity, unit_price')
+        .select('order_id, product_id, quantity, unit_price, combo_tag')
         .in('order_id', orderIds);
     if (itemsErr) throw new Error(`Error leyendo order_items: ${itemsErr.message}`);
 
@@ -65,6 +100,7 @@ async function loadItemsForOrders(orderIds) {
             sku: product.sku || null,
             name: product.name || null,
             gestionar_product_id: product.gestionar_product_id || null,
+            combo_tag: it.combo_tag || null,
         });
     }
 
@@ -133,7 +169,7 @@ async function dispatchPendingOrders({ limit = 50, orderId = null } = {}) {
 
     const allOrdersWithItems = pending.map((o) => ({
         ...o,
-        items: itemsByOrder[o.id] || [],
+        items: appendComboGiftItems(itemsByOrder[o.id] || []),
     }));
 
     // El push es en lote: Gestionar rechaza el Excel ENTERO si una sola fila tiene
@@ -339,4 +375,6 @@ function parseSaleDate(s) {
 
 module.exports = {
     dispatchPendingOrders,
+    appendComboGiftItems,
+    COMBO_GIFT_SKU,
 };
