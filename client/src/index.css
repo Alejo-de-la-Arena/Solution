@@ -284,7 +284,7 @@
   scroll-snap-align: start;
 }
 @media (min-width: 640px) {
-  .sol-slider-card { flex-basis: 300px; }
+  .sol-slider-card { flex-basis: 320px; }
 }
 @media (min-width: 1024px) {
   .sol-slider-row {
@@ -292,7 +292,14 @@
     overflow-x: visible;
     flex-wrap: wrap;
   }
-  .sol-slider-card { flex: 0 0 300px; }
+  /* Hasta 3 cards por fila sin salirse del contenedor */
+  .sol-slider-card { flex: 0 0 calc(33.333% - 12px); max-width: none; }
+}
+
+/* Título de cada fila: izquierda en mobile, centrado en desktop */
+.sol-slider-rowlabel { text-align: left; }
+@media (min-width: 1024px) {
+  .sol-slider-rowlabel { text-align: center; }
 }
 
 /* ── Tienda: reels de video (reseñas) ── */
@@ -304,17 +311,25 @@
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   padding-bottom: 6px;
+  /* Respeta el padding del contenedor: el scroll empieza con padding-left */
+  padding-left: var(--sol-section-px);
+  padding-right: var(--sol-section-px);
+  /* scroll-snap debe respetar el padding (sin esto la 1ra card se pega al borde) */
+  scroll-padding-left: var(--sol-section-px);
+  scroll-padding-right: var(--sol-section-px);
 }
 .sol-reel-row::-webkit-scrollbar { display: none; }
 .sol-reel-card {
-  flex: 0 0 150px;
+  /* 2 por slide en mobile con peek mínimo del siguiente */
+  flex: 0 0 calc(50% - 12px);
   scroll-snap-align: start;
 }
 @media (min-width: 640px) {
-  .sol-reel-card { flex-basis: 180px; }
+  .sol-reel-card { flex: 0 0 200px; }
 }
 @media (min-width: 1024px) {
   .sol-reel-row { justify-content: center; }
+  .sol-reel-card { flex: 0 0 240px; }
 }
 
 /* ── Product scroll: forced padding so Tailwind reset can't strip it ── */

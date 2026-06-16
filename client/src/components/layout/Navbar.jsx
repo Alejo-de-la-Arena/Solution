@@ -261,7 +261,6 @@ export default function Navbar() {
               <nav style={{ flex: 1 }}>
                 {/* Main links */}
                 {[
-                  { label: 'Inicio',    to: '/' },
                   { label: 'Tienda',    to: '/tienda' },
                   { label: 'Mayorista', to: wholesaleTo },
                 ].map(({ label, to }) => (

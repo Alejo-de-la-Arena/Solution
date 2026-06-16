@@ -75,8 +75,8 @@ const SLIDER_ROWS = [
 // Sin atar a un perfume específico (la mayoría de reseñas son de Red Desire).
 // Formato reel 9:16. Para activar un video, completá `url` (y opcionalmente `poster`).
 const VIDEO_REVIEWS = [
-  { id: 'v1', url: '', poster: '', accent: '#FF2D55' },
-  { id: 'v2', url: '', poster: '', accent: '#00e5ff' },
+  { id: 'v1', url: 'https://tpyzgrcqregtzmuirfny.supabase.co/storage/v1/object/public/solution-products/video/red-desire-1.mp4', poster: '', accent: '#FF2D55' },
+  { id: 'v2', url: 'https://tpyzgrcqregtzmuirfny.supabase.co/storage/v1/object/public/solution-products/video/red-desire-2.mp4', poster: '', accent: '#00e5ff' },
   { id: 'v3', url: '', poster: '', accent: '#e6a72f' },
   { id: 'v4', url: '', poster: '', accent: '#378add' },
 ];
@@ -244,7 +244,7 @@ function SliderRow({ label, perfumes }) {
   const ref = useReveal();
   return (
     <div ref={ref} className="sol-reveal" style={{ marginBottom: '36px' }}>
-      <div className="font-jost" style={{ fontSize: 'clamp(20px, 4vw, 26px)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--sol-ink)', marginBottom: '18px' }}>
+      <div className="font-jost sol-slider-rowlabel" style={{ fontSize: 'clamp(20px, 4vw, 30px)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--sol-ink)', marginBottom: '18px' }}>
         {label}
       </div>
       <div className="sol-slider-row">
@@ -402,8 +402,8 @@ function VideoReviewsSection() {
         </h2>
       </div>
 
-      <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-        <div className="sol-reel-row" style={{ paddingLeft: 'var(--sol-section-px)', paddingRight: 'var(--sol-section-px)' }}>
+      <div className="sol-container">
+        <div className="sol-reel-row">
           {VIDEO_REVIEWS.map((review) => (
             <VideoReel key={review.id} review={review} />
           ))}
@@ -430,7 +430,7 @@ function VideoReel({ review }) {
             controls
             autoPlay
             playsInline
-            preload="metadata"
+            preload="none"
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
           />
         ) : (
@@ -470,7 +470,7 @@ function MomentoSection() {
 
   return (
     <section style={{ borderBottom: '0.5px solid var(--sol-line)', background: 'var(--sol-bg)', color: 'var(--sol-ink)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)' }}>
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 var(--sol-section-px)' }}>
+      <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 var(--sol-section-px)' }}>
 
         {/* Head */}
         <div ref={headRef} className="sol-reveal" style={{ textAlign: 'center', marginBottom: '36px' }}>
@@ -495,29 +495,30 @@ function MomentoSection() {
                 to={`/producto/${m.slug}`}
                 className="sol-momento-row"
                 style={{
-                  display: 'flex', alignItems: 'center', gap: '14px',
+                  display: 'flex', alignItems: 'center', gap: 'clamp(14px, 1.6vw, 20px)',
                   background: 'var(--sol-bg-card)', border: '0.5px solid var(--sol-line)',
-                  borderRadius: '10px', padding: '14px 16px', textDecoration: 'none', color: 'var(--sol-ink)',
+                  borderRadius: '10px', padding: 'clamp(14px, 1.6vw, 22px) clamp(16px, 1.8vw, 26px)',
+                  textDecoration: 'none', color: 'var(--sol-ink)',
                   transition: 'border-color 0.3s var(--sol-ease)',
                 }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--sol-line-str)'; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--sol-line)'; }}
               >
-                <span aria-hidden style={{ width: 38, height: 38, borderRadius: '50%', background: m.tint, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>
+                <span aria-hidden style={{ width: 'clamp(38px, 4vw, 52px)', height: 'clamp(38px, 4vw, 52px)', borderRadius: '50%', background: m.tint, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(16px, 2vw, 22px)', flexShrink: 0 }}>
                   {m.icon}
                 </span>
                 <span style={{ flex: 1, minWidth: 0 }}>
-                  <span className="font-jakarta" style={{ display: 'block', fontSize: '8px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '3px' }}>
+                  <span className="font-jakarta" style={{ display: 'block', fontSize: 'clamp(8px, 0.9vw, 11px)', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '3px' }}>
                     {m.tag}
                   </span>
-                  <span className="font-jost" style={{ display: 'block', fontSize: '16px', fontWeight: 600, lineHeight: 1.1, color: 'var(--sol-ink)' }}>
+                  <span className="font-jost" style={{ display: 'block', fontSize: 'clamp(16px, 1.9vw, 24px)', fontWeight: 600, lineHeight: 1.1, color: 'var(--sol-ink)' }}>
                     {m.name}<em style={{ fontStyle: 'normal', color: accent }}>.</em>
                   </span>
-                  <span className="font-jakarta" style={{ display: 'block', fontSize: '10px', color: 'var(--sol-muted)', marginTop: '2px' }}>
+                  <span className="font-jakarta" style={{ display: 'block', fontSize: 'clamp(10px, 1.1vw, 13px)', color: 'var(--sol-muted)', marginTop: '3px' }}>
                     → {m.reference}
                   </span>
                 </span>
-                <span aria-hidden className="font-jakarta" style={{ fontSize: '14px', color: 'var(--sol-muted)', flexShrink: 0 }}>→</span>
+                <span aria-hidden className="font-jakarta" style={{ fontSize: 'clamp(14px, 1.5vw, 18px)', color: 'var(--sol-muted)', flexShrink: 0 }}>→</span>
               </Link>
             );
           })}

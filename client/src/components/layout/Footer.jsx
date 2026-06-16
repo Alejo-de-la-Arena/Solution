@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { CONTACT_EMAIL, WHATSAPP_NUMBER, INSTAGRAM_URL } from '../../lib/contact';
 
 const NAV_LINKS = [
-  { label: 'Inicio',             to: '/' },
   { label: 'Tienda',             to: '/tienda' },
   { label: 'Programa mayorista', to: '/programa-mayorista' },
   { label: 'Aplicar mayorista',  to: '/aplicar-mayorista' },
