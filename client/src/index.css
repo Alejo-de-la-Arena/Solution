@@ -267,6 +267,56 @@
 .sol-scroll::-webkit-scrollbar { display: none; }
 .sol-scroll { scrollbar-width: none; }
 
+/* ── Tienda: sliders de productos ── */
+.sol-slider-row {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 6px;
+}
+.sol-slider-row::-webkit-scrollbar { display: none; }
+.sol-slider-card {
+  flex: 0 0 72%;
+  max-width: 320px;
+  scroll-snap-align: start;
+}
+@media (min-width: 640px) {
+  .sol-slider-card { flex-basis: 300px; }
+}
+@media (min-width: 1024px) {
+  .sol-slider-row {
+    justify-content: center;
+    overflow-x: visible;
+    flex-wrap: wrap;
+  }
+  .sol-slider-card { flex: 0 0 300px; }
+}
+
+/* ── Tienda: reels de video (reseñas) ── */
+.sol-reel-row {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 6px;
+}
+.sol-reel-row::-webkit-scrollbar { display: none; }
+.sol-reel-card {
+  flex: 0 0 150px;
+  scroll-snap-align: start;
+}
+@media (min-width: 640px) {
+  .sol-reel-card { flex-basis: 180px; }
+}
+@media (min-width: 1024px) {
+  .sol-reel-row { justify-content: center; }
+}
+
 /* ── Product scroll: forced padding so Tailwind reset can't strip it ── */
 .sol-prod-scroll {
   --sol-prod-edge-offset: var(--sol-section-px);

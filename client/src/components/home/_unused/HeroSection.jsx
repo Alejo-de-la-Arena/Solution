@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useReveal } from '../../hooks/useReveal';
+import { useReveal } from '../../../hooks/useReveal';
 
 const VSL_VIDEO_URL = 'https://tpyzgrcqregtzmuirfny.supabase.co/storage/v1/object/public/solution-products/video/video-home-solution.mp4';
 

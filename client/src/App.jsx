@@ -8,7 +8,6 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import ScrollToTop from './components/layout/ScrollToTop';
 import TickerBanner from './components/home/TickerBanner';
-import Home from './pages/Home';
 import Acceso from './pages/Acceso';
 
 import WholesaleApply from './pages/WholesaleApply';
@@ -47,7 +46,7 @@ function AppRoutes() {
       <TickerBanner />
       <Navbar />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Tienda />} />
         <Route path="/acceso" element={<Acceso />} />
         <Route path="/tienda" element={<Tienda />} />
         <Route path="/producto/:id" element={<Producto />} />

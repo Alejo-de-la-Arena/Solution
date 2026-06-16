@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useReveal } from '../hooks/useReveal';
 import { getPublicProducts, productToPerfume } from '../services/products';
 import { ACCENT_COLORS } from '../lib/accentColors';
@@ -10,6 +10,7 @@ import { getStoreProductImages } from '../lib/storeProductImages';
 import { useCart } from '../contexts/CartContext';
 import { getCrossedPrice, CROSSED_PRICES } from '../lib/crossedPrices';
 import { getComboSettings, normalizeComboSettings, resolveComboImage } from '../services/combo';
+import TestimonialsSection from '../components/home/TestimonialsSection';
 
 // ─── Static per-slug data ──────────────────────────────────────────────────────
 const SLUG_META = {
@@ -47,7 +48,7 @@ const SLUG_META = {
   },
   'white-ice': {
     subtitle:   'Pureza y frescura para tu rutina',
-    reference:  'Acqua Di Gio',
+    reference:  'Acqua di Gio',
     momento:    'Gym',
     dotColor:   '#0dd3b8',
     notes:      ['Acuático', 'Bergamota', 'Pachulí'],
@@ -55,19 +56,39 @@ const SLUG_META = {
   },
 };
 
-const FILTER_PILLS = [
-  { key: 'all',      label: 'Todas',                dot: 'var(--sol-ink-dim)' },
-  { key: 'noche',    label: 'Noche y citas',         dot: '#c0392b' },
-  { key: 'salida',   label: 'Eventos y salidas',     dot: '#888888' },
-  { key: 'dia',      label: 'Sunset y encuentros',   dot: '#e6a72f' },
-  { key: 'trabajo',  label: 'Oficina y reuniones',   dot: '#378add' },
-  { key: 'gym',      label: 'Rutina diaria',         dot: '#0dd3b8' },
+// Número de colección por slug (orden de la maqueta)
+const CARD_NUM = {
+  'black-code':   '01',
+  'red-desire':   '02',
+  'yellow-bloom': '03',
+  'deep-blue':    '04',
+  'white-ice':    '05',
+};
+
+// Agrupación de los sliders de productos
+const SLIDER_ROWS = [
+  { label: 'Noche & Salidas',   slugs: ['red-desire', 'black-code'] },
+  { label: 'Día & Movimiento',  slugs: ['deep-blue', 'yellow-bloom', 'white-ice'] },
 ];
 
-function momentoKey(slug) {
-  const m = SLUG_META[slug]?.momento || '';
-  return m.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
-}
+// ─── Videos de reseñas (placeholders — cargar URLs cuando estén listas) ─────────
+// Sin atar a un perfume específico (la mayoría de reseñas son de Red Desire).
+// Formato reel 9:16. Para activar un video, completá `url` (y opcionalmente `poster`).
+const VIDEO_REVIEWS = [
+  { id: 'v1', url: '', poster: '', accent: '#FF2D55' },
+  { id: 'v2', url: '', poster: '', accent: '#00e5ff' },
+  { id: 'v3', url: '', poster: '', accent: '#e6a72f' },
+  { id: 'v4', url: '', poster: '', accent: '#378add' },
+];
+
+// ─── ¿Cuál es tu momento? — filas con íconos ────────────────────────────────────
+const MOMENTOS = [
+  { slug: 'red-desire',   icon: '🌙', tag: 'Noche · Citas',        name: 'Red Desire',   reference: 'Stronger with you', tint: 'rgba(192,57,43,0.14)' },
+  { slug: 'black-code',   icon: '✦',  tag: 'Salida · Eventos',     name: 'Black Code',   reference: 'Creed Aventus',     tint: 'rgba(0,229,255,0.10)' },
+  { slug: 'yellow-bloom', icon: '☀',  tag: 'Día · Rutina',         name: 'Yellow Bloom', reference: 'Erba Pura',         tint: 'rgba(230,167,47,0.12)' },
+  { slug: 'deep-blue',    icon: '◈',  tag: 'Trabajo · Reuniones',  name: 'Deep Blue',    reference: 'Bleu de Chanel',    tint: 'rgba(55,138,221,0.14)' },
+  { slug: 'white-ice',    icon: '◎',  tag: 'Gym · Movimiento',     name: 'White Ice',    reference: 'Acqua di Gio',      tint: 'rgba(13,211,184,0.12)' },
+];
 
 // ─── Main page ─────────────────────────────────────────────────────────────────
 export default function Tienda() {
@@ -75,8 +96,6 @@ export default function Tienda() {
   const [loading, setLoading]                 = useState(true);
   const [selectedPerfume1, setSelectedPerfume1] = useState(null);
   const [selectedPerfume2, setSelectedPerfume2] = useState(null);
-  const [altView, setAltView]                 = useState(false);
-  const [activeFilter, setActiveFilter]       = useState('all');
   const [comboSettings, setComboSettings]     = useState(null);
 
   useEffect(() => {
@@ -107,18 +126,8 @@ export default function Tienda() {
     if (perfumes.length > 1 && !selectedPerfume2) setSelectedPerfume2(perfumes[1].id);
   }, [perfumes, selectedPerfume1, selectedPerfume2]);
 
-  // Auto-switch de imagen para todo el listado
-  useEffect(() => {
-    const id = window.setInterval(() => { setAltView(v => !v); }, 6500);
-    return () => window.clearInterval(id);
-  }, []);
-
   const perfume1 = perfumes.find(p => p.id === selectedPerfume1);
   const perfume2 = perfumes.find(p => p.id === selectedPerfume2);
-
-  const visiblePerfumes = activeFilter === 'all'
-    ? perfumes
-    : perfumes.filter(p => momentoKey(p.slug) === activeFilter);
 
   if (loading) {
     return (
@@ -145,26 +154,13 @@ export default function Tienda() {
         />
       )}
 
-      <MomentFilter
-        pills={FILTER_PILLS}
-        active={activeFilter}
-        onChange={setActiveFilter}
-      />
+      <ProductSlidersSection perfumes={perfumes} />
 
-      {/* Product list */}
-      <section style={{ borderBottom: '0.5px solid var(--sol-line)' }}>
-        {visiblePerfumes.length === 0 ? (
-          <div style={{ padding: '80px var(--sol-section-px)', textAlign: 'center' }}>
-            <p className="font-jakarta" style={{ fontSize: '13px', color: 'var(--sol-muted)', letterSpacing: '0.1em' }}>
-              Sin fragancias para este momento.
-            </p>
-          </div>
-        ) : (
-          visiblePerfumes.map((perfume, index) => (
-            <ProductCard key={perfume.id} perfume={perfume} index={index} altView={altView} />
-          ))
-        )}
-      </section>
+      <VideoReviewsSection />
+
+      <TestimonialsSection />
+
+      <MomentoSection />
     </div>
   );
 }
@@ -172,7 +168,6 @@ export default function Tienda() {
 // ─── Hero ──────────────────────────────────────────────────────────────────────
 function TiendaHero() {
   const headRef = useReveal();
-  const subRef  = useReveal();
   const statsRef = useReveal();
 
   return (
@@ -214,324 +209,344 @@ function TiendaHero() {
   );
 }
 
-// ─── Moment filter pills ───────────────────────────────────────────────────────
-function MomentFilter({ pills, active, onChange }) {
+// ─── Product sliders (reemplaza el listado vertical) ────────────────────────────
+function ProductSlidersSection({ perfumes }) {
+  const headRef = useReveal();
+  const bySlug = new Map(perfumes.map(p => [(p.slug || '').trim().toLowerCase(), p]));
+
   return (
-    <div style={{ borderBottom: '0.5px solid var(--sol-line)', background: 'var(--sol-bg)', paddingTop: '12px', paddingBottom: '12px' }}>
+    <section id="coleccion" style={{ borderBottom: '0.5px solid var(--sol-line)', background: 'var(--sol-bg)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)' }}>
-        {/* Label */}
-        <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '10px' }}>
-          Filtrar por momento
+
+        {/* Section head */}
+        <div ref={headRef} className="sol-reveal" style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '12px' }}>
+            La colección
+          </div>
+          <h2 className="font-jost" style={{ fontWeight: 400, fontSize: 'clamp(26px, 5vw, 40px)', lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--sol-ink)' }}>
+            Elegí tu <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>fragancia</em>.
+          </h2>
         </div>
-        {/* Pills */}
-        <div className="sol-filter-pills">
-          {pills.map(pill => {
-            const isActive = pill.key === active;
-            return (
-              <button
-                key={pill.key}
-                type="button"
-                onClick={() => onChange(pill.key)}
-                className="font-jakarta sol-filter-pill"
-                style={{
-                  flexShrink: 0,
-                  display: 'inline-flex', alignItems: 'center', gap: '6px',
-                  borderRadius: '9999px',
-                  background: isActive ? 'var(--sol-green)' : 'transparent',
-                  color: isActive ? 'var(--sol-bg)' : 'var(--sol-ink-dim)',
-                  border: `0.5px solid ${isActive ? 'var(--sol-green)' : 'var(--sol-line-mid)'}`,
-                  cursor: 'pointer',
-                  transition: 'all 0.25s var(--sol-ease)',
-                }}
-              >
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: isActive ? 'var(--sol-bg)' : pill.dot, flexShrink: 0 }} />
-                {pill.label}
-              </button>
-            );
-          })}
-        </div>
+
+        {/* Filas */}
+        {SLIDER_ROWS.map((row) => {
+          const items = row.slugs.map(s => bySlug.get(s)).filter(Boolean);
+          if (items.length === 0) return null;
+          return <SliderRow key={row.label} label={row.label} perfumes={items} />;
+        })}
+
+      </div>
+    </section>
+  );
+}
+
+function SliderRow({ label, perfumes }) {
+  const ref = useReveal();
+  return (
+    <div ref={ref} className="sol-reveal" style={{ marginBottom: '36px' }}>
+      <div className="font-jost" style={{ fontSize: 'clamp(20px, 4vw, 26px)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--sol-ink)', marginBottom: '18px' }}>
+        {label}
+      </div>
+      <div className="sol-slider-row">
+        {perfumes.map((perfume, i) => (
+          <SliderCard key={perfume.id} perfume={perfume} index={i} />
+        ))}
       </div>
     </div>
   );
 }
 
-// ─── Reference tag with sweep-fill hover ──────────────────────────────────────
-function ReferenceTag({ reference, accent }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: 'inline-flex', alignItems: 'center', gap: '10px',
-        padding: '10px 20px', marginBottom: '28px',
-        border: `1px solid ${accent}`,
-        position: 'relative', overflow: 'hidden', cursor: 'default',
-      }}
-    >
-      {/* Sweep fill */}
-      <motion.div
-        style={{ position: 'absolute', inset: 0, background: accent, transformOrigin: 'left center', zIndex: 0 }}
-        animate={{ scaleX: hovered ? 1 : 0 }}
-        transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-      />
-      <motion.span
-        animate={{ color: hovered ? '#000' : accent }}
-        transition={{ duration: 0.3 }}
-        style={{ position: 'relative', zIndex: 1, fontSize: '13px', lineHeight: 1 }}
-      >
-        →
-      </motion.span>
-      <motion.span
-        className="font-jakarta"
-        animate={{ color: hovered ? 'rgba(0,0,0,0.55)' : 'var(--sol-muted)' }}
-        transition={{ duration: 0.3 }}
-        style={{ position: 'relative', zIndex: 1, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase' }}
-      >
-        Referencia:
-      </motion.span>
-      <motion.span
-        className="font-jost"
-        animate={{ color: hovered ? '#000' : accent }}
-        transition={{ duration: 0.3 }}
-        style={{ position: 'relative', zIndex: 1, fontSize: '17px', fontWeight: 600, letterSpacing: '-0.01em' }}
-      >
-        {reference}
-      </motion.span>
-    </div>
-  );
-}
-
-// ─── Product card ──────────────────────────────────────────────────────────────
-function ProductCard({ perfume, index, altView }) {
+function SliderCard({ perfume, index }) {
   const { addToCart } = useCart();
-  const slug     = (perfume.slug || '').trim().toLowerCase();
-  const meta     = SLUG_META[slug] || {};
-  const accent   = perfume.accent_color || ACCENT_COLORS[index] || 'var(--sol-green)';
+  const [imgError, setImgError] = useState(false);
+
+  const slug       = (perfume.slug || '').trim().toLowerCase();
+  const meta       = SLUG_META[slug] || {};
+  const accent     = perfume.accent_color || ACCENT_COLORS[index] || 'var(--sol-green)';
   const isFeatured = meta.featured || slug === 'red-desire';
-  const price    = perfume.price ? `$${Number(perfume.price).toLocaleString('es-AR')}` : '';
-  const idx      = String(index + 1).padStart(2, '0');
-  const cardRef  = useReveal();
+  const price      = perfume.price ? `$${Number(perfume.price).toLocaleString('es-AR')}` : '';
+  const crossed    = getCrossedPrice(slug);
+  const num        = CARD_NUM[slug] || String(index + 1).padStart(2, '0');
+
+  const storeImages = getStoreProductImages(perfume);
+  const imgSrc = storeImages.default ? mediaUrl(storeImages.default) : (perfume.image || null);
 
   return (
     <article
-      ref={cardRef}
-      className="sol-reveal"
+      className="sol-slider-card"
       style={{
-        borderBottom: '0.5px solid var(--sol-line)',
-        borderLeft: `3px solid ${accent}`,
-        borderRight: `3px solid ${accent}`,
-        background: `radial-gradient(ellipse 55% 35% at 0% 0%, ${accent}06 0%, var(--sol-bg) 65%)`,
-        position: 'relative',
+        background: 'var(--sol-bg-card)',
+        border: '0.5px solid var(--sol-line)',
+        borderTop: `2px solid ${accent}`,
+        borderRadius: '10px',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: 'var(--sol-section-py) var(--sol-section-px)' }}>
-
-        {/* All text above image — centered */}
-        <div style={{ textAlign: 'center' }}>
-
-          {/* Index + momento row — centered */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', marginBottom: '20px' }}>
-            <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
-              N°/{idx}
-            </div>
-            <span style={{ width: 1, height: 10, background: 'var(--sol-line-mid)', display: 'inline-block' }} />
-            <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-ink-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: meta.dotColor || accent, boxShadow: `0 0 0 1px rgba(0,0,0,0.4)` }} />
-              {meta.momento || ''}
-            </div>
+      {/* Imagen */}
+      <Link to={`/producto/${perfume.id}`} style={{ display: 'block', position: 'relative', aspectRatio: '1 / 1', overflow: 'hidden', background: `radial-gradient(ellipse at 50% 28%, ${accent}1f 0%, #060606 70%)` }}>
+        {isFeatured && (
+          <span className="font-jakarta" style={{ position: 'absolute', top: 10, left: 10, zIndex: 2, fontSize: '8px', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', background: 'var(--sol-magenta)', color: 'var(--sol-bg)', padding: '4px 8px' }}>
+            Más vendido
+          </span>
+        )}
+        <span className="font-jakarta" style={{ position: 'absolute', bottom: 8, right: 10, zIndex: 2, fontSize: '9px', letterSpacing: '0.1em', color: 'rgba(244,241,236,0.25)' }}>
+          N°/{num}
+        </span>
+        {imgSrc && !imgError ? (
+          <img
+            src={imgSrc}
+            alt={perfume.name}
+            loading="lazy"
+            onError={() => setImgError(true)}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: slug === 'red-desire' ? 'center 25%' : 'center center' }}
+          />
+        ) : (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span className="font-jakarta" style={{ fontSize: '10px', color: 'var(--sol-muted)', letterSpacing: '0.16em' }}>Imagen no configurada</span>
           </div>
+        )}
+      </Link>
 
-          {/* Product name */}
-          <div style={{ marginBottom: '10px' }}>
-            <h2 className="font-jost" style={{
-              fontWeight: 300, fontSize: 'clamp(36px, 9vw, 64px)', lineHeight: 1,
-              letterSpacing: '-0.03em', color: 'var(--sol-ink)',
-            }}>
-              {perfume.name}<em style={{ fontStyle: 'italic', color: accent }}>.</em>
-            </h2>
-            {meta.subtitle && (
-              <p className="font-jost" style={{ fontStyle: 'italic', fontWeight: 300, fontSize: '15px', color: 'var(--sol-ink-dim)', marginTop: '6px' }}>
-                {meta.subtitle}
-              </p>
-            )}
-          </div>
-
-          {/* Reference — sweep-fill on hover, centered */}
-          {meta.reference && (
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <ReferenceTag reference={meta.reference} accent={accent} />
-            </div>
-          )}
-
-          {/* "Más vendido" badge */}
-          {isFeatured && (
-            <div style={{ marginBottom: '16px' }}>
-              <span className="font-jakarta" style={{
-                display: 'inline-block',
-                fontSize: '8px', letterSpacing: '0.22em', textTransform: 'uppercase',
-                background: 'var(--sol-magenta)', color: 'var(--sol-bg)',
-                padding: '5px 10px', fontWeight: 600,
-              }}>
-                Más vendido
-              </span>
-            </div>
-          )}
-
-        </div>{/* end centered text block */}
-
-        {/* Desktop: 2-col layout (image left, info right) */}
-        <div className="sol-prod-tienda-grid">
-
-          {/* Image */}
-          <div>
-            <PerfumeStoreImage perfume={perfume} accentColor={accent} altView={altView} />
-          </div>
-
-          {/* Info — centered below image */}
-          <div style={{ paddingTop: '24px', borderTop: '0.5px solid var(--sol-line)', textAlign: 'center' }}>
-            {/* Price */}
-            <div style={{ marginBottom: '6px' }}>
-              {getCrossedPrice(slug) && (
-                <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                  <span className="font-jakarta" style={{ fontSize: '12px', color: 'var(--sol-muted)', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
-                    {getCrossedPrice(slug)} ARS
-                  </span>
-                  <span className="font-jakarta" style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', color: 'var(--sol-bg)', background: accent, padding: '3px 8px', borderRadius: '9999px' }}>
-                    30% OFF
-                  </span>
-                </div>
-              )}
-              <span className="font-jost" style={{ fontSize: 'clamp(28px, 6vw, 40px)', fontWeight: 300, letterSpacing: '-0.025em', color: 'var(--sol-ink)' }}>
-                {price}
-              </span>
-              <span className="font-jakarta" style={{ fontSize: '10px', color: 'var(--sol-muted)', letterSpacing: '0.18em', marginLeft: '6px' }}>ARS</span>
-            </div>
-            <div className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '20px' }}>
-              60ml · Eau de Parfum · 2 cuotas sin interés
-            </div>
-
-            {/* CTA buttons */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: 360, margin: '0 auto' }}>
-              <button
-                type="button"
-                onClick={() => addToCart(perfume)}
-                className="font-jakarta"
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                  padding: '16px', background: accent, color: 'var(--sol-bg)',
-                  border: 'none', fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em',
-                  textTransform: 'uppercase', cursor: 'pointer', transition: 'opacity 0.3s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-              >
-                <svg style={{ width: 14, height: 14, stroke: 'currentColor', fill: 'none', strokeWidth: 1.5 }} viewBox="0 0 24 24" aria-hidden>
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-                Agregar al carrito
-              </button>
-              <Link
-                to={`/producto/${perfume.id}`}
-                className="font-jakarta"
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  padding: '14px', background: 'transparent',
-                  border: `0.5px solid var(--sol-line-mid)`,
-                  color: 'var(--sol-ink-dim)', fontSize: '11px', letterSpacing: '0.18em',
-                  textTransform: 'uppercase', textDecoration: 'none',
-                  transition: 'border-color 0.3s, color 0.3s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.color = accent; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--sol-line-mid)'; e.currentTarget.style.color = 'var(--sol-ink-dim)'; }}
-              >
-                Ver detalles →
-              </Link>
-            </div>
-          </div>
+      {/* Cuerpo */}
+      <div style={{ padding: '16px 16px 18px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+        {/* Momento */}
+        <div className="font-jakarta" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '8px' }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: meta.dotColor || accent, boxShadow: '0 0 0 1px rgba(0,0,0,0.4)', flexShrink: 0 }} />
+          {meta.momento || ''}
         </div>
 
+        {/* Nombre */}
+        <h3 className="font-jost" style={{ fontSize: 'clamp(20px, 3.4vw, 24px)', fontWeight: 600, lineHeight: 1.05, letterSpacing: '-0.01em', color: 'var(--sol-ink)', marginBottom: '6px' }}>
+          {perfume.name}<em style={{ fontStyle: 'normal', color: accent }}>.</em>
+        </h3>
+
+        {/* Referencia de mercado */}
+        {meta.reference && (
+          <div className="font-jakarta" style={{ alignSelf: 'flex-start', fontSize: '9px', fontWeight: 600, letterSpacing: '0.06em', color: 'var(--sol-ink-dim)', background: 'rgba(244,241,236,0.06)', border: '0.5px solid var(--sol-line)', padding: '4px 9px', borderRadius: '4px', marginBottom: '12px' }}>
+            <span style={{ color: 'var(--sol-muted)' }}>→ </span>{meta.reference}
+          </div>
+        )}
+
+        {/* Precio */}
+        <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+          {crossed && (
+            <span className="font-jakarta" style={{ fontSize: '11px', color: 'var(--sol-muted)', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
+              {crossed}
+            </span>
+          )}
+          <span className="font-jost" style={{ fontSize: 'clamp(18px, 3.4vw, 22px)', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--sol-ink)' }}>
+            {price}
+          </span>
+          {crossed && (
+            <span className="font-jakarta" style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', color: 'var(--sol-bg)', background: accent, padding: '2px 7px', borderRadius: '9999px' }}>
+              30% OFF
+            </span>
+          )}
+        </div>
+
+        {/* CTAs — Ver detalles (arriba) + Agregar al carrito (abajo) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: 'auto' }}>
+          <Link
+            to={`/producto/${perfume.id}`}
+            className="font-jakarta"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '11px', background: 'transparent',
+              border: '0.5px solid var(--sol-line-mid)', color: 'var(--sol-ink-dim)',
+              fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', textDecoration: 'none',
+              transition: 'border-color 0.3s, color 0.3s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.color = accent; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--sol-line-mid)'; e.currentTarget.style.color = 'var(--sol-ink-dim)'; }}
+          >
+            Ver detalles →
+          </Link>
+          <button
+            type="button"
+            onClick={() => addToCart(perfume)}
+            className="font-jakarta"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              padding: '12px', background: accent, color: 'var(--sol-bg)',
+              border: 'none', fontSize: '10px', fontWeight: 700, letterSpacing: '0.18em',
+              textTransform: 'uppercase', cursor: 'pointer', transition: 'opacity 0.3s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+          >
+            <svg style={{ width: 13, height: 13, stroke: 'currentColor', fill: 'none', strokeWidth: 1.6 }} viewBox="0 0 24 24" aria-hidden>
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Agregar al carrito
+          </button>
+        </div>
       </div>
     </article>
   );
 }
 
-// ─── Product image (unchanged logic from original) ─────────────────────────────
-function PerfumeStoreImage({ perfume, accentColor, altView }) {
-  const [defaultError, setDefaultError] = useState(false);
-  const [altError, setAltError]         = useState(false);
-
-  const productImages = getStoreProductImages(perfume);
-  const defaultSrc    = productImages?.default ? mediaUrl(productImages.default) : null;
-  const altSrc        = productImages?.hover   ? mediaUrl(productImages.hover)   : null;
-  const hasAlt        = Boolean(altSrc);
-  const showAlt       = Boolean(altView && hasAlt && !altError);
-  const isBlackCode   = (perfume.slug || '').trim().toLowerCase() === 'black-code';
-  const isRedDesire   = (perfume.slug || '').trim().toLowerCase() === 'red-desire';
-  const baseScale     = isBlackCode ? 0.985 : 1;
-  const activeScale   = showAlt ? (isBlackCode ? 1.01 : 1.015) : baseScale;
-  const inactiveScale = showAlt ? baseScale : (isBlackCode ? 1.01 : 1.04);
-
-  if (!defaultSrc) {
-    return (
-      <div style={{
-        aspectRatio: '4/5', background: 'linear-gradient(180deg,#111 0%,#050505 100%)',
-        border: '0.5px solid var(--sol-line)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        maxWidth: 420, margin: '0 auto',
-      }}>
-        <p className="font-jakarta" style={{ fontSize: '11px', color: 'var(--sol-muted)', letterSpacing: '0.16em' }}>Imagen no configurada</p>
-      </div>
-    );
-  }
+// ─── Sección de videos — "Lo que dicen ellos" ───────────────────────────────────
+function VideoReviewsSection() {
+  const headRef = useReveal();
 
   return (
-    <Link to={`/producto/${perfume.id}`} className="group block" style={{ display: 'block', maxWidth: 420, margin: '0 auto' }}>
-      <motion.div style={{ position: 'relative', width: '100%' }} initial={false}>
-        {/* Glow */}
-        <motion.div
-          style={{ position: 'absolute', inset: 0, filter: 'blur(58px)', backgroundColor: accentColor, borderRadius: 28 }}
-          animate={{ opacity: showAlt ? 0.22 : 0.16, scale: showAlt ? 1.0 : 0.94 }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-        />
-        {/* Card */}
-        <motion.div
-          style={{ position: 'relative', zIndex: 1, aspectRatio: '4/5', overflow: 'hidden', borderRadius: 28, border: '1px solid rgba(255,255,255,0.1)', background: '#080808' }}
-          animate={{ borderColor: `${accentColor}AA`, boxShadow: showAlt ? `0 22px 70px rgba(0,0,0,0.52), 0 0 24px ${accentColor}14` : '0 16px 48px rgba(0,0,0,0.38)' }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {/* Inner glow */}
-          <motion.div
-            style={{ position: 'absolute', bottom: '6%', left: '18%', right: '18%', height: '24%', borderRadius: '50%', filter: 'blur(56px)', backgroundColor: accentColor, pointerEvents: 'none' }}
-            animate={{ opacity: showAlt ? 0.2 : 0.14, scale: showAlt ? 1.04 : 1 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+    <section style={{ borderBottom: '0.5px solid var(--sol-line)', background: 'var(--sol-bg)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)', overflow: 'hidden' }}>
+      <div ref={headRef} className="sol-reveal" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)', textAlign: 'center', marginBottom: '36px' }}>
+        <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '12px' }}>
+          En sus palabras
+        </div>
+        <h2 className="font-jost" style={{ fontWeight: 400, fontSize: 'clamp(26px, 5vw, 40px)', lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--sol-ink)' }}>
+          Lo que dicen <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>ellos</em>.
+        </h2>
+      </div>
+
+      <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+        <div className="sol-reel-row" style={{ paddingLeft: 'var(--sol-section-px)', paddingRight: 'var(--sol-section-px)' }}>
+          {VIDEO_REVIEWS.map((review) => (
+            <VideoReel key={review.id} review={review} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function VideoReel({ review }) {
+  const [active, setActive] = useState(false);
+  const hasUrl = Boolean(review.url);
+
+  return (
+    <div className="sol-reel-card">
+      <div style={{ position: 'relative', aspectRatio: '9 / 16', borderRadius: '12px', overflow: 'hidden', border: '0.5px solid var(--sol-line)', background: '#0b0b0b' }}>
+        {/* Acento superior */}
+        <span aria-hidden style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: review.accent, zIndex: 3 }} />
+
+        {active && hasUrl ? (
+          <video
+            src={review.url}
+            poster={review.poster || undefined}
+            controls
+            autoPlay
+            playsInline
+            preload="metadata"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
           />
-          {/* Base image */}
-          {!defaultError && (
-            <motion.img
-              src={defaultSrc} alt={perfume.name}
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: isRedDesire ? 'center 25%' : 'center center' }}
-              loading="lazy"
-              animate={{ opacity: showAlt ? 0 : 1, scale: showAlt ? inactiveScale : activeScale, filter: showAlt ? 'blur(2px)' : 'blur(0px)' }}
-              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-              onError={() => setDefaultError(true)}
-            />
-          )}
-          {/* Alt image */}
-          {altSrc && !altError && (
-            <motion.img
-              src={altSrc} alt={`${perfume.name} combo`}
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: isRedDesire ? 'center 25%' : 'center center' }}
-              loading="lazy" initial={false}
-              animate={{ opacity: showAlt ? 1 : 0, scale: showAlt ? activeScale : inactiveScale, filter: showAlt ? 'blur(0px)' : 'blur(2px)' }}
-              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-              onError={() => setAltError(true)}
-            />
-          )}
-          {/* Overlay */}
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(0,0,0,0.10) 0%,rgba(0,0,0,0.03) 38%,rgba(0,0,0,0.18) 100%)', pointerEvents: 'none' }} />
-        </motion.div>
-      </motion.div>
-    </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => hasUrl && setActive(true)}
+            disabled={!hasUrl}
+            aria-label={hasUrl ? 'Reproducir video' : 'Video próximamente'}
+            style={{
+              position: 'absolute', inset: 0, width: '100%', height: '100%',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px',
+              background: 'transparent', border: 'none', cursor: hasUrl ? 'pointer' : 'default', padding: 0,
+            }}
+          >
+            {review.poster && (
+              <img src={review.poster} alt="" aria-hidden loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55 }} />
+            )}
+            <span style={{ position: 'relative', zIndex: 2, width: 44, height: 44, borderRadius: '50%', background: 'rgba(244,241,236,0.13)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--sol-ink)' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M8 5v14l11-7z" /></svg>
+            </span>
+            {!hasUrl && (
+              <span className="font-jakarta" style={{ position: 'relative', zIndex: 2, fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
+                Próximamente
+              </span>
+            )}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── ¿Cuál es tu momento? — 5 filas con íconos + CTA ────────────────────────────
+function MomentoSection() {
+  const headRef = useReveal();
+  const listRef = useReveal();
+
+  return (
+    <section style={{ borderBottom: '0.5px solid var(--sol-line)', background: 'var(--sol-bg)', color: 'var(--sol-ink)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)' }}>
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 var(--sol-section-px)' }}>
+
+        {/* Head */}
+        <div ref={headRef} className="sol-reveal" style={{ textAlign: 'center', marginBottom: '36px' }}>
+          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '12px' }}>
+            Encontrá el tuyo
+          </div>
+          <h2 className="font-jost" style={{ fontWeight: 400, fontSize: 'clamp(30px, 7vw, 48px)', lineHeight: 1.02, letterSpacing: '-0.03em', color: 'var(--sol-ink)', marginBottom: '14px' }}>
+            ¿Cuál es <em style={{ fontStyle: 'italic', color: 'var(--sol-magenta)', fontWeight: 300 }}>tu momento?</em>
+          </h2>
+          <p className="font-jakarta" style={{ fontSize: '13px', lineHeight: 1.6, color: 'var(--sol-ink-dim)' }}>
+            Cada fragancia tiene un propósito. Elegí la que va con tu día.
+          </p>
+        </div>
+
+        {/* Filas */}
+        <div ref={listRef} className="sol-reveal" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '32px' }}>
+          {MOMENTOS.map((m) => {
+            const accent = SLUG_META[m.slug]?.dotColor || 'var(--sol-green)';
+            return (
+              <Link
+                key={m.slug}
+                to={`/producto/${m.slug}`}
+                className="sol-momento-row"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '14px',
+                  background: 'var(--sol-bg-card)', border: '0.5px solid var(--sol-line)',
+                  borderRadius: '10px', padding: '14px 16px', textDecoration: 'none', color: 'var(--sol-ink)',
+                  transition: 'border-color 0.3s var(--sol-ease)',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--sol-line-str)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--sol-line)'; }}
+              >
+                <span aria-hidden style={{ width: 38, height: 38, borderRadius: '50%', background: m.tint, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>
+                  {m.icon}
+                </span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span className="font-jakarta" style={{ display: 'block', fontSize: '8px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '3px' }}>
+                    {m.tag}
+                  </span>
+                  <span className="font-jost" style={{ display: 'block', fontSize: '16px', fontWeight: 600, lineHeight: 1.1, color: 'var(--sol-ink)' }}>
+                    {m.name}<em style={{ fontStyle: 'normal', color: accent }}>.</em>
+                  </span>
+                  <span className="font-jakarta" style={{ display: 'block', fontSize: '10px', color: 'var(--sol-muted)', marginTop: '2px' }}>
+                    → {m.reference}
+                  </span>
+                </span>
+                <span aria-hidden className="font-jakarta" style={{ fontSize: '14px', color: 'var(--sol-muted)', flexShrink: 0 }}>→</span>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* CTA final */}
+        <div style={{ textAlign: 'center' }}>
+          <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '14px' }}>
+            5 Perfumes · 5 Momentos · 1 Solución
+          </div>
+          <a
+            href="#coleccion"
+            className="font-jakarta"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+              width: '100%', maxWidth: 360, margin: '0 auto', padding: '16px',
+              background: 'var(--sol-green)', color: 'var(--sol-bg)',
+              border: 'none', fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em',
+              textTransform: 'uppercase', textDecoration: 'none', cursor: 'pointer', transition: 'opacity 0.3s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+          >
+            Elegí el tuyo →
+          </a>
+        </div>
+
+      </div>
+    </section>
   );
 }
 
