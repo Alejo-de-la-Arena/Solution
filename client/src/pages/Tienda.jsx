@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useReveal } from '../hooks/useReveal';
@@ -71,14 +71,16 @@ const SLIDER_ROWS = [
   { label: 'Día & Movimiento',  slugs: ['deep-blue', 'yellow-bloom', 'white-ice'] },
 ];
 
-// ─── Videos de reseñas (placeholders — cargar URLs cuando estén listas) ─────────
+// ─── Videos de reseñas ──────────────────────────────────────────────────────────
 // Sin atar a un perfume específico (la mayoría de reseñas son de Red Desire).
-// Formato reel 9:16. Para activar un video, completá `url` (y opcionalmente `poster`).
+// Formato reel 9:16. Cada video carga sólo al darle play (preload="none"); el
+// poster se muestra como imagen estática hasta entonces.
+const VIDEO_BASE   = 'https://tpyzgrcqregtzmuirfny.supabase.co/storage/v1/object/public/solution-products/video';
 const VIDEO_REVIEWS = [
-  { id: 'v1', url: 'https://tpyzgrcqregtzmuirfny.supabase.co/storage/v1/object/public/solution-products/video/red-desire-1.mp4', poster: '', accent: '#FF2D55' },
-  { id: 'v2', url: 'https://tpyzgrcqregtzmuirfny.supabase.co/storage/v1/object/public/solution-products/video/red-desire-2.mp4', poster: '', accent: '#00e5ff' },
-  { id: 'v3', url: '', poster: '', accent: '#e6a72f' },
-  { id: 'v4', url: '', poster: '', accent: '#378add' },
+  { id: 'v1', url: `${VIDEO_BASE}/red-desire-1.mp4`, poster: `${VIDEO_BASE}/thumbnails/red-desire-1-thumbnail.jpg`, accent: '#FF2D55' },
+  { id: 'v2', url: `${VIDEO_BASE}/red-desire-2.mp4`, poster: `${VIDEO_BASE}/thumbnails/red-desire-2-thumbnail.jpg`, accent: '#00e5ff' },
+  { id: 'v3', url: `${VIDEO_BASE}/red-desire-3.mp4`, poster: `${VIDEO_BASE}/thumbnails/red-desire-3-thumbnail.jpg`, accent: '#e6a72f' },
+  { id: 'v4', url: `${VIDEO_BASE}/red-desire-4.mp4`, poster: `${VIDEO_BASE}/thumbnails/red-desire-4-thumbnail.jpg`, accent: '#378add' },
 ];
 
 // ─── ¿Cuál es tu momento? — filas con íconos ────────────────────────────────────
@@ -390,6 +392,37 @@ function SliderCard({ perfume, index }) {
 // ─── Sección de videos — "Lo que dicen ellos" ───────────────────────────────────
 function VideoReviewsSection() {
   const headRef = useReveal();
+  const videoRefs = useRef([]);
+  const [startedIds, setStartedIds] = useState([]);
+
+  // Un solo video a la vez: al reproducir uno, pausar todos los demás.
+  const handlePlay = (id) => {
+    setStartedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    videoRefs.current.forEach((v) => {
+      if (v && v.dataset.id !== id && !v.paused) {
+        v.pause();
+      }
+    });
+  };
+
+  // Performance: pausar cualquier video que salga del viewport.
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return undefined;
+    const vids = videoRefs.current.filter(Boolean);
+    if (vids.length === 0) return undefined;
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting && !entry.target.paused) {
+            entry.target.pause();
+          }
+        });
+      },
+      { threshold: 0.35 }
+    );
+    vids.forEach((v) => io.observe(v));
+    return () => io.disconnect();
+  }, []);
 
   return (
     <section style={{ borderBottom: '0.5px solid var(--sol-line)', background: 'var(--sol-bg)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)', overflow: 'hidden' }}>
@@ -404,8 +437,14 @@ function VideoReviewsSection() {
 
       <div className="sol-container">
         <div className="sol-reel-row">
-          {VIDEO_REVIEWS.map((review) => (
-            <VideoReel key={review.id} review={review} />
+          {VIDEO_REVIEWS.map((review, index) => (
+            <VideoReel
+              key={review.id}
+              review={review}
+              started={startedIds.includes(review.id)}
+              onPlay={handlePlay}
+              registerRef={(el) => { videoRefs.current[index] = el; }}
+            />
           ))}
         </div>
       </div>
@@ -413,9 +452,15 @@ function VideoReviewsSection() {
   );
 }
 
-function VideoReel({ review }) {
-  const [active, setActive] = useState(false);
-  const hasUrl = Boolean(review.url);
+function VideoReel({ review, started, onPlay, registerRef }) {
+  const videoRef = useRef(null);
+
+  const startPlayback = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    const p = v.play();
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  };
 
   return (
     <div className="sol-reel-card">
@@ -423,39 +468,42 @@ function VideoReel({ review }) {
         {/* Acento superior */}
         <span aria-hidden style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: review.accent, zIndex: 3 }} />
 
-        {active && hasUrl ? (
-          <video
-            src={review.url}
-            poster={review.poster || undefined}
-            controls
-            autoPlay
-            playsInline
-            preload="none"
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-        ) : (
+        {/* Video: poster estático + sin descarga hasta play (preload="none") */}
+        <video
+          ref={(el) => { videoRef.current = el; registerRef?.(el); }}
+          data-id={review.id}
+          src={review.url}
+          poster={review.poster}
+          controls
+          playsInline
+          preload="none"
+          onPlay={() => onPlay(review.id)}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+
+        {/* Overlay con poster (imagen liviana, lazy) + botón de play.
+            Se oculta de forma definitiva tras el primer play. */}
+        {!started && (
           <button
             type="button"
-            onClick={() => hasUrl && setActive(true)}
-            disabled={!hasUrl}
-            aria-label={hasUrl ? 'Reproducir video' : 'Video próximamente'}
+            onClick={startPlayback}
+            aria-label="Reproducir video"
             style={{
               position: 'absolute', inset: 0, width: '100%', height: '100%',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px',
-              background: 'transparent', border: 'none', cursor: hasUrl ? 'pointer' : 'default', padding: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, zIndex: 2,
             }}
           >
-            {review.poster && (
-              <img src={review.poster} alt="" aria-hidden loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55 }} />
-            )}
-            <span style={{ position: 'relative', zIndex: 2, width: 44, height: 44, borderRadius: '50%', background: 'rgba(244,241,236,0.13)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--sol-ink)' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M8 5v14l11-7z" /></svg>
+            <img
+              src={review.poster}
+              alt=""
+              aria-hidden
+              loading="lazy"
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+            <span style={{ position: 'relative', zIndex: 2, width: 48, height: 48, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--sol-ink)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M8 5v14l11-7z" /></svg>
             </span>
-            {!hasUrl && (
-              <span className="font-jakarta" style={{ position: 'relative', zIndex: 2, fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
-                Próximamente
-              </span>
-            )}
           </button>
         )}
       </div>
