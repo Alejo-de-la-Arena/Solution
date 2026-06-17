@@ -10,6 +10,7 @@ import { getStoreProductImages } from '../lib/storeProductImages';
 import { useCart } from '../contexts/CartContext';
 import { getCrossedPrice, CROSSED_PRICES } from '../lib/crossedPrices';
 import { getComboSettings, normalizeComboSettings, resolveComboImage } from '../services/combo';
+import { getTiendaSettings, normalizeTiendaSettings } from '../services/tiendaSettings';
 import TestimonialsSection from '../components/home/TestimonialsSection';
 
 // ─── Static per-slug data ──────────────────────────────────────────────────────
@@ -65,10 +66,10 @@ const CARD_NUM = {
   'white-ice':    '05',
 };
 
-// Agrupación de los sliders de productos
-const SLIDER_ROWS = [
-  { label: 'Noche & Salidas',   slugs: ['red-desire', 'black-code'] },
-  { label: 'Día & Movimiento',  slugs: ['deep-blue', 'yellow-bloom', 'white-ice'] },
+// Slugs de cada fila del slider (labels vienen de tienda_settings)
+const SLIDER_ROWS_SLUGS = [
+  ['red-desire', 'black-code'],
+  ['deep-blue', 'yellow-bloom', 'white-ice'],
 ];
 
 // ─── Videos de reseñas ──────────────────────────────────────────────────────────
@@ -99,12 +100,21 @@ export default function Tienda() {
   const [selectedPerfume1, setSelectedPerfume1] = useState(null);
   const [selectedPerfume2, setSelectedPerfume2] = useState(null);
   const [comboSettings, setComboSettings]     = useState(null);
+  const [tiendaSettings, setTiendaSettings]   = useState(() => normalizeTiendaSettings(null));
 
   useEffect(() => {
     let cancelled = false;
     getComboSettings()
       .then((row) => { if (!cancelled) setComboSettings(normalizeComboSettings(row)); })
       .catch(() => { if (!cancelled) setComboSettings(normalizeComboSettings(null)); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    getTiendaSettings()
+      .then((row) => { if (!cancelled) setTiendaSettings(normalizeTiendaSettings(row)); })
+      .catch(() => {});
     return () => { cancelled = true; };
   }, []);
 
@@ -141,7 +151,7 @@ export default function Tienda() {
 
   return (
     <div style={{ background: 'var(--sol-bg)', color: 'var(--sol-ink)', minHeight: '100vh' }}>
-      <TiendaHero />
+      <TiendaHero settings={tiendaSettings} />
 
       {perfumes.length >= 2 && (
         <TiendaComboSection
@@ -156,19 +166,19 @@ export default function Tienda() {
         />
       )}
 
-      <ProductSlidersSection perfumes={perfumes} />
+      <ProductSlidersSection perfumes={perfumes} settings={tiendaSettings} />
 
-      <VideoReviewsSection />
+      <VideoReviewsSection settings={tiendaSettings} />
 
-      <TestimonialsSection />
+      <TestimonialsSection eyebrow={tiendaSettings.testimonios_eyebrow} title={tiendaSettings.testimonios_title} />
 
-      <MomentoSection />
+      <MomentoSection settings={tiendaSettings} />
     </div>
   );
 }
 
 // ─── Hero ──────────────────────────────────────────────────────────────────────
-function TiendaHero() {
+function TiendaHero({ settings }) {
   const headRef = useReveal();
   const statsRef = useReveal();
 
@@ -189,8 +199,8 @@ function TiendaHero() {
           className="font-jost"
           style={{ fontWeight: 300, fontSize: 'clamp(44px, 10.5vw, 88px)', lineHeight: 1.02, letterSpacing: '-0.03em', color: 'var(--sol-ink)', marginBottom: '24px', textAlign: 'center' }}
         >
-          <span style={{ display: 'block' }}>Cinco fragancias.</span>
-          <em style={{ display: 'block', fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>Tu momento.</em>
+          <span style={{ display: 'block' }}>{settings.hero_title}</span>
+          <em style={{ display: 'block', fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>{settings.hero_subtitle}</em>
         </h1>
 
         {/* Scroll indicator */}
@@ -212,9 +222,14 @@ function TiendaHero() {
 }
 
 // ─── Product sliders (reemplaza el listado vertical) ────────────────────────────
-function ProductSlidersSection({ perfumes }) {
+function ProductSlidersSection({ perfumes, settings }) {
   const headRef = useReveal();
   const bySlug = new Map(perfumes.map(p => [(p.slug || '').trim().toLowerCase(), p]));
+
+  const rows = [
+    { label: settings.coleccion_row1_label, subtitle: settings.coleccion_row1_subtitle, slugs: SLIDER_ROWS_SLUGS[0] },
+    { label: settings.coleccion_row2_label, subtitle: settings.coleccion_row2_subtitle, slugs: SLIDER_ROWS_SLUGS[1] },
+  ];
 
   return (
     <section id="coleccion" style={{ borderBottom: '0.5px solid var(--sol-line)', background: 'var(--sol-bg)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)' }}>
@@ -223,18 +238,18 @@ function ProductSlidersSection({ perfumes }) {
         {/* Section head */}
         <div ref={headRef} className="sol-reveal" style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '12px' }}>
-            La colección
+            {settings.coleccion_eyebrow}
           </div>
           <h2 className="font-jost" style={{ fontWeight: 400, fontSize: 'clamp(26px, 5vw, 40px)', lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--sol-ink)' }}>
-            Elegí tu <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>fragancia</em>.
+            {settings.coleccion_title}
           </h2>
         </div>
 
         {/* Filas */}
-        {SLIDER_ROWS.map((row) => {
+        {rows.map((row) => {
           const items = row.slugs.map(s => bySlug.get(s)).filter(Boolean);
           if (items.length === 0) return null;
-          return <SliderRow key={row.label} label={row.label} perfumes={items} />;
+          return <SliderRow key={row.label} label={row.label} subtitle={row.subtitle} perfumes={items} />;
         })}
 
       </div>
@@ -242,13 +257,18 @@ function ProductSlidersSection({ perfumes }) {
   );
 }
 
-function SliderRow({ label, perfumes }) {
+function SliderRow({ label, subtitle, perfumes }) {
   const ref = useReveal();
   return (
     <div ref={ref} className="sol-reveal" style={{ marginBottom: '36px' }}>
-      <div className="font-jost sol-slider-rowlabel" style={{ fontSize: 'clamp(20px, 4vw, 30px)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--sol-ink)', marginBottom: '18px' }}>
+      <div className="font-jost sol-slider-rowlabel" style={{ fontSize: 'clamp(20px, 4vw, 30px)', fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--sol-ink)', marginBottom: subtitle ? '6px' : '18px' }}>
         {label}
       </div>
+      {subtitle && (
+        <div className="font-jakarta sol-slider-rowlabel" style={{ fontSize: '11px', color: 'var(--sol-ink-dim)', marginBottom: '14px', letterSpacing: '0.04em' }}>
+          {subtitle}
+        </div>
+      )}
       <div className="sol-slider-row">
         {perfumes.map((perfume, i) => (
           <SliderCard key={perfume.id} perfume={perfume} index={i} />
@@ -277,13 +297,14 @@ function SliderCard({ perfume, index }) {
     <article
       className="sol-slider-card"
       style={{
-        background: 'var(--sol-bg-card)',
-        border: '0.5px solid var(--sol-line)',
+        background: 'rgba(245, 242, 238, 0.96)',
+        border: '0.5px solid rgba(0,0,0,0.08)',
         borderTop: `2px solid ${accent}`,
         borderRadius: '10px',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
       }}
     >
       {/* Imagen */}
@@ -314,35 +335,35 @@ function SliderCard({ perfume, index }) {
       {/* Cuerpo */}
       <div style={{ padding: '16px 16px 18px', display: 'flex', flexDirection: 'column', flex: 1 }}>
         {/* Momento */}
-        <div className="font-jakarta" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '8px' }}>
+        <div className="font-jakarta" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#666', marginBottom: '8px' }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: meta.dotColor || accent, boxShadow: '0 0 0 1px rgba(0,0,0,0.4)', flexShrink: 0 }} />
           {meta.momento || ''}
         </div>
 
         {/* Nombre */}
-        <h3 className="font-jost" style={{ fontSize: 'clamp(20px, 3.4vw, 24px)', fontWeight: 600, lineHeight: 1.05, letterSpacing: '-0.01em', color: 'var(--sol-ink)', marginBottom: '6px' }}>
+        <h3 className="font-jost" style={{ fontSize: 'clamp(20px, 3.4vw, 24px)', fontWeight: 600, lineHeight: 1.05, letterSpacing: '-0.01em', color: '#1a1a1a', marginBottom: '6px' }}>
           {perfume.name}<em style={{ fontStyle: 'normal', color: accent }}>.</em>
         </h3>
 
         {/* Referencia de mercado */}
         {meta.reference && (
-          <div className="font-jakarta" style={{ alignSelf: 'flex-start', fontSize: '9px', fontWeight: 600, letterSpacing: '0.06em', color: 'var(--sol-ink-dim)', background: 'rgba(244,241,236,0.06)', border: '0.5px solid var(--sol-line)', padding: '4px 9px', borderRadius: '4px', marginBottom: '12px' }}>
-            <span style={{ color: 'var(--sol-muted)' }}>→ </span>{meta.reference}
+          <div className="font-jakarta" style={{ alignSelf: 'flex-start', fontSize: '9px', fontWeight: 600, letterSpacing: '0.06em', color: '#555', background: 'rgba(0,0,0,0.04)', border: '0.5px solid rgba(0,0,0,0.12)', padding: '4px 9px', borderRadius: '4px', marginBottom: '12px' }}>
+            <span style={{ color: '#888' }}>→ </span>{meta.reference}
           </div>
         )}
 
         {/* Precio */}
         <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
           {crossed && (
-            <span className="font-jakarta" style={{ fontSize: '11px', color: 'var(--sol-muted)', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
+            <span className="font-jakarta" style={{ fontSize: '11px', color: '#888', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
               {crossed}
             </span>
           )}
-          <span className="font-jost" style={{ fontSize: 'clamp(18px, 3.4vw, 22px)', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--sol-ink)' }}>
+          <span className="font-jost" style={{ fontSize: 'clamp(18px, 3.4vw, 22px)', fontWeight: 600, letterSpacing: '-0.02em', color: '#1a1a1a' }}>
             {price}
           </span>
           {crossed && (
-            <span className="font-jakarta" style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', color: 'var(--sol-bg)', background: accent, padding: '2px 7px', borderRadius: '9999px' }}>
+            <span className="font-jakarta" style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', color: '#000', background: accent, padding: '2px 7px', borderRadius: '9999px' }}>
               30% OFF
             </span>
           )}
@@ -356,12 +377,12 @@ function SliderCard({ perfume, index }) {
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               padding: '11px', background: 'transparent',
-              border: '0.5px solid var(--sol-line-mid)', color: 'var(--sol-ink-dim)',
+              border: `0.5px solid ${accent}`, color: accent,
               fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', textDecoration: 'none',
-              transition: 'border-color 0.3s, color 0.3s',
+              transition: 'opacity 0.3s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.color = accent; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--sol-line-mid)'; e.currentTarget.style.color = 'var(--sol-ink-dim)'; }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = '0.7'; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
           >
             Ver detalles →
           </Link>
@@ -371,7 +392,7 @@ function SliderCard({ perfume, index }) {
             className="font-jakarta"
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-              padding: '12px', background: accent, color: 'var(--sol-bg)',
+              padding: '12px', background: accent, color: '#000',
               border: 'none', fontSize: '10px', fontWeight: 700, letterSpacing: '0.18em',
               textTransform: 'uppercase', cursor: 'pointer', transition: 'opacity 0.3s',
             }}
@@ -390,7 +411,7 @@ function SliderCard({ perfume, index }) {
 }
 
 // ─── Sección de videos — "Lo que dicen ellos" ───────────────────────────────────
-function VideoReviewsSection() {
+function VideoReviewsSection({ settings }) {
   const headRef = useReveal();
   const videoRefs = useRef([]);
   const [startedIds, setStartedIds] = useState([]);
@@ -428,11 +449,21 @@ function VideoReviewsSection() {
     <section style={{ borderBottom: '0.5px solid var(--sol-line)', background: 'var(--sol-bg)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)', overflow: 'hidden' }}>
       <div ref={headRef} className="sol-reveal" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)', textAlign: 'center', marginBottom: '36px' }}>
         <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '12px' }}>
-          En sus palabras
+          {settings.videos_eyebrow}
         </div>
         <h2 className="font-jost" style={{ fontWeight: 400, fontSize: 'clamp(26px, 5vw, 40px)', lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--sol-ink)' }}>
-          Lo que dicen <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>ellos</em>.
+          {settings.videos_title} <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>{settings.videos_title_em}</em>.
         </h2>
+        {settings.videos_subtitle && (
+          <div className="font-jakarta" style={{ fontSize: '12px', color: 'var(--sol-ink-dim)', marginTop: '8px', letterSpacing: '0.04em' }}>
+            {settings.videos_subtitle}
+          </div>
+        )}
+        {settings.videos_description && (
+          <p className="font-jakarta" style={{ fontSize: '13px', color: 'var(--sol-ink-dim)', marginTop: '6px', lineHeight: 1.6 }}>
+            {settings.videos_description}
+          </p>
+        )}
       </div>
 
       <div className="sol-container">
@@ -512,7 +543,7 @@ function VideoReel({ review, started, onPlay, registerRef }) {
 }
 
 // ─── ¿Cuál es tu momento? — 5 filas con íconos + CTA ────────────────────────────
-function MomentoSection() {
+function MomentoSection({ settings }) {
   const headRef = useReveal();
   const listRef = useReveal();
 
@@ -523,13 +554,13 @@ function MomentoSection() {
         {/* Head */}
         <div ref={headRef} className="sol-reveal" style={{ textAlign: 'center', marginBottom: '36px' }}>
           <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '12px' }}>
-            Encontrá el tuyo
+            {settings.cta_eyebrow}
           </div>
           <h2 className="font-jost" style={{ fontWeight: 400, fontSize: 'clamp(30px, 7vw, 48px)', lineHeight: 1.02, letterSpacing: '-0.03em', color: 'var(--sol-ink)', marginBottom: '14px' }}>
-            ¿Cuál es <em style={{ fontStyle: 'italic', color: 'var(--sol-magenta)', fontWeight: 300 }}>tu momento?</em>
+            {settings.cta_title}
           </h2>
           <p className="font-jakarta" style={{ fontSize: '13px', lineHeight: 1.6, color: 'var(--sol-ink-dim)' }}>
-            Cada fragancia tiene un propósito. Elegí la que va con tu día.
+            {settings.cta_description}
           </p>
         </div>
 

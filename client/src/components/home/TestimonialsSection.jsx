@@ -111,7 +111,7 @@ function TestCard({ t }) {
   );
 }
 
-export default function TestimonialsSection() {
+export default function TestimonialsSection({ eyebrow, title }) {
   const headRef = useReveal();
 
   return (
@@ -138,11 +138,13 @@ export default function TestimonialsSection() {
       >
         <div>
           <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)' }}>
-            Voces reales
+            {eyebrow || 'Voces reales'}
           </div>
           <h2 className="font-jost" style={{ fontWeight: 400, fontSize: 'clamp(26px, 5vw, 40px)', lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--sol-ink)', marginTop: '12px' }}>
-            Lo que dicen<br />
-            <em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>quienes lo usan</em>.
+            {title
+              ? title
+              : <>Lo que dicen<br /><em style={{ fontStyle: 'italic', color: 'var(--sol-ink-dim)', fontWeight: 300 }}>quienes lo usan</em>.</>
+            }
           </h2>
         </div>
       </div>

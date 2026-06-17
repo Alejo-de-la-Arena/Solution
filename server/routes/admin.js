@@ -925,6 +925,80 @@ router.get('/metrics', async (req, res) => {
   return res.json(data || {});
 });
 
+// ===========================================================================
+// TIENDA SETTINGS (textos editables de /tienda — singleton)
+// ===========================================================================
+
+const TIENDA_TEXT_FIELDS = [
+  'hero_title', 'hero_subtitle',
+  'coleccion_eyebrow', 'coleccion_title',
+  'coleccion_row1_label', 'coleccion_row1_subtitle',
+  'coleccion_row2_label', 'coleccion_row2_subtitle',
+  'videos_eyebrow', 'videos_title', 'videos_title_em',
+  'videos_subtitle', 'videos_description',
+  'testimonios_eyebrow', 'testimonios_title',
+  'cta_eyebrow', 'cta_title', 'cta_description',
+];
+
+async function fetchTiendaSingleton() {
+  return supabase
+    .from('tienda_settings')
+    .select('*')
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+}
+
+/** GET /api/admin/tienda-settings — devuelve el singleton. */
+router.get('/tienda-settings', async (req, res) => {
+  const user = await assertAdmin(req, res);
+  if (!user) return;
+
+  const { data, error } = await fetchTiendaSingleton();
+  if (error) {
+    console.error('[admin] GET /tienda-settings:', error);
+    return res.status(500).json({ error: 'No se pudo leer tienda_settings' });
+  }
+  return res.json({ tienda: data });
+});
+
+/** PATCH /api/admin/tienda-settings — actualiza el singleton. */
+router.patch('/tienda-settings', async (req, res) => {
+  const user = await assertAdmin(req, res);
+  if (!user) return;
+
+  const body = req.body || {};
+  const update = {};
+  for (const f of TIENDA_TEXT_FIELDS) {
+    if (f in body) update[f] = body[f] === '' ? null : body[f];
+  }
+
+  if (Object.keys(update).length === 0) {
+    return res.status(400).json({ error: 'Nada para actualizar' });
+  }
+
+  const { data: existing, error: fErr } = await fetchTiendaSingleton();
+  if (fErr) {
+    console.error('[admin] PATCH /tienda-settings (fetch):', fErr);
+    return res.status(500).json({ error: 'No se pudo leer tienda_settings' });
+  }
+  if (!existing) {
+    return res.status(404).json({ error: 'tienda_settings no inicializado' });
+  }
+
+  const { error: upErr } = await supabase
+    .from('tienda_settings')
+    .update(update)
+    .eq('id', existing.id);
+  if (upErr) {
+    console.error('[admin] PATCH /tienda-settings:', upErr);
+    return res.status(500).json({ error: 'No se pudo actualizar tienda_settings' });
+  }
+
+  const { data } = await fetchTiendaSingleton();
+  return res.json({ tienda: data });
+});
+
 // multer error handler (tamaño, mime, etc.)
 router.use((err, _req, res, next) => {
   if (err instanceof multer.MulterError) {

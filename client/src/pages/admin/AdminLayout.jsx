@@ -21,6 +21,7 @@ const navItems = [
   { to: '/admin/pedidos', end: false, label: 'Pedidos' },
   { to: '/admin/productos', end: false, label: 'Productos' },
   { to: '/admin/combos', end: false, label: 'Combos' },
+  { to: '/admin/tienda', end: false, label: 'Tienda' },
   { to: '/admin/usuarios', end: false, label: 'Usuarios' },
   { to: '/admin/mayoristas', end: false, label: 'Mayoristas' },
   { to: '/admin/gestionar', end: false, label: 'Gestionar' },
