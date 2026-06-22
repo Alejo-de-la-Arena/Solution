@@ -669,12 +669,12 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
     <section id="combo" style={{ background: 'var(--sol-bg)', color: 'var(--sol-ink)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)', borderBottom: '0.5px solid var(--sol-line)' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)' }}>
 
-        {/* Label — encima de la card, centrado */}
+        {/* Label — encima de la card, centrado
         <div ref={headRef} className="sol-reveal" style={{ marginBottom: '20px', textAlign: 'center' }}>
           <div className="font-jakarta sol-combo-label" style={{ letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--sol-ink)', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '18px' }}>
             🎁 Oferta Día del Padre
           </div>
-        </div>
+        </div> */}
 
         {/* Single-column content */}
         <div ref={bodyRef} className="sol-reveal">
