@@ -236,61 +236,126 @@ async function getPackages(query = {}) {
 }
 
 // ============================================================================
-// Push de paquetes — multipart/form-data
+// Push de paquetes — JSON { condition, type, packages: [...] }
 // ============================================================================
+//
+// Gestionar migró este endpoint (mediados de jun 2026): antes subía un Excel en
+// el campo `file`, ahora valida un body JSON con un array `packages` (un objeto
+// por fila destinatario×SKU) y rechaza el `file` con HTTP 422
+// "El campo packages es obligatorio". El builder de Excel (`buildFullfilmentExcel`,
+// más abajo) queda solo para los smoke tests; el push real usa
+// `buildPackagesPayload` + `registerNotLinkedPackages`.
 
 /**
- * Sube un Excel con paquetes de ventas no vinculadas a Gestionar.
- * @param {object}  args
- * @param {Buffer}  args.excelBuffer - .xlsx armado por buildFullfilmentExcel.
- * @param {string}  args.condition   - p.ej. 'cambio'.
- * @param {string=} args.type        - p.ej. 'fullfilment'.
+ * Fecha de venta como SERIAL de Excel (días desde 1899-12-30). El validador de
+ * Gestionar acepta strings, pero el procesamiento la pasa por PhpSpreadsheet
+ * `Date::excelToDateTimeObject()`, que exige un número (serial Excel): mandar un
+ * string ISO crashea con `floor(): ... string given`. Es el mismo valor que
+ * tenían las celdas de fecha del Excel viejo (de ahí que antes funcionara).
  */
-async function registerNotLinkedPackages({ excelBuffer, condition, type } = {}) {
-    if (!excelBuffer || !Buffer.isBuffer(excelBuffer)) {
-        throw new GestionarError('excelBuffer (Buffer) requerido', 400);
+function toExcelSerialDate(value) {
+    const d = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(d.getTime())) return null;
+    const utcMidnight = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+    const EXCEL_EPOCH = Date.UTC(1899, 11, 30);
+    return Math.round((utcMidnight - EXCEL_EPOCH) / 86_400_000);
+}
+
+/**
+ * Arma el array `packages` que espera not-linked-register. Una entrada por
+ * (orden × item con SKU). Mismas reglas de saneo que el Excel viejo:
+ *   - codigo_postal numérico de 4 dígitos (normalizeCP)
+ *   - localidad = partido canónico AMBA si el CP está cubierto
+ *   - telefono solo dígitos
+ * Claves (snake_case) confirmadas contra el validador de Gestionar:
+ *   destinatario, direccion, localidad, codigo_postal, telefono, correo,
+ *   tipo_de_entrega, fecha_de_venta, turbo, monto_a_pagar, observaciones,
+ *   sku, cantidad.
+ */
+function buildPackagesPayload({ orders } = {}) {
+    if (!Array.isArray(orders) || orders.length === 0) {
+        throw new GestionarError('orders[] requerido', 400);
+    }
+
+    const packages = [];
+    const ordersWithoutItems = [];
+
+    for (const order of orders) {
+        const items = (order.items || []).filter((it) => {
+            const sku = (it && it.sku ? String(it.sku) : '').trim();
+            return sku.length > 0;
+        });
+        if (items.length === 0) {
+            ordersWithoutItems.push(order.id);
+            continue;
+        }
+
+        const destinatario = (order.customer_name || '').trim();
+        const direccion = joinAddress(order.shipping_address_line1, order.shipping_address_line2);
+        const codigoPostal = normalizeCP(order.shipping_postal_code);
+        const coverage = lookupCP(order.shipping_postal_code);
+        const localidad = coverage?.partido || (order.shipping_city || '').trim();
+        const telefono = (order.customer_phone || '').replace(/\D/g, '');
+        const correo = (order.customer_email || '').trim();
+        const fechaVenta = toExcelSerialDate(order.created_at || new Date());
+        const observaciones = (order.shipping_notes || '').trim();
+
+        for (const item of items) {
+            const cantidad = Number(item.quantity);
+            packages.push({
+                destinatario,
+                direccion,
+                localidad,
+                codigo_postal: codigoPostal,
+                telefono,
+                correo,
+                tipo_de_entrega: 'Residencial',
+                fecha_de_venta: fechaVenta,
+                turbo: 'No',
+                monto_a_pagar: 0,
+                observaciones,
+                sku: String(item.sku).trim(),
+                cantidad: Number.isFinite(cantidad) ? cantidad : 0,
+            });
+        }
+    }
+
+    if (packages.length === 0) {
+        throw new GestionarError(
+            `Ninguna orden quedó con items vendibles (SKU mapeado). Órdenes afectadas: ${ordersWithoutItems.join(', ')}`,
+            422,
+        );
+    }
+    if (ordersWithoutItems.length > 0) {
+        console.warn(
+            '[gestionar.provider] órdenes sin SKU saltadas:',
+            ordersWithoutItems.join(', '),
+        );
+    }
+    return packages;
+}
+
+/**
+ * Sube paquetes de ventas no vinculadas vía JSON.
+ * @param {object} args
+ * @param {Array<object>} args.packages - array armado por buildPackagesPayload.
+ * @param {string}  args.condition      - p.ej. 'nueva venta'.
+ * @param {string=} args.type           - p.ej. 'fullfilment'.
+ */
+async function registerNotLinkedPackages({ packages, condition, type } = {}) {
+    if (!Array.isArray(packages) || packages.length === 0) {
+        throw new GestionarError('packages[] requerido', 400);
     }
     if (!condition) throw new GestionarError('condition requerido', 400);
 
-    let FormData;
-    try {
-        FormData = require('form-data');
-    } catch (_e) {
-        throw new GestionarError(
-            'Falta el paquete `form-data` en server/package.json. Se agrega cuando se implemente la fase 8 (push real a Gestionar).',
-            501,
-        );
-    }
+    const body = { condition, packages };
+    if (type) body.type = type;
 
-    const form = new FormData();
-    form.append('file', excelBuffer, {
-        filename: 'paquetes.xlsx',
-        contentType:
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    return request({
+        method: 'POST',
+        path: '/api/external-client/package/not-linked-register',
+        body,
     });
-    form.append('condition', condition);
-    if (type) form.append('type', type);
-
-    try {
-        const { data } = await axios.post(
-            `${GESTIONAR_API_URL}/api/external-client/package/not-linked-register`,
-            form,
-            {
-                headers: {
-                    'secret-token-key': getApiKey(),
-                    ...form.getHeaders(),
-                },
-                maxBodyLength: 50 * 1024 * 1024,
-                timeout: 60_000,
-            },
-        );
-        return data;
-    } catch (err) {
-        const status = err.response?.status || 500;
-        const raw = err.response?.data || null;
-        const msg = raw?.message || err.message || 'Error subiendo Excel a Gestionar';
-        throw new GestionarError(msg, status, raw);
-    }
 }
 
 // Headers exactos de la plantilla `ventas_novinculadas_fullfilment.xlsx`. El
@@ -450,5 +515,6 @@ module.exports = {
     createPickup,
     getPackages,
     registerNotLinkedPackages,
+    buildPackagesPayload,
     buildFullfilmentExcel,
 };

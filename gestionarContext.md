@@ -70,37 +70,79 @@ El API tiene un límite de **600 requests** por ventana de tiempo. El encabezado
 
 ### Importación masiva de paquetes no vinculados
 
-Permite importar paquetes de ventas no vinculadas a ningún marketplace mediante un archivo Excel.
+Permite importar paquetes de ventas no vinculadas a ningún marketplace.
 
 **Endpoint:** `POST /api/external-client/package/not-linked-register`
 
 **Autenticación:** Bearer token + `secret-token-key`
 
-**Body:** `multipart/form-data`
+> ⚠️ **CAMBIO DE CONTRATO (mediados de jun 2026).** Este endpoint **dejó de
+> aceptar el Excel** (`multipart/form-data` con campo `file`). Ahora valida un
+> **body JSON** con un array `packages`. Mandar el Excel devuelve
+> `HTTP 422 → {"errors":{"packages":["El campo packages es obligatorio."]}}`.
+> Verificado en vivo el 2026-06-24. El código (`server/services/providers/gestionar.provider.js`)
+> ya usa el formato JSON nuevo vía `buildPackagesPayload` + `registerNotLinkedPackages`.
 
-| Campo | Tipo | Requerido | Descripción |
+**Body:** `application/json`
+
+```json
+{
+  "condition": "nueva venta",
+  "type": "fullfilment",
+  "packages": [
+    {
+      "destinatario": "Gonzalo Chocobar",
+      "direccion": "El picaflor - 2680",
+      "localidad": "Almirante Brown",
+      "codigo_postal": "1847",
+      "telefono": "1122888224",
+      "correo": "gonza.chocobar@gmail.com",
+      "tipo_de_entrega": "Residencial",
+      "fecha_de_venta": "2026-06-21",
+      "turbo": "No",
+      "monto_a_pagar": 0,
+      "observaciones": "",
+      "sku": "RED-N-ROJ-D",
+      "cantidad": 1
+    }
+  ]
+}
+```
+
+| Campo (top-level) | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `file` | File | ✅ | Archivo `.xlsx` con los paquetes a importar |
-| `condition` | string | ✅ | Condición de importación (ej: `"cambio"`) |
-| `type` | string | ❌ | Tipo de importación. Usar `"fullfilment"` para importaciones de tipo fulfillment |
+| `packages` | array\<object\> | ✅ | Un objeto por fila destinatario × SKU (una orden con N SKUs = N entradas) |
+| `condition` | string | ✅ | Condición de importación (se usa `"nueva venta"`) |
+| `type` | string | ❌ | `"fullfilment"` para importaciones de tipo fulfillment |
 
-**Ejemplo – Importación estándar:**
-```
-POST /api/external-client/package/not-linked-register
-Content-Type: multipart/form-data
+**Campos por paquete** (snake_case, confirmados contra el validador de Gestionar):
 
-file: ventas_novinculadas.xlsx
-condition: cambio
-```
+| Campo | Requerido | Notas |
+|-------|-----------|-------|
+| `destinatario` | ✅ | Nombre del destinatario |
+| `direccion` | ✅ | Calle y número |
+| `localidad` | ✅ | Partido/localidad |
+| `codigo_postal` | ✅ | Numérico de 4 dígitos (no CPA alfanumérico) |
+| `telefono` | ✅ | Solo dígitos (6–20) |
+| `correo` | ✅ | Email |
+| `tipo_de_entrega` | ✅ | p.ej. `"Residencial"` |
+| `fecha_de_venta` | ✅ | Acepta ISO `YYYY-MM-DD` o `DD/MM/YYYY` |
+| `monto_a_pagar` | ✅ | Número. `0` para prepagos online (no es contra-entrega) |
+| `turbo` | ❌ | `"No"` / `"Si"` |
+| `observaciones` | ❌ | Notas de envío |
+| `sku` | ❌ | SKU del producto en el catálogo de Gestionar |
+| `cantidad` | ❌ | Número |
 
-**Ejemplo – Importación fulfillment:**
-```
-POST /api/external-client/package/not-linked-register
-Content-Type: multipart/form-data
+**Errores de validación:** HTTP 400/422 con el detalle por campo en
+`data` (formato `packages.<n>.<campo>`):
 
-file: ventas_novinculadas_fullfilment.xlsx
-condition: cambio
-type: fullfilment
+```json
+{
+  "status": "Error",
+  "success": false,
+  "message": "Algunos datos en el excel no son válidos",
+  "data": { "packages.0.correo": ["El campo correo es obligatorio."] }
+}
 ```
 
 ---

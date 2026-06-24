@@ -207,16 +207,13 @@ async function dispatchPendingOrders({ limit = 50, orderId = null } = {}) {
         };
     }
 
-    let excelBuffer;
+    let packagesPayload;
     try {
-        excelBuffer = await gestionarProvider.buildFullfilmentExcel({ orders: ordersWithItems });
+        packagesPayload = gestionarProvider.buildPackagesPayload({ orders: ordersWithItems });
     } catch (err) {
-        // Si buildFullfilmentExcel está stubeado (fase 8 bloqueada), marcamos
-        // todas las órdenes con el error y volvemos. El admin lo ve y reintenta
-        // cuando llegue el template del Excel.
         const detailedMessage = buildDetailedMessage(err);
         console.error(
-            '[gestionar.dispatcher] buildFullfilmentExcel falló:',
+            '[gestionar.dispatcher] buildPackagesPayload falló:',
             detailedMessage,
             err.raw ? `\nraw: ${JSON.stringify(err.raw, null, 2)}` : '',
         );
@@ -233,21 +230,21 @@ async function dispatchPendingOrders({ limit = 50, orderId = null } = {}) {
             picked: pending.length,
             succeeded: 0,
             failed: pending.length,
-            errors: [{ stage: 'buildExcel', message: detailedMessage, raw: err.raw || null }],
+            errors: [{ stage: 'buildPayload', message: detailedMessage, raw: err.raw || null }],
         };
     }
 
     let response;
     try {
         response = await gestionarProvider.registerNotLinkedPackages({
-            excelBuffer,
+            packages: packagesPayload,
             condition: 'nueva venta',
             type: 'fullfilment',
         });
     } catch (err) {
         const detailedMessage = buildDetailedMessage(err);
-        // Log siempre el raw completo (sin truncar) — Gestionar suele meter en
-        // `errors` o `invalidRows` qué fila/columna rechazó el validador.
+        // Log siempre el raw completo (sin truncar) — Gestionar mete en `data`
+        // qué paquete/campo rechazó el validador (packages.N.<campo>).
         console.error(
             '[gestionar.dispatcher] registerNotLinkedPackages falló para órdenes',
             ordersWithItems.map((o) => o.id).join(', '),
@@ -338,7 +335,7 @@ async function persistOrderPackages({ orderId, packages }) {
  * matching más fino (p. ej. usando el orden de las filas del Excel).
  */
 function extractPackagesForOrder(response, order, claimedPackageIds = new Set()) {
-    const packages = response?.data?.packages;
+    const packages = response?.data?.packages || response?.packages;
     if (!Array.isArray(packages) || packages.length === 0) return [];
 
     const targetEmail = String(order?.customer_email || '').trim().toLowerCase();
