@@ -323,7 +323,7 @@ function SliderCard({ perfume, index }) {
             alt={perfume.name}
             loading="lazy"
             onError={() => setImgError(true)}
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: slug === 'red-desire' ? 'center 25%' : 'center center' }}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center center' }}
           />
         ) : (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
