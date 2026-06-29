@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { useReveal } from '../hooks/useReveal';
 import { getPublicProducts, productToPerfume } from '../services/products';
 import { ACCENT_COLORS } from '../lib/accentColors';
-import { getComboProfile, normalizeComboKey } from '../data/comboProfiles';
 import { mediaUrl } from '../lib/mediaUrl';
 import { getStoreProductImages } from '../lib/storeProductImages';
 import { useCart } from '../contexts/CartContext';
@@ -376,12 +375,12 @@ function SliderCard({ perfume, index }) {
             className="font-jakarta"
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              padding: '11px', background: 'transparent',
-              border: `0.5px solid ${accent}`, color: accent,
+              padding: '11px', background: '#1a1a1a',
+              border: 'none', color: '#f4f1ec',
               fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', textDecoration: 'none',
               transition: 'opacity 0.3s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = '0.7'; }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = '0.75'; }}
             onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
           >
             Ver detalles →
@@ -639,14 +638,9 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
   const cfg = settings || normalizeComboSettings(null);
 
   const handleAddCombo = () => {
-    if (perfume1) addToCart({ ...perfume1, combo_tag: 'Combo Día del Padre' });
-    if (perfume2) addToCart({ ...perfume2, combo_tag: 'Combo Día del Padre' });
+    if (perfume1) addToCart({ ...perfume1, combo_tag: 'Combo' });
+    if (perfume2) addToCart({ ...perfume2, combo_tag: 'Combo' });
   };
-
-  const comboProfile    = getComboProfile(selectedPerfume1, selectedPerfume2);
-  const comboProfileKey = comboProfile
-    ? normalizeComboKey(selectedPerfume1, selectedPerfume2)
-    : `${selectedPerfume1 || 'empty'}__${selectedPerfume2 || 'empty'}`;
 
   const SLUG_ORDER = ['red-desire', 'yellow-bloom', 'black-code', 'white-ice', 'deep-blue'];
   const orderedPerfumes = [...perfumes].sort((a, b) => {
@@ -680,40 +674,21 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
         <div ref={bodyRef} className="sol-reveal">
 
           {/* Card — único bloque: título, slider, perfil, selectores, precio y CTA */}
-          <div className="sol-combo-card" style={{ border: '0.5px solid rgba(255, 255, 255, 0.6)', background: 'rgba(245, 242, 238, 0.92)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.18)', borderRadius: '16px', margin: '0 auto', width: '100%', padding: '20px 16px', textAlign: 'center', color: '#1a1a1a' }}>
+          <div className="sol-combo-card" style={{ borderRadius: '16px', margin: '0 auto', width: '100%', padding: '20px 16px', textAlign: 'center', color: '#f0ece6', background: 'linear-gradient(160deg, rgba(25,22,18,0.98) 0%, rgba(14,12,10,0.99) 100%)', border: '0.5px solid rgba(212,175,55,0.2)', borderTop: '1.5px solid rgba(212,175,55,0.35)', boxShadow: '0 0 80px rgba(212,175,55,0.06), 0 16px 48px rgba(0,0,0,0.55)' }}>
 
             {/* 1. Título */}
-            <p className="font-jakarta" style={{ fontWeight: 700, fontSize: 'clamp(16px, 3vw, 18px)', letterSpacing: '0.06em', lineHeight: 1.6, textAlign: 'center', color: '#1a1a1a', margin: 0 }}>
+            <p className="font-jakarta" style={{ fontWeight: 700, fontSize: 'clamp(16px, 3vw, 18px)', letterSpacing: '0.06em', lineHeight: 1.6, textAlign: 'center', color: '#f0ece6', margin: 0 }}>
               LLEVÁ 2 PERFUMES SOLUTION<br />
-              <span style={{ color: '#1a1a1a', marginLeft: '-9px' }}>+ PERFUMERO DE REGALO</span><br />
+              <span style={{ marginLeft: '-9px' }}>+ PERFUMERO DE REGALO</span><br />
               + ENVÍO GRATIS + 30% OFF
             </p>
 
             {/* 2. Slider reducido */}
             <div style={{ marginTop: '12px' }}>
-              <ComboCollectionShowcase settings={cfg} compact maxWidth={240} />
+              <ComboCollectionShowcase settings={cfg} compact maxWidth={360} />
             </div>
 
-            {/* 3. Perfil — solo label + nickname */}
-            <div style={{ marginTop: '12px' }}>
-              <motion.div
-                key={comboProfileKey}
-                initial={{ opacity: 0, y: 8, filter: 'blur(6px)' }}
-                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                transition={{ duration: 0.35, ease: 'easeOut' }}
-              >
-                <div className="font-jakarta sol-combo-perfil-label" style={{ letterSpacing: '0.24em', textTransform: 'uppercase', color: comboProfile ? '#e040fb' : '#888', marginBottom: comboProfile ? '6px' : 0 }}>
-                  Perfil de la combinación
-                </div>
-                {comboProfile && (
-                  <h3 className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(24px, 5.5vw, 34px)', letterSpacing: '-0.02em', color: '#1a1a1a', margin: 0 }}>
-                    {comboProfile.nickname}
-                  </h3>
-                )}
-              </motion.div>
-            </div>
-
-            {/* 4-5. Selectores */}
+            {/* 3. Selectores */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
               <ComboSelect
                 label={cfg.select_label_1}
@@ -738,16 +713,16 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                 const cp2 = CROSSED_PRICES[(perfume2.slug || '').toLowerCase().trim()];
                 const crossedSum = cp1 && cp2 ? cp1 + cp2 : null;
                 return crossedSum ? (
-                  <span className="font-jakarta" style={{ fontSize: '13px', color: '#888', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
+                  <span className="font-jakarta" style={{ fontSize: '13px', color: 'rgba(240,236,230,0.4)', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
                     ${crossedSum.toLocaleString('es-AR')} ARS
                   </span>
                 ) : null;
               })()}
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', justifyContent: 'center' }}>
-                <span className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(30px, 7vw, 42px)', letterSpacing: '-0.025em', color: '#1a1a1a', lineHeight: 1 }}>
+                <span className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(30px, 7vw, 42px)', letterSpacing: '-0.025em', color: '#f0ece6', lineHeight: 1 }}>
                   {perfume1 && perfume2 ? `$${(perfume1.price + perfume2.price).toLocaleString('es-AR')}` : '—'}
                 </span>
-                <span className="font-jakarta" style={{ fontSize: '10px', color: '#666', letterSpacing: '0.18em' }}>ARS</span>
+                <span className="font-jakarta" style={{ fontSize: '10px', color: 'rgba(240,236,230,0.4)', letterSpacing: '0.18em' }}>ARS</span>
               </div>
             </div>
 
@@ -781,7 +756,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
 function ComboSelect({ label, value, onChange, options, optionLabel }) {
   return (
     <div style={{ textAlign: 'left' }}>
-      <label className="font-jakarta" style={{ display: 'block', fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#888', marginBottom: '8px' }}>
+      <label className="font-jakarta" style={{ display: 'block', fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(240,236,230,0.45)', marginBottom: '8px' }}>
         {label}
       </label>
       <div style={{ position: 'relative' }}>
@@ -792,8 +767,8 @@ function ComboSelect({ label, value, onChange, options, optionLabel }) {
           style={{
             width: '100%', minHeight: '42px',
             padding: '10px 40px 10px 14px',
-            background: 'rgba(255,255,255,0.7)', color: '#1a1a1a',
-            border: '0.5px solid rgba(0,0,0,0.15)', borderRadius: 0,
+            background: 'rgba(255,255,255,0.07)', color: '#f0ece6',
+            border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: 0,
             fontSize: '13px', letterSpacing: '0.12em', textTransform: 'uppercase',
             appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none',
             cursor: 'pointer', outline: 'none',
@@ -837,7 +812,7 @@ function ComboCollectionShowcase({ settings, compact = false, maxWidth = 540 }) 
   if (slides.length === 0) return null;
 
   return (
-    <div style={{ position: 'relative', width: '100%', maxWidth: compact ? `clamp(200px, 60vw, ${maxWidth}px)` : maxWidth, margin: '0 auto' }}>
+    <div style={{ position: 'relative', width: '100%', maxWidth: compact ? `clamp(260px, 82vw, ${maxWidth}px)` : maxWidth, margin: '0 auto' }}>
       <motion.div
         style={{ position: 'absolute', inset: 0, borderRadius: radius, filter: 'blur(70px)', background: 'radial-gradient(circle at center, rgba(0,229,255,0.12) 0%, rgba(0,0,0,0) 78%)' }}
         animate={{ opacity: [0.12, 0.18, 0.12], scale: [0.985, 1.02, 0.985] }}

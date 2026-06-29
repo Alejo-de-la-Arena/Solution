@@ -23,16 +23,16 @@ function assert(cond, msg) {
 async function main() {
     // 1 combo = 2 perfumes con combo_tag → 1 perfumero.
     const oneCombo = appendComboGiftItems([
-        { sku: 'RED-N-ROJ-D', quantity: 1, combo_tag: 'Combo Día del Padre' },
-        { sku: 'BLA-N-NEG-A', quantity: 1, combo_tag: 'Combo Día del Padre' },
+        { sku: 'RED-N-ROJ-D', quantity: 1, combo_tag: 'Combo' },
+        { sku: 'BLA-N-NEG-A', quantity: 1, combo_tag: 'Combo' },
     ]);
     const gift1 = oneCombo.filter((i) => i.sku === COMBO_GIFT_SKU);
     assert(gift1.length === 1 && gift1[0].quantity === 1, '1 combo → 1 perfumero');
 
     // 2 combos (4 perfumes) → 2 perfumeros.
     const twoCombos = appendComboGiftItems([
-        { sku: 'RED-N-ROJ-D', quantity: 2, combo_tag: 'Combo Día del Padre' },
-        { sku: 'BLA-N-NEG-A', quantity: 2, combo_tag: 'Combo Día del Padre' },
+        { sku: 'RED-N-ROJ-D', quantity: 2, combo_tag: 'Combo' },
+        { sku: 'BLA-N-NEG-A', quantity: 2, combo_tag: 'Combo' },
     ]);
     const gift2 = twoCombos.filter((i) => i.sku === COMBO_GIFT_SKU);
     assert(gift2.length === 1 && gift2[0].quantity === 2, '2 combos → 2 perfumeros');
