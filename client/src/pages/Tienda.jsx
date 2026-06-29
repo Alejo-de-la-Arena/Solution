@@ -11,6 +11,8 @@ import { getCrossedPrice, CROSSED_PRICES } from '../lib/crossedPrices';
 import { getComboSettings, normalizeComboSettings, resolveComboImage } from '../services/combo';
 import { getTiendaSettings, normalizeTiendaSettings } from '../services/tiendaSettings';
 import TestimonialsSection from '../components/home/TestimonialsSection';
+import banderaArgentina from '../assets/bandera-argentina.svg';
+import worldCupSvg from '../assets/world-cup.svg';
 
 // ─── Static per-slug data ──────────────────────────────────────────────────────
 const SLUG_META = {
@@ -152,8 +154,6 @@ export default function Tienda() {
     <div style={{ background: 'var(--sol-bg)', color: 'var(--sol-ink)', minHeight: '100vh' }}>
       <TiendaHero settings={tiendaSettings} />
 
-      <MundialTickerBand />
-
       {perfumes.length >= 2 && (
         <TiendaComboSection
           perfumes={perfumes}
@@ -233,8 +233,28 @@ function ProductSlidersSection({ perfumes, settings }) {
   ];
 
   return (
-    <section id="coleccion" style={{ borderBottom: '0.5px solid var(--sol-line)', background: 'var(--sol-bg)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)' }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)' }}>
+    <section id="coleccion" style={{ position: 'relative', overflow: 'hidden', borderBottom: '0.5px solid var(--sol-line)', background: 'var(--sol-bg)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)' }}>
+
+      {/* Copa decorativa — fondo ambiental */}
+      <div aria-hidden style={{ position: 'absolute', right: '-24px', top: '50%', transform: 'translateY(-50%)', zIndex: 0, pointerEvents: 'none' }}>
+        <motion.div
+          className="sol-copa-deco"
+          style={{ width: '200px', opacity: 0.20 }}
+          animate={{
+            y: [0, -14, 0],
+            filter: [
+              'brightness(0) invert(1) drop-shadow(0 0 8px rgba(212,175,55,0.22))',
+              'brightness(0) invert(1) drop-shadow(0 0 28px rgba(212,175,55,0.55))',
+              'brightness(0) invert(1) drop-shadow(0 0 8px rgba(212,175,55,0.22))',
+            ],
+          }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <img src={worldCupSvg} alt="" loading="lazy" style={{ width: '100%', height: 'auto', display: 'block' }} />
+        </motion.div>
+      </div>
+
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)', position: 'relative', zIndex: 1 }}>
 
         {/* Section head */}
         <div ref={headRef} className="sol-reveal" style={{ textAlign: 'center', marginBottom: '40px' }}>
@@ -676,7 +696,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
         <div ref={bodyRef} className="sol-reveal">
 
           {/* Card — único bloque: título, slider, perfil, selectores, precio y CTA */}
-          <div className="sol-combo-card" style={{ position: 'relative', borderRadius: '16px', margin: '0 auto', width: '100%', padding: '20px 16px', textAlign: 'center', color: '#1a1a1a', background: 'linear-gradient(160deg, #fdfaf5 0%, #f7f3ec 100%)', border: '0.5px solid rgba(212,175,55,0.28)', borderTop: '1.5px solid rgba(212,175,55,0.45)', boxShadow: '0 8px 40px rgba(0,0,0,0.22), 0 2px 0 rgba(212,175,55,0.12), 0 0 48px rgba(117,170,219,0.07)' }}>
+          <div className="sol-combo-card" style={{ position: 'relative', borderRadius: '16px', margin: '0 auto', width: '100%', padding: '20px 16px', textAlign: 'center', color: '#f0ece6', background: `linear-gradient(rgba(4,10,22,0.84), rgba(4,10,22,0.88)), url(${banderaArgentina})`, backgroundSize: 'cover', backgroundPosition: 'center 35%', border: '0.5px solid rgba(212,175,55,0.28)', borderTop: '1.5px solid rgba(212,175,55,0.45)', boxShadow: '0 8px 40px rgba(0,0,0,0.38), 0 2px 0 rgba(212,175,55,0.12), 0 0 48px rgba(117,170,219,0.09)' }}>
 
             {/* Badge mundialista */}
             <motion.div
@@ -694,7 +714,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                 zIndex: 2,
               }}
             >
-              <ArgentinaFlag />
+              <img src={banderaArgentina} alt="" aria-hidden style={{ width: 22, height: 14, display: 'inline-block', verticalAlign: 'middle', flexShrink: 0, objectFit: 'cover', borderRadius: 1 }} />
               <span className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700, color: MUNDIAL_CELESTE, textTransform: 'uppercase', lineHeight: 1 }}>
                 Edición Mundial
               </span>
@@ -702,7 +722,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
             </motion.div>
 
             {/* 1. Título */}
-            <p className="font-jakarta" style={{ fontWeight: 700, fontSize: 'clamp(16px, 3vw, 18px)', letterSpacing: '0.06em', lineHeight: 1.6, textAlign: 'center', color: '#1a1a1a', margin: 0 }}>
+            <p className="font-jakarta" style={{ fontWeight: 700, fontSize: 'clamp(16px, 3vw, 18px)', letterSpacing: '0.06em', lineHeight: 1.6, textAlign: 'center', color: '#f0ece6', margin: '36px 0 0' }}>
               LLEVÁ 2 PERFUMES SOLUTION<br />
               <span style={{ marginLeft: '-9px' }}>+ PERFUMERO DE REGALO</span><br />
               + ENVÍO GRATIS + 30% OFF
@@ -738,16 +758,16 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
                 const cp2 = CROSSED_PRICES[(perfume2.slug || '').toLowerCase().trim()];
                 const crossedSum = cp1 && cp2 ? cp1 + cp2 : null;
                 return crossedSum ? (
-                  <span className="font-jakarta" style={{ fontSize: '13px', color: '#888', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
+                  <span className="font-jakarta" style={{ fontSize: '13px', color: 'rgba(240,236,230,0.45)', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
                     ${crossedSum.toLocaleString('es-AR')} ARS
                   </span>
                 ) : null;
               })()}
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', justifyContent: 'center' }}>
-                <span className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(30px, 7vw, 42px)', letterSpacing: '-0.025em', color: '#1a1a1a', lineHeight: 1 }}>
+                <span className="font-jost" style={{ fontWeight: 300, fontSize: 'clamp(30px, 7vw, 42px)', letterSpacing: '-0.025em', color: '#f0ece6', lineHeight: 1 }}>
                   {perfume1 && perfume2 ? `$${(perfume1.price + perfume2.price).toLocaleString('es-AR')}` : '—'}
                 </span>
-                <span className="font-jakarta" style={{ fontSize: '10px', color: '#666', letterSpacing: '0.18em' }}>ARS</span>
+                <span className="font-jakarta" style={{ fontSize: '10px', color: 'rgba(240,236,230,0.4)', letterSpacing: '0.18em' }}>ARS</span>
               </div>
             </div>
 
@@ -781,7 +801,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
 function ComboSelect({ label, value, onChange, options, optionLabel }) {
   return (
     <div style={{ textAlign: 'left' }}>
-      <label className="font-jakarta" style={{ display: 'block', fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#888', marginBottom: '8px' }}>
+      <label className="font-jakarta" style={{ display: 'block', fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(240,236,230,0.45)', marginBottom: '8px' }}>
         {label}
       </label>
       <div style={{ position: 'relative' }}>
@@ -792,8 +812,8 @@ function ComboSelect({ label, value, onChange, options, optionLabel }) {
           style={{
             width: '100%', minHeight: '42px',
             padding: '10px 40px 10px 14px',
-            background: 'rgba(255,255,255,0.7)', color: '#1a1a1a',
-            border: '0.5px solid rgba(0,0,0,0.15)', borderRadius: 0,
+            background: 'rgba(255,255,255,0.09)', color: '#f0ece6',
+            border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: 0,
             fontSize: '13px', letterSpacing: '0.12em', textTransform: 'uppercase',
             appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none',
             cursor: 'pointer', outline: 'none',
@@ -816,55 +836,6 @@ function ComboSelect({ label, value, onChange, options, optionLabel }) {
 // ─── Mundial 2026 ──────────────────────────────────────────────────────────────
 const MUNDIAL_CELESTE = '#75AADB';
 const MUNDIAL_GOLD    = '#D4AF37';
-
-const MUNDIAL_ITEMS = [
-  { text: 'ARGENTINA',      color: MUNDIAL_CELESTE },
-  { text: 'MUNDIAL 2026',   color: MUNDIAL_GOLD    },
-  { text: 'VAMO A GANALA',  color: MUNDIAL_CELESTE },
-  { text: 'COPA DEL MUNDO', color: MUNDIAL_GOLD    },
-  { text: 'SOLUTION',       color: '#f4f1ec'        },
-];
-
-function ArgentinaFlag() {
-  return (
-    <svg width="22" height="14" viewBox="0 0 22 14" aria-hidden style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}>
-      <rect width="22" height="4.67"  fill={MUNDIAL_CELESTE} />
-      <rect y="4.67" width="22" height="4.66" fill="#ffffff" />
-      <rect y="9.33" width="22" height="4.67" fill={MUNDIAL_CELESTE} />
-    </svg>
-  );
-}
-
-function MundialTickerBand() {
-  const trackRef = useRef(null);
-  useEffect(() => {
-    const el = trackRef.current;
-    if (el) el.innerHTML += el.innerHTML;
-  }, []);
-
-  return (
-    <div style={{
-      height: '44px', overflow: 'hidden',
-      background: '#03080f',
-      borderTop:    `0.5px solid rgba(117,170,219,0.15)`,
-      borderBottom: `0.5px solid rgba(117,170,219,0.15)`,
-      display: 'flex', alignItems: 'center', whiteSpace: 'nowrap',
-    }}>
-      <div ref={trackRef} className="sol-mundial-ticker-track">
-        {MUNDIAL_ITEMS.map((item, i) => (
-          <span key={i} style={{ display: 'inline-flex', alignItems: 'center' }}>
-            <span className="font-jakarta" style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.26em', textTransform: 'uppercase', color: item.color, lineHeight: 1 }}>
-              {item.text}
-            </span>
-            <span aria-hidden style={{ display: 'inline-flex', alignItems: 'center', padding: '0 20px' }}>
-              <ArgentinaFlag />
-            </span>
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // ─── Combo collection showcase ─────────────────────────────────────────────────
 function ComboCollectionShowcase({ settings, compact = false, maxWidth = 540 }) {

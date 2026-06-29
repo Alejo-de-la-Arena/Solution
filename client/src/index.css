@@ -43,15 +43,10 @@
   }
 }
 
-/* ── Ticker mundialista ── */
-.sol-mundial-ticker-track {
-  display: inline-flex;
-  align-items: center;
-  height: 100%;
-  line-height: 1;
-  animation: sol-ticker 22s linear infinite;
-  will-change: transform;
-  white-space: nowrap;
+/* ── Copa del mundo decorativa (La Colección) ── */
+.sol-copa-deco { display: none; }
+@media (min-width: 900px) {
+  .sol-copa-deco { display: block; }
 }
 
 /* ── Combo native select ── */
