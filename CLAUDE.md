@@ -12,7 +12,7 @@ Tienda e-commerce de perfumes **Solution** con dos canales:
 | Backend | Node + Express 5 · Axios · Morgan · dotenv |
 | Datos | Supabase (PostgreSQL) + Storage para assets |
 | Pagos | Mercado Pago (`@mercadopago/sdk-js`) + Nave / Naranja X (`@ranty/ranty-sdk`) |
-| Logística | Correo Argentino (cotización + etiqueta) + Gestionar (retiros/depósitos) |
+| Logística | Correo Argentino (cotización + etiqueta) |
 | Emails | Integración custom en `server/services/email.js` |
 
 ## Estructura
@@ -31,7 +31,7 @@ Solution/
 │       ├── hooks/           # useAuth, usePageTracking, …
 │       └── services/        # checkout.js, shipping.js, …
 ├── server/                  # Express API
-│   ├── routes/              # checkout, mercadopago, nave, shipping, correo, gestionar, admin
+│   ├── routes/              # checkout, mercadopago, nave, shipping, correo, admin
 │   ├── services/email.js
 │   ├── lib/supabase.js
 │   └── index.js             # monta rutas + webhooks raw-body
@@ -41,8 +41,7 @@ Solution/
 │   └── seed/
 ├── MercadoContext.md        # Docs MP Orders API
 ├── MercadoPagoContext.md    # Plan de despliegue MP
-├── naveContext.MD           # Docs Nave/Ranty API
-└── gestionarContext.md      # Docs Gestionar
+└── naveContext.MD           # Docs Nave/Ranty API
 ```
 
 ## Rutas del cliente
@@ -74,9 +73,8 @@ Montados en `server/index.js` con prefijo `/api` (excepto webhooks).
 | `/api/nave/*` | `routes/nave.js` | create-payment, payment-status, webhook alternativo |
 | `/webhooks/mercadopago` | `routes/mercadopago.js::handleMercadoPagoWebhook` | Notificaciones MP (raw body + HMAC) |
 | `/webhooks/nave` | `routes/nave.js::handleNaveWebhook` | Notificaciones Nave (raw body) |
-| `/api/shipping/*` | `routes/shipping.js` | Cotización unificada (Correo + Gestionar) |
+| `/api/shipping/*` | `routes/shipping.js` | Cotización de envío (Correo Argentino) |
 | `/api/correo/*` | `routes/correo.js` | Correo Argentino directo |
-| `/api/gestionar/*` | `routes/gestionar.js` | Gestionar logística |
 | `/api/admin/*` | `routes/admin.js` | Panel admin (requiere auth Supabase) |
 
 Los webhooks se montan ANTES de `express.json()` con `express.raw()` para poder validar firmas/parsear payloads con `Content-Type` no-JSON.
@@ -101,7 +99,7 @@ Tabla `order_items`: `order_id` (FK), `product_id` (FK), `quantity`, `unit_price
 `CartContext` persiste items en `localStorage['cart']` y sincroniza precios con la DB al montar.
 
 ### 2. Checkout (`/checkout`)
-El usuario completa email, nombre, dirección, CP + provincia. Un `useEffect` debounced llama a `/api/shipping/quote` que consulta **Correo Argentino** y/o **Gestionar** y devuelve opciones (home / branch). Se auto-selecciona la primera de home.
+El usuario completa email, nombre, dirección, CP + provincia. Un `useEffect` debounced llama a `/api/shipping/quote` que consulta **Correo Argentino** y devuelve opciones (home / branch). Se auto-selecciona la primera de home.
 
 ### 3. Método de pago
 
@@ -126,7 +124,7 @@ Tras cualquier compra exitosa, el cliente guarda la orden en `localStorage['solu
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
 - `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`
 - `NAVE_ENV` (`testing` | `production`), `NAVE_CLIENT_ID`, `NAVE_CLIENT_SECRET`, `NAVE_AUDIENCE`, `NAVE_POS_ID`, `NAVE_PAYMENT_DURATION_SECS`
-- Correo Argentino / Gestionar: ver `routes/correo.js` y `routes/gestionar.js`
+- Correo Argentino: ver `routes/correo.js`
 
 ### `client/.env`
 - `VITE_API_URL` (URL del server, sin trailing slash)
@@ -155,4 +153,3 @@ Testear webhooks en dev con un túnel (ngrok / cloudflared) y registrarlo en los
 - `MercadoContext.md` — referencia Orders API, Payments API, testing cards y webhooks.
 - `MercadoPagoContext.md` — fases 0–7 del rollout, credenciales, checklist prod.
 - `naveContext.MD` — OAuth2 M2M, payment requests, estados del webhook (APPROVED / REJECTED / CANCELLED / REFUNDED / CHARGED_BACK).
-- `gestionarContext.md` — API de Gestionar (ventas, paquetes, retiros).

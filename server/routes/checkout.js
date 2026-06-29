@@ -9,7 +9,7 @@ const { attachCogsToOrderItemRows } = require('../lib/orderItems');
  * POST /api/checkout
  * Crea una orden retail (channel: 'retail') y sus order_items.
  *
- * Campos de envío opcionales (cotizados en el checkout con Correo Argentino o Gestionar):
+ * Campos de envío opcionales (cotizados en el checkout con Correo Argentino):
  *   shipping_provider, shipping_mode, shipping_service_type, shipping_is_free,
  *   shipping_agency_code, shipping_agency_name, shipping_customer_id,
  *   shipping_quote_payload, shipping_quote_response

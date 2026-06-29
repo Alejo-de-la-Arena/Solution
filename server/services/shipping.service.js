@@ -1,42 +1,8 @@
 const correoProvider = require('./providers/correo/correo.provider');
-const gestionarProvider = require('./providers/gestionar.provider');
-const { isAmbaCoverage } = require('../data/amba-zones');
 const { getOrderBundle, updateOrderShippingFields } = require('./shipping.data');
 const { buildAddressFromOrder } = require('./providers/correo/correo.mapper');
 
 async function quoteShipping({ items, address }) {
-    // AMBA: Gestionar para domicilio + sucursales de Correo como alternativa. Fuera de AMBA: solo Correo.
-    if (isAmbaCoverage(address?.postalCode)) {
-        const [gestionarResult, correoResult] = await Promise.allSettled([
-            gestionarProvider.quote({ items, address }),
-            correoProvider.quote({ items, address }),
-        ]);
-
-        if (gestionarResult.status === 'fulfilled') {
-            const merged = gestionarResult.value;
-            if (correoResult.status === 'fulfilled') {
-                const branchOptions = (correoResult.value.options || []).filter((o) => o.mode === 'branch');
-                if (branchOptions.length > 0) {
-                    merged.options = [...merged.options, ...branchOptions];
-                    merged.parcel = correoResult.value.parcel || null;
-                    merged.customerId = correoResult.value.customerId || null;
-                }
-            } else {
-                console.warn(
-                    '[shipping] Correo falló al ofrecer sucursales para CP AMBA:',
-                    correoResult.reason?.message || correoResult.reason,
-                );
-            }
-            return merged;
-        }
-
-        console.warn(
-            '[shipping] Gestionar falló pese a CP AMBA, fallback a Correo:',
-            gestionarResult.reason?.message || gestionarResult.reason,
-        );
-        if (correoResult.status === 'fulfilled') return correoResult.value;
-        throw correoResult.reason;
-    }
     return correoProvider.quote({ items, address });
 }
 

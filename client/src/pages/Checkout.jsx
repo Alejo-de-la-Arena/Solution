@@ -33,7 +33,6 @@ const PROVINCIAS = [
 
 const PROVIDER_LABELS = {
   correo_argentino: 'Correo Argentino',
-  gestionar: 'Gestionar',
 };
 
 const NAVE_ORDER_KEY = 'nave_pending_order';
@@ -907,14 +906,11 @@ export default function Checkout() {
   const contactDone = !!form.email.trim() && !!form.name.trim();
   const addressDone = !!form.city.trim() && !!form.state.trim() && form.zip.trim().length >= 4;
   const shippingDone = showShippingSection && !!selectedShipping?.mode;
-  // El provider efectivo viene de la opción elegida (cuando hay AMBA, Gestionar y Correo
-  // conviven en la misma lista de opciones, cada una con su provider).
+  // El provider efectivo viene de la opción elegida (hoy siempre Correo Argentino).
   const activeProvider = selectedShipping?.provider || shippingQuote?.provider || null;
   const providerLabel = activeProvider ? PROVIDER_LABELS[activeProvider] : null;
   const shippingOptions = shippingQuote?.options || [];
-  const freeShippingProviderLabel = activeProvider === 'gestionar'
-    ? 'Gestionar'
-    : 'Correo Argentino Clásico';
+  const freeShippingProviderLabel = 'Correo Argentino Clásico';
 
   return (
     <div className="bg-black text-white min-h-screen checkout-bg-grid">

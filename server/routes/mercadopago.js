@@ -499,7 +499,7 @@ router.post('/mercadopago/create-order', async (req, res) => {
   if (!Number.isFinite(shippingCostNum) || shippingCostNum < 0) {
     return res.status(400).json({ error: 'shipping_cost inválido' });
   }
-  // Envío a domicilio sin calle rompe el push a Gestionar (direccion obligatoria).
+  // La calle es obligatoria para envío a domicilio.
   if (shippingMode === 'home' && !(shipping_address_line1 || '').trim()) {
     return res.status(400).json({ error: 'La dirección (calle y número) es obligatoria para envío a domicilio' });
   }
@@ -731,7 +731,7 @@ router.post('/mercadopago/create-preference', async (req, res) => {
   if (!Number.isFinite(shippingCostNum) || shippingCostNum < 0) {
     return res.status(400).json({ error: 'shipping_cost inválido' });
   }
-  // Envío a domicilio sin calle rompe el push a Gestionar (direccion obligatoria).
+  // La calle es obligatoria para envío a domicilio.
   if (shippingMode === 'home' && !(shipping_address_line1 || '').trim()) {
     return res.status(400).json({ error: 'La dirección (calle y número) es obligatoria para envío a domicilio' });
   }

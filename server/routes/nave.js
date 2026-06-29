@@ -91,7 +91,7 @@ router.get('/nave/test-auth', async (_req, res) => {
 /**
  * POST /api/nave/create-payment
  * Crea la orden en Supabase + intención de pago en Nave.
- * Incluye campos de cotización de envío (Correo Argentino / Gestionar).
+ * Incluye campos de cotización de envío (Correo Argentino).
  */
 router.post('/nave/create-payment', async (req, res) => {
   if (!supabase) return res.status(503).json({ error: 'Base de datos no configurada' });
@@ -129,7 +129,7 @@ router.post('/nave/create-payment', async (req, res) => {
   if (!Number.isFinite(shippingCostNum) || shippingCostNum < 0) {
     return res.status(400).json({ error: 'shipping_cost inválido' });
   }
-  // Envío a domicilio sin calle rompe el push a Gestionar (direccion obligatoria).
+  // La calle es obligatoria para envío a domicilio.
   if (shippingMode === 'home' && !(shipping_address_line1 || '').trim()) {
     return res.status(400).json({ error: 'La dirección (calle y número) es obligatoria para envío a domicilio' });
   }

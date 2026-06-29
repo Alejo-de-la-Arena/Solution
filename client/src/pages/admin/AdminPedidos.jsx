@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getAdminOrders, refundNaveOrder, updateAdminOrderStatus } from '../../services/admin';
 import { dispatchWithCorreo, fetchCorreoAgencies, saveTrackingNumber } from '../../services/shipping';
-import { gestionarDispatchNow } from '../../services/gestionar';
 import { AdminDatePicker, toYMDLocal } from '../../components/admin/AdminDatePicker';
 import { useNewOrdersRealtime } from '../../hooks/useNewOrdersRealtime';
 
@@ -444,88 +443,6 @@ function DispatchPanel({ order, onSuccess, onClose }) {
 }
 
 
-// ── Gestionar Status Panel ────────────────────────────────────────────────
-function GestionarStatusPanel({ order, onAfterRetry }) {
-  const [retrying, setRetrying] = useState(false);
-  const [feedback, setFeedback] = useState(null);
-
-  const pushed = !!order.gestionar_pushed_at;
-  const hasError = !!order.gestionar_error;
-  const attempts = order.gestionar_attempts || 0;
-
-  async function handleRetry() {
-    setRetrying(true);
-    setFeedback(null);
-    try {
-      const res = await gestionarDispatchNow({ orderId: order.id });
-      setFeedback({
-        ok: res.succeeded > 0,
-        message:
-          res.succeeded > 0
-            ? 'Push exitoso a Gestionar.'
-            : res.errors?.[0]?.message || 'No se pudo despachar.',
-      });
-      if (res.succeeded > 0) onAfterRetry?.(order.id);
-    } catch (e) {
-      setFeedback({ ok: false, message: e.message || 'Error al reintentar' });
-    } finally {
-      setRetrying(false);
-    }
-  }
-
-  let badge;
-  if (pushed) {
-    badge = (
-      <span className="text-xs px-2 py-1 rounded border border-emerald-500/40 text-emerald-300 bg-emerald-500/10">
-        En Gestionar{order.gestionar_package_id ? ` (${order.gestionar_package_id})` : ''}
-      </span>
-    );
-  } else if (hasError) {
-    badge = (
-      <span className="text-xs px-2 py-1 rounded border border-red-500/40 text-red-300 bg-red-500/10">
-        Error en push (intento {attempts})
-      </span>
-    );
-  } else {
-    badge = (
-      <span className="text-xs px-2 py-1 rounded border border-white/30 text-white/60 bg-white/5">
-        Pendiente de push
-      </span>
-    );
-  }
-
-  return (
-    <div className="mt-3 p-4 rounded-lg border border-fuchsia-500/30 bg-fuchsia-500/[0.04] space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <h4 className="text-sm font-heading tracking-widest text-fuchsia-300">
-          GESTIONAR (CABA / GBA)
-        </h4>
-        {badge}
-      </div>
-      {hasError && (
-        <p className="text-xs text-red-200/90 break-words">
-          <span className="text-white/40">Último error:</span> {order.gestionar_error}
-        </p>
-      )}
-      {!pushed && (
-        <button
-          type="button"
-          onClick={handleRetry}
-          disabled={retrying}
-          className="text-xs uppercase tracking-widest px-4 py-2 rounded border border-fuchsia-400/50 text-fuchsia-200 hover:bg-fuchsia-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          {retrying ? 'Reintentando…' : 'Reintentar ahora'}
-        </button>
-      )}
-      {feedback && (
-        <p className={`text-xs ${feedback.ok ? 'text-emerald-300' : 'text-red-300'}`}>
-          {feedback.ok ? '✅' : '❌'} {feedback.message}
-        </p>
-      )}
-    </div>
-  );
-}
-
 // Tracking Panel
 function TrackingPanel({ order, onSuccess }) {
   const [trackingInput, setTrackingInput] = useState(order.shipping_tracking_number || '');
@@ -608,7 +525,6 @@ function OrderDetailSection({
   refundingId, handleRefundNave,
   openDispatchPanels, toggleDispatchPanel,
   handleDispatchSuccess, dispatchedTracking,
-  onGestionarRetry,
 }) {
   const showDispatch = canDispatchCorreo(order);
   const dispatchOpen = openDispatchPanels.has(order.id);
@@ -768,10 +684,6 @@ function OrderDetailSection({
                 />
               )}
             </>
-          )}
-
-          {order.shipping_provider === 'gestionar' && order.status === 'paid' && (
-            <GestionarStatusPanel order={order} onAfterRetry={onGestionarRetry} />
           )}
         </div>
       )}
@@ -934,7 +846,6 @@ export default function AdminPedidos() {
     refundingId, handleRefundNave,
     openDispatchPanels, toggleDispatchPanel,
     handleDispatchSuccess, dispatchedTracking,
-    onGestionarRetry: () => fetchOrders(),
   };
 
   return (
