@@ -12,7 +12,6 @@ import { getComboSettings, normalizeComboSettings, resolveComboImage } from '../
 import { getTiendaSettings, normalizeTiendaSettings } from '../services/tiendaSettings';
 import TestimonialsSection from '../components/home/TestimonialsSection';
 import banderaArgentina from '../assets/bandera-argentina.svg';
-import worldCupSvg from '../assets/world-cup.svg';
 
 // ─── Static per-slug data ──────────────────────────────────────────────────────
 const SLUG_META = {
@@ -184,8 +183,21 @@ function TiendaHero({ settings }) {
   const statsRef = useReveal();
 
   return (
-    <section style={{ borderBottom: '0.5px solid var(--sol-line)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)', background: 'var(--sol-bg)' }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)' }}>
+    <section style={{ position: 'relative', overflow: 'hidden', borderBottom: '0.5px solid var(--sol-line)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)', background: 'var(--sol-bg)' }}>
+
+      {/* Estrellas mundialistas — triángulo decorativo de fondo */}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        {/* ★ arriba-centro */}
+        <div style={{ position: 'absolute', left: 0, right: 0, top: '12%', textAlign: 'center' }}>
+          <span style={{ display: 'inline-block', fontSize: 'clamp(36px, 5.5vw, 58px)', color: MUNDIAL_GOLD, opacity: 0.13, lineHeight: 1, filter: 'drop-shadow(0 0 9px rgba(212,175,55,0.50))' }}>★</span>
+        </div>
+        {/* ★ abajo-izquierda */}
+        <span style={{ position: 'absolute', left: '8%', bottom: '20%', fontSize: 'clamp(26px, 4vw, 44px)', color: MUNDIAL_GOLD, opacity: 0.11, lineHeight: 1, filter: 'drop-shadow(0 0 6px rgba(212,175,55,0.40))' }}>★</span>
+        {/* ★ abajo-derecha */}
+        <span style={{ position: 'absolute', right: '8%', bottom: '20%', fontSize: 'clamp(26px, 4vw, 44px)', color: MUNDIAL_GOLD, opacity: 0.11, lineHeight: 1, filter: 'drop-shadow(0 0 6px rgba(212,175,55,0.40))' }}>★</span>
+      </div>
+
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)', position: 'relative', zIndex: 1 }}>
 
         {/* Eyebrow + section number */}
         <div ref={headRef} className="sol-reveal" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '28px' }}>
@@ -233,28 +245,9 @@ function ProductSlidersSection({ perfumes, settings }) {
   ];
 
   return (
-    <section id="coleccion" style={{ position: 'relative', overflow: 'hidden', borderBottom: '0.5px solid var(--sol-line)', background: 'var(--sol-bg)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)' }}>
+    <section id="coleccion" style={{ borderBottom: '0.5px solid var(--sol-line)', background: 'var(--sol-bg)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)' }}>
 
-      {/* Copa decorativa — fondo ambiental */}
-      <div aria-hidden style={{ position: 'absolute', right: '-24px', top: '50%', transform: 'translateY(-50%)', zIndex: 0, pointerEvents: 'none' }}>
-        <motion.div
-          className="sol-copa-deco"
-          style={{ width: '200px', opacity: 0.20 }}
-          animate={{
-            y: [0, -14, 0],
-            filter: [
-              'brightness(0) invert(1) drop-shadow(0 0 8px rgba(212,175,55,0.22))',
-              'brightness(0) invert(1) drop-shadow(0 0 28px rgba(212,175,55,0.55))',
-              'brightness(0) invert(1) drop-shadow(0 0 8px rgba(212,175,55,0.22))',
-            ],
-          }}
-          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          <img src={worldCupSvg} alt="" loading="lazy" style={{ width: '100%', height: 'auto', display: 'block' }} />
-        </motion.div>
-      </div>
-
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)', position: 'relative', zIndex: 1 }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)' }}>
 
         {/* Section head */}
         <div ref={headRef} className="sol-reveal" style={{ textAlign: 'center', marginBottom: '40px' }}>
@@ -696,7 +689,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
         <div ref={bodyRef} className="sol-reveal">
 
           {/* Card — único bloque: título, slider, perfil, selectores, precio y CTA */}
-          <div className="sol-combo-card" style={{ position: 'relative', borderRadius: '16px', margin: '0 auto', width: '100%', padding: '20px 16px', textAlign: 'center', color: '#f0ece6', background: `linear-gradient(rgba(4,10,22,0.84), rgba(4,10,22,0.88)), url(${banderaArgentina})`, backgroundSize: 'cover', backgroundPosition: 'center 35%', border: '0.5px solid rgba(212,175,55,0.28)', borderTop: '1.5px solid rgba(212,175,55,0.45)', boxShadow: '0 8px 40px rgba(0,0,0,0.38), 0 2px 0 rgba(212,175,55,0.12), 0 0 48px rgba(117,170,219,0.09)' }}>
+          <div className="sol-combo-card" style={{ position: 'relative', borderRadius: '16px', margin: '0 auto', width: '100%', padding: '20px 16px', textAlign: 'center', color: '#f0ece6', background: 'linear-gradient(160deg, #050c18 0%, #07111f 100%)', border: '0.5px solid rgba(212,175,55,0.28)', borderTop: '1.5px solid rgba(212,175,55,0.45)', boxShadow: '0 8px 40px rgba(0,0,0,0.38), 0 2px 0 rgba(212,175,55,0.12), 0 0 48px rgba(117,170,219,0.09)' }}>
 
             {/* Badge mundialista */}
             <motion.div
