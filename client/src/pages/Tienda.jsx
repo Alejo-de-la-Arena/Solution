@@ -152,6 +152,8 @@ export default function Tienda() {
     <div style={{ background: 'var(--sol-bg)', color: 'var(--sol-ink)', minHeight: '100vh' }}>
       <TiendaHero settings={tiendaSettings} />
 
+      <MundialTickerBand />
+
       {perfumes.length >= 2 && (
         <TiendaComboSection
           perfumes={perfumes}
@@ -674,7 +676,30 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
         <div ref={bodyRef} className="sol-reveal">
 
           {/* Card — único bloque: título, slider, perfil, selectores, precio y CTA */}
-          <div className="sol-combo-card" style={{ borderRadius: '16px', margin: '0 auto', width: '100%', padding: '20px 16px', textAlign: 'center', color: '#1a1a1a', background: 'linear-gradient(160deg, #fdfaf5 0%, #f7f3ec 100%)', border: '0.5px solid rgba(212,175,55,0.28)', borderTop: '1.5px solid rgba(212,175,55,0.45)', boxShadow: '0 8px 40px rgba(0,0,0,0.22), 0 2px 0 rgba(212,175,55,0.12)' }}>
+          <div className="sol-combo-card" style={{ position: 'relative', borderRadius: '16px', margin: '0 auto', width: '100%', padding: '20px 16px', textAlign: 'center', color: '#1a1a1a', background: 'linear-gradient(160deg, #fdfaf5 0%, #f7f3ec 100%)', border: '0.5px solid rgba(212,175,55,0.28)', borderTop: '1.5px solid rgba(212,175,55,0.45)', boxShadow: '0 8px 40px rgba(0,0,0,0.22), 0 2px 0 rgba(212,175,55,0.12), 0 0 48px rgba(117,170,219,0.07)' }}>
+
+            {/* Badge mundialista */}
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 240, damping: 18, delay: 0.3 }}
+              style={{
+                position: 'absolute', top: 12, right: 12,
+                display: 'inline-flex', alignItems: 'center', gap: '7px',
+                background: 'linear-gradient(135deg, #0d2040 0%, #08172e 100%)',
+                border: `0.5px solid rgba(117,170,219,0.35)`,
+                borderRadius: '9999px',
+                padding: '5px 11px 5px 8px',
+                boxShadow: '0 4px 14px rgba(117,170,219,0.2)',
+                zIndex: 2,
+              }}
+            >
+              <ArgentinaFlag />
+              <span className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700, color: MUNDIAL_CELESTE, textTransform: 'uppercase', lineHeight: 1 }}>
+                Edición Mundial
+              </span>
+              <span aria-hidden style={{ fontSize: '10px', lineHeight: 1, color: MUNDIAL_GOLD }}>★</span>
+            </motion.div>
 
             {/* 1. Título */}
             <p className="font-jakarta" style={{ fontWeight: 700, fontSize: 'clamp(16px, 3vw, 18px)', letterSpacing: '0.06em', lineHeight: 1.6, textAlign: 'center', color: '#1a1a1a', margin: 0 }}>
@@ -783,6 +808,59 @@ function ComboSelect({ label, value, onChange, options, optionLabel }) {
             <path d="M6 9l6 6 6-6" />
           </svg>
         </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Mundial 2026 ──────────────────────────────────────────────────────────────
+const MUNDIAL_CELESTE = '#75AADB';
+const MUNDIAL_GOLD    = '#D4AF37';
+
+const MUNDIAL_ITEMS = [
+  { text: 'ARGENTINA',      color: MUNDIAL_CELESTE },
+  { text: 'MUNDIAL 2026',   color: MUNDIAL_GOLD    },
+  { text: 'VAMO A GANALA',  color: MUNDIAL_CELESTE },
+  { text: 'COPA DEL MUNDO', color: MUNDIAL_GOLD    },
+  { text: 'SOLUTION',       color: '#f4f1ec'        },
+];
+
+function ArgentinaFlag() {
+  return (
+    <svg width="22" height="14" viewBox="0 0 22 14" aria-hidden style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}>
+      <rect width="22" height="4.67"  fill={MUNDIAL_CELESTE} />
+      <rect y="4.67" width="22" height="4.66" fill="#ffffff" />
+      <rect y="9.33" width="22" height="4.67" fill={MUNDIAL_CELESTE} />
+    </svg>
+  );
+}
+
+function MundialTickerBand() {
+  const trackRef = useRef(null);
+  useEffect(() => {
+    const el = trackRef.current;
+    if (el) el.innerHTML += el.innerHTML;
+  }, []);
+
+  return (
+    <div style={{
+      height: '44px', overflow: 'hidden',
+      background: '#03080f',
+      borderTop:    `0.5px solid rgba(117,170,219,0.15)`,
+      borderBottom: `0.5px solid rgba(117,170,219,0.15)`,
+      display: 'flex', alignItems: 'center', whiteSpace: 'nowrap',
+    }}>
+      <div ref={trackRef} className="sol-mundial-ticker-track">
+        {MUNDIAL_ITEMS.map((item, i) => (
+          <span key={i} style={{ display: 'inline-flex', alignItems: 'center' }}>
+            <span className="font-jakarta" style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.26em', textTransform: 'uppercase', color: item.color, lineHeight: 1 }}>
+              {item.text}
+            </span>
+            <span aria-hidden style={{ display: 'inline-flex', alignItems: 'center', padding: '0 20px' }}>
+              <ArgentinaFlag />
+            </span>
+          </span>
+        ))}
       </div>
     </div>
   );

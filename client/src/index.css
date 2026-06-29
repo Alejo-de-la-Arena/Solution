@@ -43,6 +43,17 @@
   }
 }
 
+/* ── Ticker mundialista ── */
+.sol-mundial-ticker-track {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  line-height: 1;
+  animation: sol-ticker 22s linear infinite;
+  will-change: transform;
+  white-space: nowrap;
+}
+
 /* ── Combo native select ── */
 .sol-combo-select:focus {
   border-color: #00e5ff !important;
