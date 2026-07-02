@@ -53,6 +53,18 @@ function safeInt(value, fallback = 0) {
     return Number.isFinite(n) ? Math.max(0, Math.round(n)) : fallback;
 }
 
+/**
+ * Normaliza un código postal al CP numérico de 4 dígitos que espera Correo.
+ * El cliente suele tipear el CPA completo (ej. "B1847DRA" = letra de provincia
+ * + CP + sufijo de cuadra). Correo espera el CP de 4 dígitos y él deriva el CPA;
+ * si le mandamos las letras el envío llega con el CPA crudo. Descartamos todo lo
+ * no numérico y tomamos los primeros 4 dígitos (mismo criterio que usa el front
+ * para mostrar el CP y el provider para ordenar sucursales por cercanía).
+ */
+function normalizePostalCode(value) {
+    return String(value || '').replace(/\D/g, '').slice(0, 4);
+}
+
 function parseAddressLine1(line1 = '') {
     const raw = String(line1 || '').trim();
     if (!raw) return { street: '', number: '' };
@@ -150,7 +162,8 @@ function buildRatesPayload({ customerId, postalCodeDestination, parcel, delivere
     if (!customerId) {
         throw new CorreoValidationError('customerId es obligatorio para cotizar.');
     }
-    if (!postalCodeDestination) {
+    const postalCodeDestinationClean = normalizePostalCode(postalCodeDestination);
+    if (!postalCodeDestinationClean) {
         throw new CorreoValidationError('postalCodeDestination es obligatorio para cotizar.');
     }
     if (!config.operational.originPostalCode) {
@@ -160,7 +173,7 @@ function buildRatesPayload({ customerId, postalCodeDestination, parcel, delivere
     const payload = {
         customerId,
         postalCodeOrigin: config.operational.originPostalCode,
-        postalCodeDestination: String(postalCodeDestination).trim(),
+        postalCodeDestination: postalCodeDestinationClean,
         dimensions: {
             weight: safeInt(parcel.weight),
             height: safeInt(parcel.height),
@@ -255,7 +268,7 @@ function buildImportPayload({ customerId, order, items, address, parcel, agencyC
                 apartment: address.apartment || '',
                 city: address.city || '',
                 provinceCode,
-                postalCode: String(address.postalCode || '').trim(),
+                postalCode: normalizePostalCode(address.postalCode),
             },
 
             weight: safeInt(parcel.weight),
@@ -275,4 +288,5 @@ module.exports = {
     buildRatesPayload,
     buildImportPayload,
     safeInt,
+    normalizePostalCode,
 };
