@@ -30,6 +30,9 @@
  *   --skip=mp      saltea backfill de MP
  *   --skip=nave    saltea backfill de Nave
  *   --skip=cogs    saltea backfill de cogs_unit
+ *   --force        re-procesa órdenes que YA tienen financials (recalcula con
+ *                  el extractor actual, corrige filas viejas). Sin este flag se
+ *                  saltean las que ya existen.
  */
 
 const path = require('path');
@@ -54,6 +57,7 @@ const LIMIT = (() => {
 const SKIP_MP = args.has('--skip=mp');
 const SKIP_NAVE = args.has('--skip=nave');
 const SKIP_COGS = args.has('--skip=cogs');
+const FORCE = args.has('--force');
 
 const MP_API = 'https://api.mercadopago.com';
 const SLEEP_MS = 250;
@@ -79,7 +83,7 @@ async function backfillMp(supabase) {
   let query = supabase
     .from('orders')
     .select('id, mp_payment_id')
-    .eq('status', 'paid')
+    .in('status', ['paid', 'shipped'])
     .not('mp_payment_id', 'is', null);
   if (LIMIT > 0) query = query.limit(LIMIT);
 
@@ -91,13 +95,15 @@ async function backfillMp(supabase) {
   let ok = 0, fail = 0, skipped = 0;
   for (const o of orders) {
     try {
-      // Saltear si ya tiene financials
-      const { data: existing } = await supabase
-        .from('order_financials')
-        .select('order_id')
-        .eq('order_id', o.id)
-        .maybeSingle();
-      if (existing) { skipped += 1; continue; }
+      // Saltear si ya tiene financials (salvo --force, que recalcula todo)
+      if (!FORCE) {
+        const { data: existing } = await supabase
+          .from('order_financials')
+          .select('order_id')
+          .eq('order_id', o.id)
+          .maybeSingle();
+        if (existing) { skipped += 1; continue; }
+      }
 
       const { data: payment } = await axios.get(`${MP_API}/v1/payments/${o.mp_payment_id}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -162,7 +168,7 @@ async function backfillNave(supabase) {
   let query = supabase
     .from('orders')
     .select('id, nave_payment_id')
-    .eq('status', 'paid')
+    .in('status', ['paid', 'shipped'])
     .not('nave_payment_id', 'is', null);
   if (LIMIT > 0) query = query.limit(LIMIT);
 
@@ -174,12 +180,14 @@ async function backfillNave(supabase) {
   let ok = 0, fail = 0, skipped = 0;
   for (const o of orders) {
     try {
-      const { data: existing } = await supabase
-        .from('order_financials')
-        .select('order_id')
-        .eq('order_id', o.id)
-        .maybeSingle();
-      if (existing) { skipped += 1; continue; }
+      if (!FORCE) {
+        const { data: existing } = await supabase
+          .from('order_financials')
+          .select('order_id')
+          .eq('order_id', o.id)
+          .maybeSingle();
+        if (existing) { skipped += 1; continue; }
+      }
 
       const { data: payment } = await axios.get(
         `${naveCtx.apiBase}/ranty-payments/payments/${o.nave_payment_id}`,

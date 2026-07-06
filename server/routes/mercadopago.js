@@ -5,6 +5,8 @@ const { supabase } = require('../lib/supabase');
 const { sendPaymentConfirmationEmail, sendAdminSaleNotificationEmail } = require('../services/email');
 const { sendPurchaseEvent } = require('../services/metaCapi');
 const { applyAdminTestMode } = require('../lib/testMode');
+const { attachCogsToOrderItemRows } = require('../lib/orderItems');
+const { extractFinancialsFromMpPayment, upsertOrderFinancials } = require('../lib/orderFinancials');
 
 const router = express.Router();
 const MP_API = 'https://api.mercadopago.com';
@@ -316,6 +318,40 @@ function isMpNotFoundError(errorData) {
   return String(firstError?.code || '').toLowerCase() === 'not_found';
 }
 
+/**
+ * Captura el desglose financiero (fee / impuestos / neto) de un payment de
+ * Mercado Pago en order_financials. Idempotente (upsert por order_id) y con
+ * falla silenciosa: NUNCA debe romper el flujo de cobro. Consumido por la
+ * Calculadora del admin.
+ */
+async function captureMpFinancials(orderId, payment) {
+  try {
+    const financials = extractFinancialsFromMpPayment(payment);
+    if (!financials) return;
+    await upsertOrderFinancials(orderId, 'mercadopago', financials, payment);
+  } catch (err) {
+    console.error('[MP] captureMpFinancials falló (no crítico):', err.message);
+  }
+}
+
+/**
+ * Igual que captureMpFinancials pero partiendo de una respuesta de la Orders
+ * API (/v1/orders). El payment anidado en transactions.payments[] no trae el
+ * detalle de fees, así que buscamos el payment real vía /v1/payments/{id}.
+ */
+async function captureMpFinancialsFromOrder(orderId, mpOrder) {
+  try {
+    const paymentId = extractFirstPayment(mpOrder)?.id;
+    if (!paymentId) return;
+    let accessToken;
+    try { accessToken = getAccessToken(); } catch { return; }
+    const payment = await fetchMpPayment(paymentId, accessToken);
+    await captureMpFinancials(orderId, payment);
+  } catch (err) {
+    console.error('[MP] captureMpFinancialsFromOrder falló (no crítico):', err.message);
+  }
+}
+
 async function applyPaymentToDb(orderRowId, payment, { sendEmailIfPaid }) {
   const mpCols = paymentToMpColumns(payment);
   const nextStatus = deriveStatusFromPayment(payment);
@@ -345,6 +381,7 @@ async function applyPaymentToDb(orderRowId, payment, { sendEmailIfPaid }) {
     await fireCapiPurchaseOnce(orderRowId, prevOrder, {
       eventTime: paidAtToEpoch(payment?.date_approved),
     });
+    await captureMpFinancials(orderRowId, payment);
   }
 
   const needCustomerEmail = !prevOrder.payment_confirmation_email_sent_at;
@@ -422,6 +459,7 @@ async function applyMpOrderToDb(orderRowId, mpOrder, { sendEmailIfPaid }) {
     await fireCapiPurchaseOnce(orderRowId, prevOrder, {
       eventTime: paidAtToEpoch(mpOrder?.last_updated_date || mpOrder?.created_date),
     });
+    await captureMpFinancialsFromOrder(orderRowId, mpOrder);
   }
 
   const needCustomerEmail = !prevOrder.payment_confirmation_email_sent_at;
@@ -586,7 +624,8 @@ router.post('/mercadopago/create-order', async (req, res) => {
     unit_price: i.unit_price,
     combo_tag: i.combo_tag || null,
   }));
-  const { error: itemsErr } = await supabase.from('order_items').insert(rows);
+  const rowsWithCogs = await attachCogsToOrderItemRows(rows);
+  const { error: itemsErr } = await supabase.from('order_items').insert(rowsWithCogs);
   if (itemsErr) console.error('[MP] Error guardando items:', itemsErr);
 
   const idempotencyKey = crypto.randomUUID();
@@ -647,6 +686,7 @@ router.post('/mercadopago/create-order', async (req, res) => {
   await supabase.from('orders').update({ ...mpCols, status: nextStatus }).eq('id', order.id);
 
   if (nextStatus === 'paid') {
+    await captureMpFinancialsFromOrder(order.id, mpOrder);
     const { data: prevOrder } = await supabase
       .from('orders')
       .select('*')
@@ -807,7 +847,8 @@ router.post('/mercadopago/create-preference', async (req, res) => {
     unit_price: i.unit_price,
     combo_tag: i.combo_tag || null,
   }));
-  const { error: itemsErr } = await supabase.from('order_items').insert(rows);
+  const rowsWithCogs = await attachCogsToOrderItemRows(rows);
+  const { error: itemsErr } = await supabase.from('order_items').insert(rowsWithCogs);
   if (itemsErr) console.error('[MP] Error guardando items:', itemsErr);
 
   const baseCallbackUrl = (callback_url || '').trim() || 'https://solutionperfumes.com/checkout';
@@ -1011,7 +1052,8 @@ router.post('/mercadopago/process-card-payment', async (req, res) => {
       unit_price: i.unit_price,
       combo_tag: i.combo_tag || null,
     }));
-    const { error: itemsErr } = await supabase.from('order_items').insert(rows);
+    const rowsWithCogs = await attachCogsToOrderItemRows(rows);
+    const { error: itemsErr } = await supabase.from('order_items').insert(rowsWithCogs);
     if (itemsErr) console.error('[MP] Error guardando items:', itemsErr);
 
     order = newOrder;

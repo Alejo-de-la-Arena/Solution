@@ -29,6 +29,52 @@ const MONTHS_ES = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
 
+function csvCell(v) {
+  const s = v == null ? '' : String(v);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+/** Arma el CSV del cierre y dispara la descarga. */
+function exportReportCsv(report) {
+  const r = report.resumen;
+  const d = report.detalle;
+  const rows = [];
+  rows.push(['Calculadora — Cierre', `${report.period.from} a ${report.period.to}`]);
+  rows.push([]);
+  rows.push(['Concepto', 'Monto (ARS)']);
+  rows.push(['Ingresos brutos', r.ingresos_brutos]);
+  rows.push(['Comisiones de pasarela', -r.comisiones_pasarela]);
+  rows.push(['Impuestos retenidos', -r.impuestos_retenidos]);
+  rows.push(['Neto recibido', r.neto_recibido]);
+  rows.push(['Costo de envío', -r.costo_envio]);
+  rows.push(['Costo de productos (COGS)', -r.cogs]);
+  rows.push(['Ganancia operativa', r.ganancia_operativa]);
+  rows.push(['Gastos fijos', -r.gastos_fijos]);
+  rows.push(['Devoluciones y contracargos', -(r.perdidas_devoluciones || 0)]);
+  rows.push(['Ganancia neta', r.ganancia_neta]);
+  rows.push(['Margen %', r.margen_pct]);
+  rows.push([]);
+  rows.push(['Unidades por SKU']);
+  rows.push(['SKU', 'Producto', 'Unidades', 'Facturación', 'COGS']);
+  for (const s of d.unidades_por_sku) rows.push([s.sku, s.name || '', s.units, s.revenue, s.cogs]);
+  if (d.devoluciones && d.devoluciones.length) {
+    rows.push([]);
+    rows.push(['Devoluciones / contracargos']);
+    rows.push(['Orden', 'Estado', 'Comisión', 'Envío', 'COGS', 'Pérdida']);
+    for (const v of d.devoluciones) rows.push([v.id, v.status, v.comision, v.envio, v.cogs, v.perdida]);
+  }
+  const csv = rows.map((row) => row.map(csvCell).join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `calculadora-${report.period.from}_${report.period.to}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function Line({ label, value, accent = false, negative = false, hint = null }) {
   return (
     <div className={`flex items-baseline justify-between py-3 ${accent ? 'border-t border-white/20 mt-2 pt-4' : 'border-t border-white/5'}`}>
@@ -98,14 +144,24 @@ export default function CalculadoraReporte() {
             ›
           </button>
         </div>
-        <button
-          type="button"
-          onClick={load}
-          disabled={loading}
-          className="text-xs uppercase tracking-widest border border-white/20 rounded px-4 py-2 text-white/70 hover:text-white hover:border-white/40 transition disabled:opacity-50"
-        >
-          {loading ? 'Cargando…' : 'Refrescar'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => report && exportReportCsv(report)}
+            disabled={loading || !report}
+            className="text-xs uppercase tracking-widest border border-white/20 rounded px-4 py-2 text-white/70 hover:text-white hover:border-white/40 transition disabled:opacity-50"
+          >
+            Exportar CSV
+          </button>
+          <button
+            type="button"
+            onClick={load}
+            disabled={loading}
+            className="text-xs uppercase tracking-widest border border-white/20 rounded px-4 py-2 text-white/70 hover:text-white hover:border-white/40 transition disabled:opacity-50"
+          >
+            {loading ? 'Cargando…' : 'Refrescar'}
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -126,6 +182,9 @@ export default function CalculadoraReporte() {
             <Line label="Costo de productos (COGS)" value={r.cogs} negative />
             <Line label="Ganancia operativa" value={r.ganancia_operativa} accent />
             <Line label="Gastos fijos del período" value={r.gastos_fijos} negative hint="pauta, agencia, infra…" />
+            {r.perdidas_devoluciones > 0 && (
+              <Line label="Devoluciones y contracargos" value={r.perdidas_devoluciones} negative hint="comisión + envío + costo" />
+            )}
             <Line label="Ganancia neta" value={r.ganancia_neta} accent />
             <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-baseline">
               <span className="uppercase tracking-widest text-xs text-white/60">Margen</span>
@@ -196,6 +255,23 @@ export default function CalculadoraReporte() {
                     <li key={g.id} className="flex justify-between text-sm">
                       <span className="text-white/80">{g.name} <span className="text-white/40 text-xs">({g.category || g.frequency})</span></span>
                       <span className="font-mono tabular-nums text-white/60">{formatARS(g.amount_in_range)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {report.detalle.devoluciones && report.detalle.devoluciones.length > 0 && (
+              <div className="bg-white/[0.03] border border-white/10 rounded p-5">
+                <div className="text-xs uppercase tracking-widest text-white/40 mb-3">Devoluciones y contracargos</div>
+                <ul className="space-y-2">
+                  {report.detalle.devoluciones.map((v) => (
+                    <li key={v.id} className="flex justify-between text-sm">
+                      <span className="text-white/80">
+                        {v.status === 'chargeback' ? 'Contracargo' : 'Devolución'}
+                        <span className="text-white/40 text-xs ml-2">#{String(v.id).slice(0, 8)}</span>
+                      </span>
+                      <span className="font-mono tabular-nums text-red-300">−{formatARS(v.perdida)}</span>
                     </li>
                   ))}
                 </ul>

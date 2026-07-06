@@ -83,7 +83,7 @@ Los webhooks se montan ANTES de `express.json()` con `express.raw()` para poder 
 
 Creada por `supabase/migrations/*.sql` (ver `20250209000000_add_orders_channel.sql` y siguientes). Columnas relevantes:
 
-- **Core**: `id` (UUID), `user_id`, `status`, `currency`, `total`, `channel` (`retail` / `wholesale`), `created_at`, `updated_at`, `payment_method` (`mercadopago` / `nave`).
+- **Core**: `id` (UUID), `user_id`, `status`, `currency`, `total`, `channel` (`retail` / `wholesale`), `created_at`, `payment_method` (`mercadopago` / `nave`). (No hay columna `updated_at`; las fechas relevantes son `mp_paid_at` / `nave_paid_at`.)
 - **Estados**: `pending_payment` (transacción iniciada en la pasarela, esperando webhook), `paid`, `payment_failed`, `cancelled`, `refunded`, `chargeback`.
 - **Cliente**: `customer_name`, `customer_email`, `customer_phone`.
 - **Envío**: `shipping_address_line1/2`, `shipping_city`, `shipping_state`, `shipping_postal_code`, `shipping_country`, `shipping_notes`, `shipping_method`, `shipping_cost`, `shipping_provider`, `shipping_mode`, `shipping_service_type`, `shipping_is_free`, `shipping_agency_code`, `shipping_agency_name`, `shipping_customer_id`, `shipping_quote_payload` (JSONB), `shipping_quote_response` (JSONB).

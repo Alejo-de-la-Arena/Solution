@@ -38,19 +38,40 @@ function extractFinancialsFromMpPayment(payment) {
   }
 
   const computedNet = gross - fee - taxes;
-  const reportedNet = payment.net_amount != null ? toNumber(payment.net_amount) : null;
+  // MP expone el neto acreditado en transaction_details.net_received_amount
+  // (/v1/payments). Es la cifra autoritativa de liquidación; la preferimos
+  // sobre el cálculo cuando está presente. net_amount se mantiene por compat.
+  const reportedNet =
+    payment.net_amount != null
+      ? toNumber(payment.net_amount)
+      : payment.transaction_details?.net_received_amount != null
+        ? toNumber(payment.transaction_details.net_received_amount)
+        : null;
+
   const net = reportedNet != null ? reportedNet : computedNet;
 
-  if (reportedNet != null && Math.abs(reportedNet - computedNet) > 0.5) {
-    console.warn(
-      `[orderFinancials] MP net_amount difiere del cálculo (reported=${reportedNet}, computed=${computedNet}) payment=${payment.id}`
-    );
+  // MP no itemiza en taxes[] el IVA/retenciones que aplica sobre su comisión,
+  // pero sí lo descuenta del neto acreditado. Cuando tenemos el neto real,
+  // imputamos ese hueco (gross − fee − taxes − net) a impuestos para que el
+  // desglose siempre cuadre: gross − fee − taxes === net. Sólo cuando el hueco
+  // es positivo (neto menor al esperado); un neto mayor sería anómalo y se deja
+  // sin tocar para no inventar comisiones negativas.
+  let finalTaxes = taxes;
+  if (reportedNet != null) {
+    const gap = gross - fee - taxes - reportedNet;
+    if (gap > 0.01) {
+      finalTaxes = taxes + gap;
+    } else if (gap < -0.5) {
+      console.warn(
+        `[orderFinancials] MP neto mayor al esperado (net=${reportedNet}, gross−fee−taxes=${computedNet}) payment=${payment.id}`
+      );
+    }
   }
 
   return {
     gross_amount: Number(gross.toFixed(2)),
     payment_fee: Number(fee.toFixed(2)),
-    payment_taxes: Number(taxes.toFixed(2)),
+    payment_taxes: Number(finalTaxes.toFixed(2)),
     net_received: Number(net.toFixed(2)),
   };
 }

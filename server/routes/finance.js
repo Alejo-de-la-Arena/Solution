@@ -84,6 +84,11 @@ router.put('/costs/:productId', async (req, res) => {
 
 // ── Gastos fijos ────────────────────────────────────────────────────────────
 
+// Estados que representan una venta efectiva (ingreso real). 'shipped' es una
+// orden pagada que además ya se despachó: sigue siendo ingreso, no debe caerse
+// del reporte al marcarla como enviada.
+const REVENUE_STATUSES = ['paid', 'shipped'];
+
 const VALID_FREQS = new Set(['monthly', 'weekly', 'daily', 'annual', 'one-time']);
 
 function validateExpenseBody(body) {
@@ -211,6 +216,58 @@ function daysBetweenInclusive(fromStr, toStr) {
 }
 
 /**
+ * Fracción de "meses calendario" cubierta por [fromStr, toStr] inclusive.
+ * Cada mes aporta (días cubiertos en ese mes / días reales del mes). Un mes
+ * calendario completo aporta exactamente 1.0 sin importar si tiene 28/30/31
+ * días — así un gasto mensual se cobra 1× en un cierre mensual, no 31/30.
+ */
+function monthFractionInRange(fromStr, toStr) {
+  const fromT = new Date(`${fromStr}T00:00:00Z`).getTime();
+  const toT = new Date(`${toStr}T00:00:00Z`).getTime();
+  if (!Number.isFinite(fromT) || !Number.isFinite(toT) || toT < fromT) return 0;
+  let total = 0;
+  let cursor = new Date(Date.UTC(Number(fromStr.slice(0, 4)), Number(fromStr.slice(5, 7)) - 1, 1));
+  while (cursor.getTime() <= toT) {
+    const yy = cursor.getUTCFullYear();
+    const mm = cursor.getUTCMonth();
+    const monthStart = Date.UTC(yy, mm, 1);
+    const monthEnd = Date.UTC(yy, mm + 1, 0); // último día del mes (00:00Z)
+    const daysInMonth = new Date(monthEnd).getUTCDate();
+    const ovStart = Math.max(fromT, monthStart);
+    const ovEnd = Math.min(toT, monthEnd);
+    if (ovEnd >= ovStart) {
+      const daysCovered = Math.floor((ovEnd - ovStart) / 86400000) + 1;
+      total += daysCovered / daysInMonth;
+    }
+    cursor = new Date(Date.UTC(yy, mm + 1, 1));
+  }
+  return total;
+}
+
+/**
+ * Fracción de "años calendario" cubierta por [fromStr, toStr] inclusive.
+ * Cada año aporta (días cubiertos / días del año), respetando bisiestos.
+ */
+function yearFractionInRange(fromStr, toStr) {
+  const fromT = new Date(`${fromStr}T00:00:00Z`).getTime();
+  const toT = new Date(`${toStr}T00:00:00Z`).getTime();
+  if (!Number.isFinite(fromT) || !Number.isFinite(toT) || toT < fromT) return 0;
+  let total = 0;
+  for (let y = Number(fromStr.slice(0, 4)); y <= Number(toStr.slice(0, 4)); y++) {
+    const yearStart = Date.UTC(y, 0, 1);
+    const yearEnd = Date.UTC(y, 11, 31);
+    const daysInYear = ((y % 4 === 0 && y % 100 !== 0) || y % 400 === 0) ? 366 : 365;
+    const ovStart = Math.max(fromT, yearStart);
+    const ovEnd = Math.min(toT, yearEnd);
+    if (ovEnd >= ovStart) {
+      const daysCovered = Math.floor((ovEnd - ovStart) / 86400000) + 1;
+      total += daysCovered / daysInYear;
+    }
+  }
+  return total;
+}
+
+/**
  * Normaliza un gasto fijo al monto efectivo dentro de [from, to], considerando
  * frequency y la vigencia (effective_from / effective_until) de la fila.
  */
@@ -229,11 +286,11 @@ function expenseAmountInRange(expense, from, to) {
     case 'daily':
       return amount * days;
     case 'weekly':
-      return amount * (days / 7);
+      return amount * (days / 7); // una semana son siempre 7 días → exacto
     case 'monthly':
-      return amount * (days / 30);
+      return amount * monthFractionInRange(overlapFrom, overlapTo);
     case 'annual':
-      return amount * (days / 365);
+      return amount * yearFractionInRange(overlapFrom, overlapTo);
     case 'one-time':
       return eFrom >= from && eFrom <= to ? amount : 0;
     default:
@@ -269,13 +326,15 @@ router.get('/report', async (req, res) => {
     supabase
       .from('orders')
       .select(baseSelect)
-      .eq('status', 'paid')
+      .in('status', REVENUE_STATUSES)
+      .not('is_admin_test', 'is', true)
       .gte('mp_paid_at', fromIso)
       .lt('mp_paid_at', toEndIso),
     supabase
       .from('orders')
       .select(baseSelect)
-      .eq('status', 'paid')
+      .in('status', REVENUE_STATUSES)
+      .not('is_admin_test', 'is', true)
       .gte('nave_paid_at', fromIso)
       .lt('nave_paid_at', toEndIso),
   ]);
@@ -374,7 +433,75 @@ router.get('/report', async (req, res) => {
     amount_in_range: Number(expenseAmountInRange(e, from, to).toFixed(2)),
   })).filter((e) => e.amount_in_range > 0);
 
-  const ganancia_neta = ganancia_operativa - gastos_fijos;
+  // ── Devoluciones y contracargos ──
+  // Órdenes en estado refunded/chargeback. No existe una columna refunded_at,
+  // así que las atribuimos al período del PAGO original (mp_paid_at/nave_paid_at)
+  // — principio de matching: la pérdida se imputa al mes en que se registró la
+  // venta que luego se revirtió. Estas órdenes ya NO están en paid/shipped, así
+  // que no aportan ingreso; su pérdida real se suma acá.
+  //   pérdida ≈ comisión de pasarela + costo de envío + COGS
+  // Asunción conservadora: la comisión no se reintegra y el envío/producto no
+  // se recuperan (una devolución con producto revendible tendría pérdida menor).
+  const [{ data: mpRef, error: mpRefErr }, { data: naveRef, error: naveRefErr }] = await Promise.all([
+    supabase
+      .from('orders')
+      .select('id, total, shipping_cost, status')
+      .in('status', ['refunded', 'chargeback'])
+      .not('is_admin_test', 'is', true)
+      .gte('mp_paid_at', fromIso)
+      .lt('mp_paid_at', toEndIso),
+    supabase
+      .from('orders')
+      .select('id, total, shipping_cost, status')
+      .in('status', ['refunded', 'chargeback'])
+      .not('is_admin_test', 'is', true)
+      .gte('nave_paid_at', fromIso)
+      .lt('nave_paid_at', toEndIso),
+  ]);
+  if (mpRefErr || naveRefErr) {
+    console.error('[finance] /report refunds error:', mpRefErr || naveRefErr);
+    return res.status(500).json({ error: 'Error leyendo devoluciones' });
+  }
+  const refundById = new Map();
+  for (const o of mpRef || []) refundById.set(o.id, o);
+  for (const o of naveRef || []) if (!refundById.has(o.id)) refundById.set(o.id, o);
+  const refunds = [...refundById.values()];
+  const refundIds = refunds.map((r) => r.id);
+
+  let refundItems = [];
+  let refundFin = [];
+  if (refundIds.length > 0) {
+    const [{ data: ri }, { data: rf }] = await Promise.all([
+      supabase.from('order_items').select('order_id, quantity, cogs_unit').in('order_id', refundIds),
+      supabase.from('order_financials').select('order_id, payment_fee').in('order_id', refundIds),
+    ]);
+    refundItems = ri || [];
+    refundFin = rf || [];
+  }
+  const refundCogsByOrder = {};
+  for (const it of refundItems) {
+    if (it.cogs_unit == null) continue;
+    refundCogsByOrder[it.order_id] = (refundCogsByOrder[it.order_id] || 0) + toNumber(it.cogs_unit) * toNumber(it.quantity);
+  }
+  const refundFeeByOrder = Object.fromEntries(refundFin.map((f) => [f.order_id, toNumber(f.payment_fee)]));
+
+  const devoluciones_detalle = refunds.map((r) => {
+    const fee = refundFeeByOrder[r.id] || 0;
+    const envio = toNumber(r.shipping_cost);
+    const cogsR = refundCogsByOrder[r.id] || 0;
+    const perdida = fee + envio + cogsR;
+    return {
+      id: r.id,
+      status: r.status,
+      comision: Number(fee.toFixed(2)),
+      envio: Number(envio.toFixed(2)),
+      cogs: Number(cogsR.toFixed(2)),
+      perdida: Number(perdida.toFixed(2)),
+    };
+  });
+  const perdidas_devoluciones = devoluciones_detalle.reduce((s, d) => s + d.perdida, 0);
+
+  const ganancia_neta = ganancia_operativa - gastos_fijos - perdidas_devoluciones;
   const margen_pct = ingresos_brutos > 0 ? (ganancia_neta / ingresos_brutos) * 100 : 0;
 
   // ── Breakdowns ──
@@ -427,16 +554,19 @@ router.get('/report', async (req, res) => {
       cogs: Number(cogs.toFixed(2)),
       ganancia_operativa: Number(ganancia_operativa.toFixed(2)),
       gastos_fijos: Number(gastos_fijos.toFixed(2)),
+      perdidas_devoluciones: Number(perdidas_devoluciones.toFixed(2)),
       ganancia_neta: Number(ganancia_neta.toFixed(2)),
       margen_pct: Number(margen_pct.toFixed(2)),
     },
     avisos: {
       ordenes_sin_desglose_financiero: ordersWithoutFin.length,
       unidades_vendidas_sin_costo: cogs_unidades_sin_costo,
+      devoluciones_en_periodo: devoluciones_detalle.length,
     },
     detalle: {
       ordenes: orders.length,
       gastos_fijos: gastos_fijos_detalle,
+      devoluciones: devoluciones_detalle,
       unidades_por_sku,
       por_canal,
       por_metodo_pago,
