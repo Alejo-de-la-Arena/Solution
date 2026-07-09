@@ -1,9 +1,25 @@
 const express = require('express');
 const router = express.Router();
 const shippingService = require('../services/shipping.service');
+const { CorreoError } = require('../services/providers/correo/correo.errors');
 
 function handleError(res, error) {
-    console.error('[shipping/quote]', error?.message || error);
+    // Log con el detalle real (status y respuesta de Correo) para poder
+    // diagnosticar cotizaciones fallidas desde los logs de Railway.
+    console.error('[shipping/quote]', {
+        message: error?.message,
+        code: error?.code,
+        statusCode: error?.statusCode,
+        details: error?.details || error?.cause?.response?.data || null,
+    });
+
+    if (error instanceof CorreoError) {
+        return res.status(error.statusCode || 500).json({
+            error: error.message,
+            code: error.code,
+        });
+    }
+
     return res.status(500).json({
         error: error?.message || 'Error al cotizar envío',
         code: error?.code || 'QUOTE_ERROR',

@@ -1,4 +1,10 @@
+import { fetchWithTimeout } from './http';
+
 const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+
+// La creación de pagos llama a MP/Nave del lado del server y puede ser lenta;
+// margen mayor que el default antes de abortar.
+const PAYMENT_TIMEOUT_MS = 30000;
 
 /**
  * Devuelve los headers de auth si se pasa un access_token de Supabase.
@@ -17,11 +23,11 @@ function authHeaders(accessToken) {
  */
 export async function createCheckoutOrder(payload, { accessToken } = {}) {
   const url = `${API_URL}/api/checkout`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(accessToken) },
     body: JSON.stringify(payload),
-  });
+  }, PAYMENT_TIMEOUT_MS);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const err = new Error(data.error || 'Error al procesar la compra');
@@ -40,11 +46,11 @@ export async function createCheckoutOrder(payload, { accessToken } = {}) {
  */
 export async function createNavePayment(payload, { accessToken } = {}) {
   const url = `${API_URL}/api/nave/create-payment`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(accessToken) },
     body: JSON.stringify(payload),
-  });
+  }, PAYMENT_TIMEOUT_MS);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const err = new Error(data.error || 'Error al crear el pago');
@@ -102,11 +108,11 @@ export function getCheckoutPaymentProvider() {
  */
 export async function createMPPreference(payload, { accessToken } = {}) {
   const url = `${API_URL}/api/mercadopago/create-preference`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(accessToken) },
     body: JSON.stringify(payload),
-  });
+  }, PAYMENT_TIMEOUT_MS);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const err = new Error(data.error || 'Error al crear preferencia de pago');
@@ -126,11 +132,11 @@ export async function createMPPreference(payload, { accessToken } = {}) {
  */
 export async function processMPCardPayment(payload, { accessToken } = {}) {
   const url = `${API_URL}/api/mercadopago/process-card-payment`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders(accessToken) },
     body: JSON.stringify(payload),
-  });
+  }, PAYMENT_TIMEOUT_MS);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const err = new Error(data.error || 'Error al procesar el pago');
