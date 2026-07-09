@@ -1142,22 +1142,16 @@ export default function Checkout() {
                   right={<span className="text-[10px] text-white/35 uppercase tracking-widest hidden sm:inline">Encriptado · No almacenamos tarjeta</span>}
                 />
                 <div className="p-5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+                  {/* Nave deshabilitado: cuenta bloqueada por Naranja X ("Payment type blocked
+                      by model config"). El backend y el webhook siguen activos para órdenes
+                      históricas; para reactivarlo, restaurar la PaymentMethodCard de nave. */}
+                  <div className="grid grid-cols-1 gap-3 mb-5">
                     <PaymentMethodCard
                       id="mercadopago"
                       title="Mercado Pago"
                       subtitle="Tarjeta, débito, cuotas o dinero en cuenta"
                       logoGradient="linear-gradient(135deg,#00b1ea,#009ee3)"
                       logoLabel="MP"
-                      selected={paymentMethod}
-                      onSelect={setPaymentMethod}
-                    />
-                    <PaymentMethodCard
-                      id="nave"
-                      title="Nave · Naranja X"
-                      subtitle="Pagá con tu cuenta o tarjeta Naranja X"
-                      logoGradient="linear-gradient(135deg,#ff7a00,#ff3d3d)"
-                      logoLabel="NX"
                       selected={paymentMethod}
                       onSelect={setPaymentMethod}
                     />
@@ -1189,18 +1183,6 @@ export default function Checkout() {
                           <span className="text-[rgb(0,255,255)]">✓</span> Rapipago, Pago Fácil y otros
                         </li>
                       </ul>
-                    </div>
-                  )}
-
-                  {paymentMethod === 'nave' && (
-                    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-5 flex items-start gap-3">
-                      <div className="h-9 w-12 rounded-md flex-shrink-0" style={{ background: 'linear-gradient(135deg,#ff7a00,#ff3d3d)' }} />
-                      <div>
-                        <div className="text-sm text-white">Vas a continuar en Nave · Naranja X</div>
-                        <div className="text-[12px] text-white/45 mt-1 leading-relaxed">
-                          Al hacer click en <span className="text-white/70">"Pagar"</span>, se abre el checkout embebido. Si tu cuenta no soporta el SDK, te redirigimos al checkout seguro de Nave. Volvés a esta página al finalizar.
-                        </div>
-                      </div>
                     </div>
                   )}
 
