@@ -24,16 +24,25 @@ function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function retryOnTransient(fn, { attempts = 3, baseDelayMs = 300, label = 'correo' } = {}) {
+// Solo para operaciones idempotentes (cotización, sucursales, tracking):
+// reintentar un POST que crea recursos (importShipment) podría duplicarlos.
+function isRetryableHttpError(error) {
+    const status = error?.response?.status;
+    return status === 500 || status === 502 || status === 503 || status === 504;
+}
+
+async function retryOnTransient(fn, { attempts = 3, baseDelayMs = 300, label = 'correo', retryOn5xx = false } = {}) {
     let lastError;
     for (let attempt = 1; attempt <= attempts; attempt++) {
         try {
             return await fn();
         } catch (error) {
             lastError = error;
-            if (attempt >= attempts || !isTransientNetworkError(error)) throw error;
+            const retryable = isTransientNetworkError(error) || (retryOn5xx && isRetryableHttpError(error));
+            if (attempt >= attempts || !retryable) throw error;
             const delay = baseDelayMs * Math.pow(2, attempt - 1);
-            console.warn(`[${label}] transient (${error.code || error.message}) intento ${attempt}/${attempts}, reintento en ${delay}ms`);
+            const reason = error.code || error.response?.status || error.message;
+            console.warn(`[${label}] transient (${reason}) intento ${attempt}/${attempts}, reintento en ${delay}ms`);
             await sleep(delay);
         }
     }

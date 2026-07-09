@@ -21,7 +21,7 @@ function createHttpClient() {
     });
 }
 
-async function requestWithBearer(method, url, { params, data, headers } = {}, retry = true) {
+async function requestWithBearer(method, url, { params, data, headers, retryOn5xx } = {}, retry = true) {
     const http = createHttpClient();
     const token = await getToken();
 
@@ -37,7 +37,7 @@ async function requestWithBearer(method, url, { params, data, headers } = {}, re
                     ...(headers || {}),
                 },
             }),
-            { attempts: 3, baseDelayMs: 300, label: `correo.${method.toLowerCase()} ${url}` }
+            { attempts: 3, baseDelayMs: 300, label: `correo.${method.toLowerCase()} ${url}`, retryOn5xx }
         );
 
         return response.data;
@@ -47,7 +47,7 @@ async function requestWithBearer(method, url, { params, data, headers } = {}, re
 
         if ((status === 401 || status === 403) && retry) {
             invalidateToken();
-            return requestWithBearer(method, url, { params, data, headers }, false);
+            return requestWithBearer(method, url, { params, data, headers, retryOn5xx }, false);
         }
 
         if (status === 401 || status === 403) {
@@ -92,12 +92,12 @@ async function getAgencies({ customerId, provinceCode, services } = {}) {
     const params = { customerId, provinceCode };
     if (services) params.services = services;
 
-    return requestWithBearer('get', '/agencies', { params });
+    return requestWithBearer('get', '/agencies', { params, retryOn5xx: true });
 }
 
 async function getRates(payload) {
     try {
-        return await requestWithBearer('post', '/rates', { data: payload });
+        return await requestWithBearer('post', '/rates', { data: payload, retryOn5xx: true });
     } catch (error) {
         console.error('[getRates] error detalle:', JSON.stringify(error?.details || error?.cause?.response?.data || error, null, 2));
         if (error?.statusCode === 404) {
@@ -130,6 +130,7 @@ async function getTracking(shippingId) {
 
     return requestWithBearer('get', '/shipping/tracking', {
         params: { shippingId },
+        retryOn5xx: true,
     });
 }
 

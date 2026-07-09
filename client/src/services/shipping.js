@@ -1,10 +1,12 @@
+import { fetchWithTimeout } from './http';
+
 const BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
 /**
  * Cotiza el envío para los items y la dirección dados.
  */
 export async function quoteShipping({ items, address }) {
-    const res = await fetch(`${BASE}/api/shipping/quote`, {
+    const res = await fetchWithTimeout(`${BASE}/api/shipping/quote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items, address }),
