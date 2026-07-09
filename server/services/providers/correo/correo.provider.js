@@ -130,8 +130,6 @@ async function listAgencies({ province }) {
     const provinceCode = mapProvinceNameToCode(province);
     const raw = await getAgencies({ customerId, provinceCode });
 
-    console.log('RAW AGENCIES RESPONSE:', JSON.stringify(raw, null, 2));
-
     const agencies = Array.isArray(raw)
         ? raw
         : (Array.isArray(raw?.agencies) ? raw.agencies : []);
