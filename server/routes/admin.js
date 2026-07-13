@@ -80,6 +80,7 @@ router.get('/orders', async (req, res) => {
 
   const channel = req.query.channel;
   const status = req.query.status;
+  const shippingStatus = req.query.shipping_status;
   const dateFrom = req.query.date_from;
   const dateTo = req.query.date_to;
   const q = (req.query.q || '').trim();
@@ -99,6 +100,9 @@ router.get('/orders', async (req, res) => {
     // Por defecto ocultamos las órdenes que sólo iniciaron la pasarela y no
     // llegaron a pagar (el usuario abandonó antes de completar el checkout).
     query = query.neq('status', 'payment_initiated');
+  }
+  if (shippingStatus === 'imported' || shippingStatus === 'error') {
+    query = query.eq('shipping_status', shippingStatus);
   }
   if (dateFrom) {
     query = query.gte('created_at', `${dateFrom}T00:00:00.000Z`);

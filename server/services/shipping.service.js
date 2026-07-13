@@ -2,6 +2,27 @@ const correoProvider = require('./providers/correo/correo.provider');
 const { getOrderBundle, updateOrderShippingFields } = require('./shipping.data');
 const { buildAddressFromOrder } = require('./providers/correo/correo.mapper');
 
+/**
+ * Construye un mensaje legible con el detalle REAL de Correo (cuando existe),
+ * para persistirlo en la orden y mostrárselo al admin.
+ */
+function buildCorreoErrorMessage(error) {
+    const base = error?.message || 'Error al despachar con Correo Argentino';
+    const body = error?.details ?? error?.cause?.response?.data ?? null;
+    if (!body) return base;
+    let detail;
+    if (typeof body === 'string') {
+        detail = body;
+    } else {
+        detail = body.message || body.error || body.detail
+            || (Array.isArray(body.errors) ? body.errors.map((e) => e?.message || e).join('; ') : null)
+            || JSON.stringify(body);
+    }
+    detail = detail ? String(detail).trim() : '';
+    if (!detail) return base;
+    return base.includes(detail) ? base : `${base} — ${detail}`;
+}
+
 async function quoteShipping({ items, address }) {
     return correoProvider.quote({ items, address });
 }
@@ -23,13 +44,41 @@ async function createCorreoShipmentFromOrderId({
     const { order, enrichedItems } = bundle;
     const address = buildAddressFromOrder(order);
 
-    const result = await correoProvider.createShipment({
-        order,
-        items: enrichedItems,
-        address,
-        agencyCode,
-        deliveryType,
-    });
+    let result;
+    try {
+        result = await correoProvider.createShipment({
+            order,
+            items: enrichedItems,
+            address,
+            agencyCode,
+            deliveryType,
+        });
+    } catch (error) {
+        // Trazabilidad: SIEMPRE persistir el fallo en la orden para no quedar
+        // ciegos ante el error intermitente de Correo. Luego re-lanzamos para
+        // que la ruta devuelva el detalle real al admin.
+        const statusCode = error?.statusCode ?? error?.cause?.response?.status ?? null;
+        const body = error?.details ?? error?.cause?.response?.data ?? null;
+        try {
+            await updateOrderShippingFields(orderId, {
+                shipping_status: 'error',
+                shipping_error_message: buildCorreoErrorMessage(error),
+                shipping_import_response: {
+                    ok: false,
+                    statusCode,
+                    code: error?.code || null,
+                    body,
+                    at: new Date().toISOString(),
+                },
+            });
+        } catch (persistErr) {
+            console.error(
+                '[shipping] no se pudo persistir el error de despacho de la orden',
+                orderId, ':', persistErr?.message || persistErr,
+            );
+        }
+        throw error;
+    }
 
     const raw = result.raw || {};
     const shippingExternalId =

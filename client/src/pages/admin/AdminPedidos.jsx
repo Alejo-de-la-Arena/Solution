@@ -28,6 +28,12 @@ const STATUS_OPTIONS = [
 
 const STATUS_EDIT_OPTIONS = STATUS_OPTIONS.filter((o) => o.value);
 
+const SHIPPING_OPTIONS = [
+  { value: '', label: 'Todos' },
+  { value: 'imported', label: 'Despachados' },
+  { value: 'error', label: 'Con error' },
+];
+
 const BA_PROVINCES = new Set([
   'buenos aires', 'caba', 'ciudad autonoma de buenos aires',
   'ciudad autónoma de buenos aires', 'capital federal',
@@ -646,6 +652,15 @@ function OrderDetailSection({
               </div>
             )}
 
+            {order.shipping_status === 'error' && !savedTracking && (
+              <div className="mt-2 p-2 bg-red-500/10 border border-red-500/30 rounded text-xs">
+                <span className="text-red-300">⚠️ Falló el despacho a Correo. </span>
+                {order.shipping_error_message
+                  ? <span className="text-red-200/90">{order.shipping_error_message}</span>
+                  : <span className="text-white/60">Reintentá desde el botón de despacho.</span>}
+              </div>
+            )}
+
             {!order.shipping_address_line1 && !order.shipping_city && !order.customer_phone && (
               <p className="text-white/50">Sin datos de envío.</p>
             )}
@@ -736,6 +751,7 @@ export default function AdminPedidos() {
   const [orders, setOrders] = useState([]);
   const [channelFilter, setChannelFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [shippingFilter, setShippingFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [searchQ, setSearchQ] = useState('');
@@ -761,15 +777,16 @@ export default function AdminPedidos() {
     return () => clearTimeout(t);
   }, [searchQ]);
 
-  const hasActiveFilters = channelFilter || statusFilter || dateFrom || dateTo || searchDebounced;
+  const hasActiveFilters = channelFilter || statusFilter || shippingFilter || dateFrom || dateTo || searchDebounced;
 
   const filters = useMemo(() => ({
     channel: channelFilter || undefined,
     status: statusFilter || undefined,
+    shippingStatus: shippingFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     q: searchDebounced || undefined,
-  }), [channelFilter, statusFilter, dateFrom, dateTo, searchDebounced]);
+  }), [channelFilter, statusFilter, shippingFilter, dateFrom, dateTo, searchDebounced]);
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -786,7 +803,7 @@ export default function AdminPedidos() {
   }, [filters]);
 
   const clearFilters = () => {
-    setChannelFilter(''); setStatusFilter('');
+    setChannelFilter(''); setStatusFilter(''); setShippingFilter('');
     setDateFrom(''); setDateTo(''); setSearchQ('');
   };
 
@@ -836,9 +853,21 @@ export default function AdminPedidos() {
     setDispatchedTracking((prev) => ({ ...prev, [orderId]: tracking }));
     setTimeout(() => {
       setOpenDispatchPanels((prev) => { const next = new Set(prev); next.delete(orderId); return next; });
-      fetchOrders();
+      // Patch local puntual en vez de refetch completo: evita el spinner de
+      // página y mantiene la posición de scroll exactamente donde estaba el admin.
+      setOrders((prev) => prev.map((o) => (
+        o.id === orderId
+          ? {
+            ...o,
+            shipping_status: 'imported',
+            shipping_provider: 'correo_argentino',
+            shipping_error_message: null,
+            shipping_tracking_number: tracking || o.shipping_tracking_number,
+          }
+          : o
+      )));
     }, 3000);
-  }, [fetchOrders]);
+  }, []);
 
   const detailProps = {
     statusEditDraft, setStatusEditDraft,
@@ -873,6 +902,12 @@ export default function AdminPedidos() {
             <label className="text-[10px] uppercase tracking-widest text-white/50">Estado</label>
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectClass} style={{ colorScheme: 'dark' }}>
               {STATUS_OPTIONS.map((o) => <option key={o.value || 'all'} value={o.value} className="bg-[#0b0b0b] text-white">{o.label}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase tracking-widest text-white/50">Despacho</label>
+            <select value={shippingFilter} onChange={(e) => setShippingFilter(e.target.value)} className={selectClass} style={{ colorScheme: 'dark' }}>
+              {SHIPPING_OPTIONS.map((o) => <option key={o.value || 'all'} value={o.value} className="bg-[#0b0b0b] text-white">{o.label}</option>)}
             </select>
           </div>
           <div className="flex flex-col gap-1">
@@ -966,6 +1001,9 @@ export default function AdminPedidos() {
                     )}
                     {(order.shipping_status === 'imported' || order.shipping_tracking_number) && (
                       <span className="text-xs px-2 py-1 rounded border border-emerald-500/40 text-emerald-300 bg-emerald-500/10">Despachado</span>
+                    )}
+                    {order.shipping_status === 'error' && !order.shipping_tracking_number && (
+                      <span className="text-xs px-2 py-1 rounded border border-red-500/40 text-red-300 bg-red-500/10">Despacho error</span>
                     )}
                     <span className="text-white font-medium truncate max-w-[180px]">{order.customer_name || order.customer_email || '—'}</span>
                     <span className="text-white/50 text-sm truncate max-w-[200px]">{order.customer_email || '—'}</span>

@@ -17,6 +17,19 @@ export async function quoteShipping({ items, address }) {
 }
 
 /**
+ * Extrae un texto legible del campo `details` que devuelve la API de Correo,
+ * para mostrarle al admin el motivo REAL del fallo (CP inválido, dirección
+ * incompleta, etc.) en lugar de un mensaje genérico.
+ */
+function extractCorreoDetail(details) {
+    if (!details) return '';
+    if (typeof details === 'string') return details.trim();
+    const d = details.message || details.error || details.detail
+        || (Array.isArray(details.errors) ? details.errors.map((e) => e?.message || e).join('; ') : '');
+    return (d ? String(d) : '').trim();
+}
+
+/**
  * Despacha una orden pagada con Correo Argentino desde el panel admin.
  */
 export async function dispatchWithCorreo({ orderId, deliveryType, agencyCode, agencyName, serviceType }) {
@@ -25,8 +38,12 @@ export async function dispatchWithCorreo({ orderId, deliveryType, agencyCode, ag
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId, deliveryType, agencyCode, agencyName, serviceType }),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Error al despachar con Correo Argentino');
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const detail = extractCorreoDetail(data.details);
+        const base = data.error || 'Error al despachar con Correo Argentino';
+        throw new Error(detail && !base.includes(detail) ? `${base} — ${detail}` : base);
+    }
     return data;
 }
 

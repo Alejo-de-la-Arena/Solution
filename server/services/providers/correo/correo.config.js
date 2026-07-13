@@ -1,4 +1,7 @@
 const DEFAULT_TIMEOUT_MS = 15000;
+// El import (POST /shipping/import) es más lento e inestable que las demás
+// llamadas; le damos un timeout más holgado sin afectar cotización/sucursales.
+const DEFAULT_IMPORT_TIMEOUT_MS = 25000;
 
 function getEnv(name, fallback = '') {
     const value = process.env[name];
@@ -33,6 +36,11 @@ function getCorreoTimeout() {
     return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_TIMEOUT_MS;
 }
 
+function getCorreoImportTimeout() {
+    const raw = Number(getEnv('CORREO_IMPORT_TIMEOUT_MS', String(DEFAULT_IMPORT_TIMEOUT_MS)));
+    return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_IMPORT_TIMEOUT_MS;
+}
+
 function getMicorreoAuthConfig() {
     return {
         username: getEnv('CORREO_MICORREO_USERNAME'),
@@ -65,6 +73,7 @@ function getCorreoConfig() {
         env: getCorreoEnv(),
         baseUrl: getCorreoBaseUrl(),
         timeoutMs: getCorreoTimeout(),
+        importTimeoutMs: getCorreoImportTimeout(),
         micorreo: getMicorreoAuthConfig(),
         paqar: getPaqArAuthConfig(),
         operational: getOperationalConfig(),
@@ -77,4 +86,5 @@ module.exports = {
     getCorreoEnv,
     getCorreoBaseUrl,
     getCorreoTimeout,
+    getCorreoImportTimeout,
 };

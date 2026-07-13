@@ -4,7 +4,7 @@ const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
 /**
  * Lista pedidos (retail/mayorista) vía backend. Requiere JWT de admin.
- * @param {{ channel?: string, status?: string, dateFrom?: string, dateTo?: string, q?: string }} filters
+ * @param {{ channel?: string, status?: string, shippingStatus?: string, dateFrom?: string, dateTo?: string, q?: string }} filters
  */
 export async function getAdminOrders(filters = {}) {
   const { data: refreshData } = await supabase.auth.refreshSession();
@@ -16,6 +16,7 @@ export async function getAdminOrders(filters = {}) {
   const params = new URLSearchParams();
   if (filters.channel) params.set('channel', filters.channel);
   if (filters.status) params.set('status', filters.status);
+  if (filters.shippingStatus) params.set('shipping_status', filters.shippingStatus);
   if (filters.dateFrom) params.set('date_from', filters.dateFrom);
   if (filters.dateTo) params.set('date_to', filters.dateTo);
   if (filters.q) params.set('q', filters.q);

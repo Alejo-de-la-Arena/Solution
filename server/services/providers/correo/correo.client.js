@@ -21,7 +21,7 @@ function createHttpClient() {
     });
 }
 
-async function requestWithBearer(method, url, { params, data, headers, retryOn5xx } = {}, retry = true) {
+async function requestWithBearer(method, url, { params, data, headers, retryOn5xx, timeout, retryAttempts, retryBaseDelayMs } = {}, retry = true) {
     const http = createHttpClient();
     const token = await getToken();
 
@@ -32,12 +32,19 @@ async function requestWithBearer(method, url, { params, data, headers, retryOn5x
                 url,
                 params,
                 data,
+                // Override opcional del timeout de la instancia axios (para el import).
+                ...(timeout ? { timeout } : {}),
                 headers: {
                     Authorization: `Bearer ${token}`,
                     ...(headers || {}),
                 },
             }),
-            { attempts: 3, baseDelayMs: 300, label: `correo.${method.toLowerCase()} ${url}`, retryOn5xx }
+            {
+                attempts: retryAttempts || 3,
+                baseDelayMs: retryBaseDelayMs || 300,
+                label: `correo.${method.toLowerCase()} ${url}`,
+                retryOn5xx,
+            }
         );
 
         return response.data;
@@ -115,8 +122,16 @@ async function getRates(payload) {
 }
 
 async function importShipment(payload) {
+    const { importTimeoutMs } = getCorreoConfig();
     return requestWithBearer('post', '/shipping/import', {
         data: payload,
+        // Timeout holgado: el import de Correo es más lento e intermitente.
+        timeout: importTimeoutMs,
+        // Reintentos SOLO ante timeout / errores de red (backoff 1s, 2s).
+        // NO se activa retryOn5xx: reintentar un POST que crea el envío podría
+        // duplicarlo si Correo lo creó pero respondió 5xx.
+        retryAttempts: 3,
+        retryBaseDelayMs: 1000,
     });
 }
 
