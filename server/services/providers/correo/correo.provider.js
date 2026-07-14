@@ -191,7 +191,17 @@ async function createShipment({ order, items, address, agencyCode, deliveryType 
         deliveryType,
     });
 
-    const raw = await importShipment(payload);
+    let raw;
+    try {
+        raw = await importShipment(payload);
+    } catch (error) {
+        // Adjuntar el payload EXACTO que se envió a Correo para poder
+        // persistirlo y diagnosticar el fallo (ver shipping.service.js).
+        if (error && typeof error === 'object') {
+            error.correoPayload = payload;
+        }
+        throw error;
+    }
 
     return { customerId, parcel, payload, raw };
 }

@@ -54,6 +54,19 @@ function safeInt(value, fallback = 0) {
 }
 
 /**
+ * Como safeInt pero para valores que DEBEN ser positivos (dimensiones/peso del
+ * paquete). Correo rechaza el envío ("Debe especificar valores para: envio[...]")
+ * si una dimensión llega en 0/null/vacío. Ojo: safeInt NO sirve acá porque
+ * Number(null) === 0 y Number('') === 0 son finitos, así que safeInt(null, 14)
+ * devolvería 0 en vez del fallback. positiveInt cae al fallback ante cualquier
+ * valor no positivo (null, '', 0, negativo, NaN).
+ */
+function positiveInt(value, fallback) {
+    const n = Math.round(Number(value));
+    return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+/**
  * Normaliza un código postal al CP numérico de 4 dígitos que espera Correo.
  * El cliente suele tipear el CPA completo (ej. "B1847DRA" = letra de provincia
  * + CP + sufijo de cuadra). Correo espera el CP de 4 dígitos y él deriva el CPA;
@@ -94,10 +107,10 @@ function buildAddressFromOrder(order) {
 
 function getItemUnitDimensions(item) {
     return {
-        weight: safeInt(item?.weight_grams, 130),
-        width: safeInt(item?.width_cm, 7),
-        height: safeInt(item?.height_cm, 14),
-        length: safeInt(item?.length_cm, 7),
+        weight: positiveInt(item?.weight_grams, 130),
+        width: positiveInt(item?.width_cm, 7),
+        height: positiveInt(item?.height_cm, 14),
+        length: positiveInt(item?.length_cm, 7),
     };
 }
 
@@ -137,10 +150,12 @@ function buildParcelFromItems(items = []) {
     else { width += 18; height += 10; length += 18; }
 
     return {
-        weight: safeInt(totalWeight, 130),
-        width: safeInt(width, 12),
-        height: safeInt(height, 8),
-        length: safeInt(length, 18),
+        // Dimensiones/peso: SIEMPRE positivas (positiveInt) para no mandarle 0
+        // a Correo. declaredValue sí puede ser 0, va con safeInt.
+        weight: positiveInt(totalWeight, 130),
+        width: positiveInt(width, 12),
+        height: positiveInt(height, 8),
+        length: positiveInt(length, 18),
         declaredValue: safeInt(declaredValue, 0),
         totalQuantity,
     };
@@ -175,10 +190,10 @@ function buildRatesPayload({ customerId, postalCodeDestination, parcel, delivere
         postalCodeOrigin: config.operational.originPostalCode,
         postalCodeDestination: postalCodeDestinationClean,
         dimensions: {
-            weight: safeInt(parcel.weight),
-            height: safeInt(parcel.height),
-            width: safeInt(parcel.width),
-            length: safeInt(parcel.length),
+            weight: positiveInt(parcel.weight, 130),
+            height: positiveInt(parcel.height, 8),
+            width: positiveInt(parcel.width, 12),
+            length: positiveInt(parcel.length, 18),
         },
     };
 
@@ -224,6 +239,29 @@ function buildImportPayload({ customerId, order, items, address, parcel, agencyC
     }
 
     const provinceCode = mapProvinceNameToCode(address.province);
+
+    // Dimensiones finales, garantizadas positivas. Correo rechaza el import con
+    // "Debe especificar valores para: envio[altura]" (o ancho/largo/peso) si
+    // alguna llega en 0/null. positiveInt asegura un mínimo razonable siempre,
+    // así el envío igual sale con dimensiones de caja de perfume por defecto.
+    const dims = {
+        weight: positiveInt(parcel?.weight, 130),
+        height: positiveInt(parcel?.height, 8),
+        length: positiveInt(parcel?.length, 18),
+        width: positiveInt(parcel?.width, 12),
+    };
+
+    // Señal (no bloqueante): si el parcel venía con alguna dimensión ≤ 0 y hubo
+    // que usar el default, lo dejamos logueado para detectar productos mal
+    // cargados sin frenar el despacho.
+    const substituted = ['weight', 'height', 'length', 'width']
+        .filter((k) => !(Number(parcel?.[k]) > 0));
+    if (substituted.length > 0) {
+        console.warn(
+            `[correo] dimensiones no positivas en el parcel (${substituted.join(', ')}) ` +
+            `para order ${order.id}; se usaron defaults ${JSON.stringify(dims)}.`
+        );
+    }
 
     return {
         customerId,
@@ -271,11 +309,11 @@ function buildImportPayload({ customerId, order, items, address, parcel, agencyC
                 postalCode: normalizePostalCode(address.postalCode),
             },
 
-            weight: safeInt(parcel.weight),
-            declaredValue: safeInt(parcel.declaredValue),
-            height: safeInt(parcel.height),
-            length: safeInt(parcel.length),
-            width: safeInt(parcel.width),
+            weight: dims.weight,
+            declaredValue: safeInt(parcel?.declaredValue),
+            height: dims.height,
+            length: dims.length,
+            width: dims.width,
         },
     };
 }

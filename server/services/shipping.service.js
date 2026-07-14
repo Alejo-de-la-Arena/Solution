@@ -63,6 +63,9 @@ async function createCorreoShipmentFromOrderId({
             await updateOrderShippingFields(orderId, {
                 shipping_status: 'error',
                 shipping_error_message: buildCorreoErrorMessage(error),
+                // Payload EXACTO enviado a Correo (si llegó a construirse), para
+                // ver qué dimensiones/datos se mandaron cuando falla el import.
+                shipping_import_payload: error?.correoPayload || null,
                 shipping_import_response: {
                     ok: false,
                     statusCode,
