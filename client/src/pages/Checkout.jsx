@@ -1023,11 +1023,11 @@ export default function Checkout() {
                   right={<span className="text-[10px] text-[rgb(0,255,255)] uppercase tracking-widest">🇦🇷 ARG</span>}
                 />
                 <div className="p-5 grid grid-cols-1 sm:grid-cols-5 gap-4">
-                  <Field id="address" label="Calle y número" required={selectedShipping?.mode !== 'branch'} span={5}>
-                    <input id="address" className="field" placeholder="Av. Siempre Viva 742"
+                  <Field id="address" label="Calle y número" hint="Incluí el número acá" required={selectedShipping?.mode !== 'branch'} span={5}>
+                    <input id="address" className="field" placeholder="Ej: Av. Siempre Viva 742 (con el número)"
                       value={form.address} onChange={handleChange} />
                   </Field>
-                  <Field id="address2" label="Piso / Depto" hint="Opcional" span={5}>
+                  <Field id="address2" label="Piso / Depto" hint="Opcional — no el número de la calle" span={5}>
                     <input id="address2" className="field" placeholder="Piso 2, Depto B"
                       value={form.address2} onChange={handleChange} />
                   </Field>

@@ -78,26 +78,66 @@ function normalizePostalCode(value) {
     return String(value || '').replace(/\D/g, '').slice(0, 4);
 }
 
+/**
+ * Extrae calle y número de un string de dirección en texto libre.
+ * Busca el ÚLTIMO grupo numérico en CUALQUIER posición del string (no solo al
+ * final), para cubrir direcciones donde el número no es lo último que aparece
+ * (ej. "25 de Mayo 590 esq Mitre"). Esto también respeta calles que empiezan
+ * con número (ej. "25 de Mayo", "9 de Julio"), porque esas quedan como parte
+ * de la calle salvo que sean el ÚLTIMO grupo numérico del string.
+ * Si no hay ningún número, number queda ''.
+ */
 function parseAddressLine1(line1 = '') {
     const raw = String(line1 || '').trim();
     if (!raw) return { street: '', number: '' };
-    const match = raw.match(/^(.*?)(?:\s+(\d+[A-Za-z0-9\-\/]*))?$/);
-    return {
-        street: (match?.[1] || raw).trim(),
-        number: (match?.[2] || '').trim(),
-    };
+
+    const numberPattern = /\d+[A-Za-z0-9\-\/]*/g;
+    const matches = [...raw.matchAll(numberPattern)];
+    if (matches.length === 0) {
+        return { street: raw, number: '' };
+    }
+
+    const last = matches[matches.length - 1];
+    const number = last[0].trim();
+    const street = (raw.slice(0, last.index) + raw.slice(last.index + last[0].length))
+        .replace(/[,\s]+$/, '')
+        .replace(/^[,\s]+/, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+
+    return { street: street || raw, number };
 }
 
 function buildAddressFromOrder(order) {
     const parsed = parseAddressLine1(order?.shipping_address_line1 || '');
+
+    let number = order?.shipping_number || parsed.number || '';
+    let apartment = order?.shipping_apartment || order?.shipping_address_line2 || '';
+
+    // Checkout tiene dos inputs de texto libre: "Calle y número" (address_line1)
+    // y "Piso / Depto" (address_line2, opcional). Nada impide que el cliente
+    // cargue el número de la calle en el campo equivocado (address_line2). Si no
+    // pudimos sacar el número de address_line1 Y address_line2 es puramente
+    // numérico (sin "Piso", "Depto", letras, etc.), es mucho más probable que sea
+    // el número de la calle mal ubicado que un piso/depto real. Lo reclasificamos.
+    // Si address_line2 tiene texto (ej. "Piso 2", "4D", "PB") se deja como
+    // apartment, sin tocar nada.
+    if (!number) {
+        const line2 = String(order?.shipping_address_line2 || '').trim();
+        if (/^\d+$/.test(line2)) {
+            number = line2;
+            apartment = order?.shipping_apartment || '';
+        }
+    }
+
     return {
         name: order?.shipping_recipient_name || order?.customer_name || 'Cliente',
         email: order?.shipping_recipient_email || order?.customer_email || '',
         phone: order?.shipping_recipient_phone || order?.customer_phone || '',
         street: order?.shipping_street || parsed.street || '',
-        number: order?.shipping_number || parsed.number || '',
+        number,
         floor: order?.shipping_floor || '',
-        apartment: order?.shipping_apartment || order?.shipping_address_line2 || '',
+        apartment,
         city: order?.shipping_city || '',
         province: order?.shipping_state || '',
         postalCode: order?.shipping_postal_code || '',
@@ -263,6 +303,23 @@ function buildImportPayload({ customerId, order, items, address, parcel, agencyC
         );
     }
 
+    // Número de calle: si no se pudo determinar (ni desde address_line1 ni
+    // reclasificando address_line2 en buildAddressFromOrder), usamos "S/N"
+    // (convención postal argentina para "sin número") en vez de string vacío.
+    // Para domicilio (D) Correo VALIDA este bloque y rechaza streetNumber vacío
+    // con un mensaje engañoso ("Debe especificar valores para: envio[altura]")
+    // que no señala el campo real; para sucursal (S) no se valida, pero igual
+    // mandamos un valor consistente. Solo logueamos (no bloqueante) cuando es D,
+    // que es el caso que realmente rompe el despacho.
+    const streetNumber = String(address.number || '').trim() || 'S/N';
+    if (streetNumber === 'S/N' && deliveryType === 'D') {
+        console.warn(
+            `[correo] streetNumber no determinado para orden ${order.id} (domicilio); ` +
+            `se usó "S/N". Revisar si el número de calle quedó cargado en el campo ` +
+            'equivocado (ej. "Piso / Depto" en vez de "Calle y número").'
+        );
+    }
+
     return {
         customerId,
         extOrderId: String(order.id),
@@ -301,7 +358,7 @@ function buildImportPayload({ customerId, order, items, address, parcel, agencyC
             // Address required for homeDelivery (D), can be null/omitted for branch (S)
             address: {
                 streetName: address.street || '',
-                streetNumber: String(address.number || ''),
+                streetNumber,
                 floor: address.floor || '',
                 apartment: address.apartment || '',
                 city: address.city || '',
