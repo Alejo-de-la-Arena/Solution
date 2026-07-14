@@ -34,6 +34,8 @@ const SHIPPING_OPTIONS = [
   { value: 'error', label: 'Con error' },
 ];
 
+const MAX_BULK_DISPATCH = 5;
+
 const BA_PROVINCES = new Set([
   'buenos aires', 'caba', 'ciudad autonoma de buenos aires',
   'ciudad autónoma de buenos aires', 'capital federal',
@@ -88,6 +90,12 @@ function canDispatchCorreo(order) {
   if (order.shipping_provider === 'correo_argentino') return true;
   if (!order.shipping_provider && province && !isBA) return true;
   return false;
+}
+
+// Mismo criterio que el despacho individual, salvo que un pedido con error
+// previo SIEMPRE se despacha individual (tras revisión), nunca en lote.
+function canBulkDispatch(order) {
+  return canDispatchCorreo(order) && order.shipping_status !== 'error';
 }
 
 function formatHours(hours) {
@@ -768,6 +776,13 @@ export default function AdminPedidos() {
   const [openDispatchPanels, setOpenDispatchPanels] = useState(new Set());
   const [dispatchedTracking, setDispatchedTracking] = useState({});
 
+  // ── Despacho múltiple ──
+  const [selectedForBulk, setSelectedForBulk] = useState(new Set());
+  const [bulkLimitMsg, setBulkLimitMsg] = useState('');
+  const [bulkDispatching, setBulkDispatching] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState(null); // { index, total, name }
+  const [bulkSummary, setBulkSummary] = useState(null); // { ok: [...], failed: [...] }
+
   useEffect(() => {
     try { localStorage.setItem(VIEW_STORAGE_KEY, ordersView); } catch { /* ignore */ }
   }, [ordersView]);
@@ -868,6 +883,96 @@ export default function AdminPedidos() {
       )));
     }, 3000);
   }, []);
+
+  // ── Despacho múltiple ──────────────────────────────────────────────────
+  const toggleBulkSelect = useCallback((order) => {
+    setSelectedForBulk((prev) => {
+      if (prev.has(order.id)) {
+        const next = new Set(prev);
+        next.delete(order.id);
+        return next;
+      }
+      if (prev.size >= MAX_BULK_DISPATCH) {
+        setBulkLimitMsg('Máximo 5 pedidos por lote — así es más fácil identificar si alguno falla');
+        return prev;
+      }
+      const next = new Set(prev);
+      next.add(order.id);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!bulkLimitMsg) return;
+    const t = setTimeout(() => setBulkLimitMsg(''), 4000);
+    return () => clearTimeout(t);
+  }, [bulkLimitMsg]);
+
+  const clearBulkSelection = useCallback(() => {
+    setSelectedForBulk(new Set());
+    setBulkSummary(null);
+  }, []);
+
+  // Despacha los pedidos seleccionados de a uno, SIEMPRE secuencial (nunca
+  // Promise.all) para poder identificar cuál falla y no saturar la API de
+  // Correo. Reutiliza dispatchWithCorreo tal cual la usa el despacho
+  // individual: mismos reintentos, misma persistencia de error, mismo email.
+  const handleBulkDispatch = useCallback(async () => {
+    const ids = [...selectedForBulk];
+    if (ids.length === 0) return;
+
+    setBulkDispatching(true);
+    setBulkSummary(null);
+    const ok = [];
+    const failed = [];
+
+    for (let i = 0; i < ids.length; i++) {
+      const orderId = ids[i];
+      const order = orders.find((o) => o.id === orderId);
+      if (!order) continue;
+      const label = order.customer_name || order.customer_email || `#${shortId(order.id)}`;
+      setBulkProgress({ index: i + 1, total: ids.length, name: label });
+
+      try {
+        const deliveryType = order.shipping_mode === 'branch' ? 'S' : 'D';
+        const res = await dispatchWithCorreo({
+          orderId: order.id,
+          deliveryType,
+          agencyCode: order.shipping_agency_code || undefined,
+          agencyName: order.shipping_agency_name || undefined,
+          serviceType: order.shipping_service_type || undefined,
+        });
+        const tracking =
+          res?.shipment?.raw?.trackingNumber ||
+          res?.order?.shipping_tracking_number ||
+          null;
+
+        setOrders((prev) => prev.map((o) => (
+          o.id === orderId
+            ? {
+              ...o,
+              shipping_status: 'imported',
+              shipping_provider: 'correo_argentino',
+              shipping_error_message: null,
+              shipping_tracking_number: tracking || o.shipping_tracking_number,
+            }
+            : o
+        )));
+        ok.push({ id: orderId, name: label });
+      } catch (err) {
+        const message = err.message || 'Error al despachar';
+        setOrders((prev) => prev.map((o) => (
+          o.id === orderId ? { ...o, shipping_status: 'error', shipping_error_message: message } : o
+        )));
+        failed.push({ id: orderId, name: label, error: message });
+      }
+    }
+
+    setBulkProgress(null);
+    setBulkSummary({ ok, failed });
+    setSelectedForBulk(new Set());
+    setBulkDispatching(false);
+  }, [selectedForBulk, orders]);
 
   const detailProps = {
     statusEditDraft, setStatusEditDraft,
@@ -975,42 +1080,59 @@ export default function AdminPedidos() {
                 <motion.div key={order.id} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }}
                   transition={{ duration: 0.3, delay: index * 0.04, layout: { duration: 0.25 } }}
                   className="border border-white/20 rounded-lg overflow-hidden bg-white/[0.02]">
-                  <button type="button" onClick={() => toggleExpand(order)} className="w-full text-left px-5 py-4 flex flex-wrap items-center gap-4 hover:bg-white/[0.04] transition-colors">
-                    <span className="font-mono text-sm text-[rgb(0,255,255)]">#{shortId(order.id)}</span>
-                    <span className="text-white/60 text-sm">{formatDate(order.created_at)}</span>
-                    <span className={`text-xs uppercase tracking-widest px-2 py-1 rounded ${order.channel === 'retail'
-                      ? 'bg-[rgb(0,255,255)]/15 text-[rgb(0,255,255)] border border-[rgb(0,255,255)]/30'
-                      : 'bg-[rgb(255,0,255)]/15 text-[rgb(255,0,255)] border border-[rgb(255,0,255)]/30'
-                      }`}>{order.channel === 'retail' ? 'Retail' : 'Mayorista'}</span>
-                    {order.payment_method && (
-                      <span className="text-xs uppercase tracking-widest px-2 py-1 rounded border border-white/20 text-white/70 bg-white/5">
-                        {formatPaymentMethod(order.payment_method)}
-                      </span>
+                  <div className="flex items-stretch">
+                    {canBulkDispatch(order) && (
+                      <label
+                        className="flex items-center pl-4 pr-1 cursor-pointer flex-shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                        title="Seleccionar para despacho múltiple"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedForBulk.has(order.id)}
+                          onChange={() => toggleBulkSelect(order)}
+                          disabled={bulkDispatching}
+                          className="w-4 h-4 accent-[rgb(0,255,255)] cursor-pointer disabled:cursor-not-allowed"
+                        />
+                      </label>
                     )}
-                    {order.shipping_provider === 'correo_argentino' && (
-                      <span className="text-xs px-2 py-1 rounded border border-amber-500/40 text-amber-300 bg-amber-500/10">Correo AR</span>
-                    )}
-                    {order.shipping_provider === 'gestionar' && (
-                      order.gestionar_pushed_at ? (
-                        <span className="text-xs px-2 py-1 rounded border border-emerald-500/40 text-emerald-300 bg-emerald-500/10">Gestionar ✓</span>
-                      ) : order.gestionar_error ? (
-                        <span className="text-xs px-2 py-1 rounded border border-red-500/40 text-red-300 bg-red-500/10">Gestionar (error)</span>
-                      ) : (
-                        <span className="text-xs px-2 py-1 rounded border border-fuchsia-500/40 text-fuchsia-300 bg-fuchsia-500/10">Gestionar</span>
-                      )
-                    )}
-                    {(order.shipping_status === 'imported' || order.shipping_tracking_number) && (
-                      <span className="text-xs px-2 py-1 rounded border border-emerald-500/40 text-emerald-300 bg-emerald-500/10">Despachado</span>
-                    )}
-                    {order.shipping_status === 'error' && !order.shipping_tracking_number && (
-                      <span className="text-xs px-2 py-1 rounded border border-red-500/40 text-red-300 bg-red-500/10">Despacho error</span>
-                    )}
-                    <span className="text-white font-medium truncate max-w-[180px]">{order.customer_name || order.customer_email || '—'}</span>
-                    <span className="text-white/50 text-sm truncate max-w-[200px]">{order.customer_email || '—'}</span>
-                    <span className="ml-auto text-lg font-light text-white tabular-nums">{formatMoney(order.total, order.currency)}</span>
-                    <span className={`text-xs uppercase ${statusTextClass(order.status)}`}>{order.status}</span>
-                    <span className="text-white/40">{expandedId === order.id ? '▼' : '▶'}</span>
-                  </button>
+                    <button type="button" onClick={() => toggleExpand(order)} className="flex-1 min-w-0 text-left px-5 py-4 flex flex-wrap items-center gap-4 hover:bg-white/[0.04] transition-colors">
+                      <span className="font-mono text-sm text-[rgb(0,255,255)]">#{shortId(order.id)}</span>
+                      <span className="text-white/60 text-sm">{formatDate(order.created_at)}</span>
+                      <span className={`text-xs uppercase tracking-widest px-2 py-1 rounded ${order.channel === 'retail'
+                        ? 'bg-[rgb(0,255,255)]/15 text-[rgb(0,255,255)] border border-[rgb(0,255,255)]/30'
+                        : 'bg-[rgb(255,0,255)]/15 text-[rgb(255,0,255)] border border-[rgb(255,0,255)]/30'
+                        }`}>{order.channel === 'retail' ? 'Retail' : 'Mayorista'}</span>
+                      {order.payment_method && (
+                        <span className="text-xs uppercase tracking-widest px-2 py-1 rounded border border-white/20 text-white/70 bg-white/5">
+                          {formatPaymentMethod(order.payment_method)}
+                        </span>
+                      )}
+                      {order.shipping_provider === 'correo_argentino' && (
+                        <span className="text-xs px-2 py-1 rounded border border-amber-500/40 text-amber-300 bg-amber-500/10">Correo AR</span>
+                      )}
+                      {order.shipping_provider === 'gestionar' && (
+                        order.gestionar_pushed_at ? (
+                          <span className="text-xs px-2 py-1 rounded border border-emerald-500/40 text-emerald-300 bg-emerald-500/10">Gestionar ✓</span>
+                        ) : order.gestionar_error ? (
+                          <span className="text-xs px-2 py-1 rounded border border-red-500/40 text-red-300 bg-red-500/10">Gestionar (error)</span>
+                        ) : (
+                          <span className="text-xs px-2 py-1 rounded border border-fuchsia-500/40 text-fuchsia-300 bg-fuchsia-500/10">Gestionar</span>
+                        )
+                      )}
+                      {(order.shipping_status === 'imported' || order.shipping_tracking_number) && (
+                        <span className="text-xs px-2 py-1 rounded border border-emerald-500/40 text-emerald-300 bg-emerald-500/10">Despachado</span>
+                      )}
+                      {order.shipping_status === 'error' && !order.shipping_tracking_number && (
+                        <span className="text-xs px-2 py-1 rounded border border-red-500/40 text-red-300 bg-red-500/10">Despacho error</span>
+                      )}
+                      <span className="text-white font-medium truncate max-w-[180px]">{order.customer_name || order.customer_email || '—'}</span>
+                      <span className="text-white/50 text-sm truncate max-w-[200px]">{order.customer_email || '—'}</span>
+                      <span className="ml-auto text-lg font-light text-white tabular-nums">{formatMoney(order.total, order.currency)}</span>
+                      <span className={`text-xs uppercase ${statusTextClass(order.status)}`}>{order.status}</span>
+                      <span className="text-white/40">{expandedId === order.id ? '▼' : '▶'}</span>
+                    </button>
+                  </div>
                   <AnimatePresence>
                     {expandedId === order.id && (
                       <motion.div layout initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
@@ -1038,6 +1160,21 @@ export default function AdminPedidos() {
                       ? 'border-[rgb(0,255,255)]/40 shadow-[0_0_0_1px_rgba(0,255,255,0.12)]'
                       : 'border-white/15 hover:border-white/25'
                       }`}>
+                    {canBulkDispatch(order) && (
+                      <label
+                        className="flex items-center gap-2 px-3 py-1.5 border-b border-white/10 cursor-pointer flex-shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedForBulk.has(order.id)}
+                          onChange={() => toggleBulkSelect(order)}
+                          disabled={bulkDispatching}
+                          className="w-4 h-4 accent-[rgb(0,255,255)] cursor-pointer disabled:cursor-not-allowed"
+                        />
+                        <span className="text-[10px] uppercase tracking-widest text-white/40">Lote</span>
+                      </label>
+                    )}
                     <button type="button" onClick={() => toggleExpand(order)} className="flex flex-col items-stretch text-left p-4 aspect-square max-h-[260px] min-h-[200px] hover:bg-white/[0.04] transition-colors">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <span className="font-mono text-sm text-[rgb(0,255,255)]">#{shortId(order.id)}</span>
@@ -1080,6 +1217,72 @@ export default function AdminPedidos() {
           )}
         </div>
       )}
+
+      {/* ── Barra flotante de despacho múltiple ── */}
+      <AnimatePresence>
+        {(selectedForBulk.size > 0 || bulkDispatching || bulkSummary) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[min(92vw,560px)] rounded-lg border border-[rgb(0,255,255)]/40 bg-[#0b0b0b]/95 backdrop-blur-md shadow-[0_0_24px_rgba(0,255,255,0.15)] p-4"
+          >
+            {bulkSummary ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-heading tracking-widest text-white">
+                    {bulkSummary.ok.length} despachado{bulkSummary.ok.length !== 1 ? 's' : ''} OK
+                    {bulkSummary.failed.length > 0 && `, ${bulkSummary.failed.length} falló${bulkSummary.failed.length !== 1 ? 'aron' : ''}`}
+                  </h4>
+                  <button type="button" onClick={clearBulkSelection} className="text-white/40 hover:text-white transition-colors text-xs uppercase tracking-widest">
+                    Cerrar
+                  </button>
+                </div>
+                {bulkSummary.failed.length > 0 && (
+                  <ul className="space-y-1.5 max-h-40 overflow-y-auto">
+                    {bulkSummary.failed.map((f) => (
+                      <li key={f.id} className="text-xs p-2 rounded border border-red-500/30 bg-red-500/10 text-red-200">
+                        <span className="font-medium">{f.name}</span>: {f.error}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : bulkDispatching ? (
+              <div className="flex items-center gap-3">
+                <span className="w-4 h-4 border-2 border-[rgb(0,255,255)] border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                <span className="text-sm text-white">
+                  {bulkProgress
+                    ? `Despachando ${bulkProgress.index} de ${bulkProgress.total}... (${bulkProgress.name})`
+                    : 'Despachando...'}
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <span className="text-sm text-white">
+                  Pedidos a despachar: <span className="text-[rgb(0,255,255)] font-medium">{selectedForBulk.size}/{MAX_BULK_DISPATCH}</span>
+                </span>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={clearBulkSelection} className="text-white/50 hover:text-white text-xs uppercase tracking-widest transition-colors">
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBulkDispatch}
+                    disabled={selectedForBulk.size === 0}
+                    className="bg-[rgb(0,255,255)] text-black px-4 py-2 text-xs font-bold tracking-[0.1em] uppercase rounded hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Despachar seleccionados
+                  </button>
+                </div>
+              </div>
+            )}
+            {bulkLimitMsg && !bulkSummary && !bulkDispatching && (
+              <p className="mt-2 text-xs text-amber-300">{bulkLimitMsg}</p>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
