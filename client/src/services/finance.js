@@ -67,7 +67,8 @@ export async function deleteFixedExpense(id) {
 
 // ── Reporte ────────────────────────────────────────────────────────────────
 
-export async function getFinanceReport(from, to) {
+export async function getFinanceReport(from, to, { daily = false } = {}) {
   const params = new URLSearchParams({ from, to });
+  if (daily) params.set('daily', 'true');
   return adminFetch(`/report?${params.toString()}`);
 }
