@@ -204,6 +204,22 @@ router.delete('/expenses/:id', async (req, res) => {
 
 // ── Reporte mensual / por rango ─────────────────────────────────────────────
 
+// Argentina no tiene DST: el offset es fijo todo el año.
+const ART_OFFSET = '-03:00';
+const ART_OFFSET_MS = 3 * 3600 * 1000;
+
+/** Suma n días a una fecha YYYY-MM-DD (aritmética de calendario pura). */
+function addDaysYmd(ymd, n) {
+  const d = new Date(`${ymd}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Fecha YYYY-MM-DD de un timestamp según hora Argentina. */
+function artYmd(ts) {
+  return new Date(new Date(ts).getTime() - ART_OFFSET_MS).toISOString().slice(0, 10);
+}
+
 /**
  * Días entre dos fechas YYYY-MM-DD inclusive (zona UTC, los dates de Postgres
  * no llevan timezone; tratarlos como UTC mantiene cálculos consistentes).
@@ -309,14 +325,13 @@ router.get('/report', async (req, res) => {
     return res.status(400).json({ error: 'from y to deben ser YYYY-MM-DD válidos y from ≤ to' });
   }
 
-  // Rango temporal: paid_at entre [from 00:00, to+1 00:00). Como mp_paid_at y
-  // nave_paid_at son timestamptz, comparamos con strings ISO.
-  const fromIso = `${from}T00:00:00.000Z`;
-  const toEndIso = (() => {
-    const d = new Date(`${to}T00:00:00Z`);
-    d.setUTCDate(d.getUTCDate() + 1);
-    return d.toISOString();
-  })();
+  const wantDaily = ['true', '1'].includes(String(req.query.daily || '').toLowerCase());
+
+  // Rango temporal: paid_at entre [from 00:00, to+1 00:00) en hora Argentina.
+  // Como mp_paid_at y nave_paid_at son timestamptz, comparamos con strings ISO
+  // con offset explícito para que el corte de día sea a medianoche ART.
+  const fromIso = `${from}T00:00:00.000${ART_OFFSET}`;
+  const toEndIso = `${addDaysYmd(to, 1)}T00:00:00.000${ART_OFFSET}`;
 
   // Filtramos por mp_paid_at OR nave_paid_at; Supabase no permite OR sobre 2
   // columnas con rango fácilmente, así que hacemos 2 queries y unimos.
@@ -414,12 +429,15 @@ router.get('/report', async (req, res) => {
 
   let cogs = 0;
   let cogs_unidades_sin_costo = 0;
+  const cogsByOrder = new Map();
   for (const it of items) {
     if (it.cogs_unit == null) {
       cogs_unidades_sin_costo += toNumber(it.quantity);
       continue;
     }
-    cogs += toNumber(it.cogs_unit) * toNumber(it.quantity);
+    const itemCogs = toNumber(it.cogs_unit) * toNumber(it.quantity);
+    cogs += itemCogs;
+    cogsByOrder.set(it.order_id, (cogsByOrder.get(it.order_id) || 0) + itemCogs);
   }
 
   const ganancia_operativa = neto_recibido_estimado - costo_envio - cogs;
@@ -445,14 +463,14 @@ router.get('/report', async (req, res) => {
   const [{ data: mpRef, error: mpRefErr }, { data: naveRef, error: naveRefErr }] = await Promise.all([
     supabase
       .from('orders')
-      .select('id, total, shipping_cost, status')
+      .select('id, total, shipping_cost, status, mp_paid_at, nave_paid_at')
       .in('status', ['refunded', 'chargeback'])
       .not('is_admin_test', 'is', true)
       .gte('mp_paid_at', fromIso)
       .lt('mp_paid_at', toEndIso),
     supabase
       .from('orders')
-      .select('id, total, shipping_cost, status')
+      .select('id, total, shipping_cost, status, mp_paid_at, nave_paid_at')
       .in('status', ['refunded', 'chargeback'])
       .not('is_admin_test', 'is', true)
       .gte('nave_paid_at', fromIso)
@@ -543,7 +561,55 @@ router.get('/report', async (req, res) => {
     return [...acc.values()];
   })();
 
+  // ── Serie diaria (agenda/heatmap) ──
+  // Reusa las órdenes/items/financials ya en memoria; agrupa por fecha ART del
+  // pago. Los días futuros no se emiten; los días sin ventas van igual (con
+  // sus gastos fijos prorrateados) para que el cliente tenga la grilla completa.
+  let por_dia = null;
+  if (wantDaily) {
+    const finByOrder = new Map(financials.map((f) => [f.order_id, f]));
+    const hoyArt = artYmd(Date.now());
+    const lastDay = to < hoyArt ? to : hoyArt;
+
+    const dayMap = new Map();
+    for (let d = from; d <= lastDay; d = addDaysYmd(d, 1)) {
+      dayMap.set(d, {
+        fecha: d, ordenes: 0, ingresos_brutos: 0, neto: 0, envio: 0,
+        cogs: 0, gastos_fijos: 0, perdidas_devoluciones: 0,
+      });
+    }
+
+    for (const o of orders) {
+      const d = dayMap.get(artYmd(o.mp_paid_at || o.nave_paid_at));
+      if (!d) continue;
+      const fin = finByOrder.get(o.id);
+      d.ordenes += 1;
+      d.ingresos_brutos += toNumber(o.total);
+      d.neto += fin ? toNumber(fin.net_received) : toNumber(o.total);
+      d.envio += toNumber(o.shipping_cost);
+      d.cogs += cogsByOrder.get(o.id) || 0;
+    }
+
+    // Cada pérdida se imputa al día ART del pago original (mismo criterio que
+    // el agregado del período). refunds y devoluciones_detalle comparten índice.
+    refunds.forEach((r, i) => {
+      const d = dayMap.get(artYmd(r.mp_paid_at || r.nave_paid_at));
+      if (d) d.perdidas_devoluciones += devoluciones_detalle[i].perdida;
+    });
+
+    for (const d of dayMap.values()) {
+      d.gastos_fijos = expenses.reduce((s, e) => s + expenseAmountInRange(e, d.fecha, d.fecha), 0);
+      const ganancia = d.neto - d.envio - d.cogs - d.gastos_fijos - d.perdidas_devoluciones;
+      for (const k of ['ingresos_brutos', 'neto', 'envio', 'cogs', 'gastos_fijos', 'perdidas_devoluciones']) {
+        d[k] = Number(d[k].toFixed(2));
+      }
+      d.ganancia_neta = Number(ganancia.toFixed(2));
+    }
+    por_dia = [...dayMap.values()];
+  }
+
   return res.json({
+    ...(por_dia ? { por_dia } : {}),
     period: { from, to, dias: daysBetweenInclusive(from, to) },
     resumen: {
       ingresos_brutos: Number(ingresos_brutos.toFixed(2)),

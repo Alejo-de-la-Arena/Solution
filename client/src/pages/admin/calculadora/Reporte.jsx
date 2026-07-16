@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getFinanceReport } from '../../../services/finance';
+import { toYMDLocal, parseYMD } from '../../../components/admin/AdminDatePicker';
+import HeatmapMensual from './HeatmapMensual';
 
 function formatARS(value) {
   const n = Number(value);
@@ -7,26 +9,70 @@ function formatARS(value) {
   return n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function currentYearMonth() {
-  const now = new Date();
-  return { year: now.getUTCFullYear(), month: now.getUTCMonth() + 1 };
+/** Hoy en hora Argentina (en-CA emite YYYY-MM-DD), independiente del TZ del browser. */
+function todayYmdART() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date());
 }
 
-function rangeForMonth(year, month) {
-  const from = `${year}-${String(month).padStart(2, '0')}-01`;
-  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  const to = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-  return { from, to };
+function addDays(ymd, n) {
+  const d = parseYMD(ymd);
+  d.setDate(d.getDate() + n);
+  return toYMDLocal(d);
 }
 
-function shiftMonth(year, month, delta) {
-  const d = new Date(Date.UTC(year, month - 1 + delta, 1));
-  return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1 };
+/** Rango [from, to] según el modo de vista. Semana = lunes a domingo. */
+function rangeFor(mode, anchor) {
+  if (mode === 'day') return { from: anchor, to: anchor };
+  if (mode === 'week') {
+    const dow = parseYMD(anchor).getDay();
+    const monday = addDays(anchor, -((dow + 6) % 7));
+    return { from: monday, to: addDays(monday, 6) };
+  }
+  const year = Number(anchor.slice(0, 4));
+  const month = Number(anchor.slice(5, 7));
+  const lastDay = new Date(year, month, 0).getDate();
+  return {
+    from: `${anchor.slice(0, 7)}-01`,
+    to: `${anchor.slice(0, 7)}-${String(lastDay).padStart(2, '0')}`,
+  };
+}
+
+function shiftAnchor(mode, anchor, delta) {
+  if (mode === 'day') return addDays(anchor, delta);
+  if (mode === 'week') return addDays(anchor, delta * 7);
+  // Mes: anclar al día 1 evita saltos raros desde el 29/30/31.
+  return toYMDLocal(new Date(Number(anchor.slice(0, 4)), Number(anchor.slice(5, 7)) - 1 + delta, 1));
 }
 
 const MONTHS_ES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+
+function labelFor(mode, anchor, from, to) {
+  if (mode === 'day') {
+    const s = parseYMD(anchor).toLocaleDateString('es-AR', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    });
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+  if (mode === 'week') {
+    const f = parseYMD(from);
+    const t = parseYMD(to);
+    const sameMonth = f.getMonth() === t.getMonth() && f.getFullYear() === t.getFullYear();
+    const fStr = sameMonth
+      ? String(f.getDate())
+      : f.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
+    const tStr = t.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
+    return `Semana del ${fStr} al ${tStr}`;
+  }
+  return `${MONTHS_ES[Number(anchor.slice(5, 7)) - 1]} ${anchor.slice(0, 4)}`;
+}
+
+const MODES = [
+  ['day', 'Día'],
+  ['week', 'Semana'],
+  ['month', 'Mes'],
 ];
 
 function csvCell(v) {
@@ -90,58 +136,118 @@ function Line({ label, value, accent = false, negative = false, hint = null }) {
 }
 
 export default function CalculadoraReporte() {
-  const initial = currentYearMonth();
-  const [year, setYear] = useState(initial.year);
-  const [month, setMonth] = useState(initial.month);
+  const [mode, setMode] = useState('day');
+  const [anchor, setAnchor] = useState(() => todayYmdART());
   const [report, setReport] = useState(null);
+  const [monthDaily, setMonthDaily] = useState(null); // { month: 'YYYY-MM', por_dia }
   const [loading, setLoading] = useState(false);
+  const [heatmapLoading, setHeatmapLoading] = useState(false);
   const [error, setError] = useState(null);
+  const monthCacheRef = useRef(new Map()); // 'YYYY-MM' → por_dia
+  const breakdownRef = useRef(null);
+  const requestIdRef = useRef(0); // descarta respuestas fuera de orden al navegar rápido
 
-  const { from, to } = useMemo(() => rangeForMonth(year, month), [year, month]);
+  const { from, to } = useMemo(() => rangeFor(mode, anchor), [mode, anchor]);
+  const heatmapMonth = anchor.slice(0, 7);
+  const todayYmd = todayYmdART();
 
-  const load = useCallback(async () => {
+  const load = useCallback(async ({ refresh = false } = {}) => {
+    const reqId = ++requestIdRef.current;
+    const isStale = () => requestIdRef.current !== reqId;
     try {
       setLoading(true);
       setError(null);
-      const data = await getFinanceReport(from, to);
-      setReport(data);
+      if (refresh) monthCacheRef.current.delete(heatmapMonth);
+
+      if (mode === 'month') {
+        // Una sola request: el reporte del mes con serie diaria alimenta
+        // desglose + heatmap.
+        const data = await getFinanceReport(from, to, { daily: true });
+        monthCacheRef.current.set(heatmapMonth, data.por_dia || []);
+        if (isStale()) return;
+        setReport(data);
+        setMonthDaily({ month: heatmapMonth, por_dia: data.por_dia || [] });
+      } else {
+        const cached = monthCacheRef.current.get(heatmapMonth);
+        const monthRange = rangeFor('month', anchor);
+        if (!cached) setHeatmapLoading(true);
+        const [data, monthData] = await Promise.all([
+          getFinanceReport(from, to),
+          cached ? Promise.resolve(null) : getFinanceReport(monthRange.from, monthRange.to, { daily: true }),
+        ]);
+        const porDia = monthData ? (monthData.por_dia || []) : cached;
+        if (monthData) monthCacheRef.current.set(heatmapMonth, porDia);
+        if (isStale()) return;
+        setReport(data);
+        setMonthDaily({ month: heatmapMonth, por_dia: porDia });
+      }
     } catch (e) {
+      if (isStale()) return;
       setError(e.message || 'Error generando reporte');
       setReport(null);
     } finally {
-      setLoading(false);
+      if (!isStale()) {
+        setLoading(false);
+        setHeatmapLoading(false);
+      }
     }
-  }, [from, to]);
+  }, [mode, anchor, from, to, heatmapMonth]);
 
   useEffect(() => { load(); }, [load]);
 
-  const onPrev = () => { const { year: y, month: m } = shiftMonth(year, month, -1); setYear(y); setMonth(m); };
-  const onNext = () => { const { year: y, month: m } = shiftMonth(year, month, 1); setYear(y); setMonth(m); };
+  const onSelectDay = (fecha) => {
+    setMode('day');
+    setAnchor(fecha);
+    requestAnimationFrame(() => breakdownRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  };
 
   const r = report?.resumen;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex rounded border border-white/20 overflow-hidden">
+            {MODES.map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setMode(value)}
+                className={`text-xs uppercase tracking-widest px-4 py-2 transition ${
+                  mode === value
+                    ? 'text-[rgb(255,0,255)] bg-[rgb(255,0,255)]/10'
+                    : 'text-white/60 hover:text-white'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <button
             type="button"
-            onClick={onPrev}
+            onClick={() => setAnchor(shiftAnchor(mode, anchor, -1))}
             className="text-white/60 hover:text-white border border-white/20 rounded w-9 h-9 flex items-center justify-center"
-            aria-label="Mes anterior"
+            aria-label="Período anterior"
           >
             ‹
           </button>
           <div className="text-lg font-heading tracking-widest">
-            {MONTHS_ES[month - 1]} {year}
+            {labelFor(mode, anchor, from, to)}
           </div>
           <button
             type="button"
-            onClick={onNext}
+            onClick={() => setAnchor(shiftAnchor(mode, anchor, 1))}
             className="text-white/60 hover:text-white border border-white/20 rounded w-9 h-9 flex items-center justify-center"
-            aria-label="Mes siguiente"
+            aria-label="Período siguiente"
           >
             ›
+          </button>
+          <button
+            type="button"
+            onClick={() => setAnchor(todayYmdART())}
+            className="text-xs uppercase tracking-widest border border-white/20 rounded px-3 py-2 text-white/60 hover:text-white hover:border-white/40 transition"
+          >
+            Hoy
           </button>
         </div>
         <div className="flex items-center gap-2">
@@ -155,7 +261,7 @@ export default function CalculadoraReporte() {
           </button>
           <button
             type="button"
-            onClick={load}
+            onClick={() => load({ refresh: true })}
             disabled={loading}
             className="text-xs uppercase tracking-widest border border-white/20 rounded px-4 py-2 text-white/70 hover:text-white hover:border-white/40 transition disabled:opacity-50"
           >
@@ -172,8 +278,10 @@ export default function CalculadoraReporte() {
 
       {!loading && r && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white/[0.03] border border-white/10 rounded p-6">
-            <div className="text-xs uppercase tracking-widest text-white/40 mb-2">Cierre {from} → {to}</div>
+          <div ref={breakdownRef} className="lg:col-span-2 bg-white/[0.03] border border-white/10 rounded p-6 scroll-mt-6">
+            <div className="text-xs uppercase tracking-widest text-white/40 mb-2">
+              Cierre {from === to ? from : `${from} → ${to}`}
+            </div>
             <Line label="Ingresos brutos" value={r.ingresos_brutos} />
             <Line label="Comisiones de pasarela" value={r.comisiones_pasarela} negative hint="MP / Nave" />
             <Line label="Impuestos retenidos" value={r.impuestos_retenidos} negative hint="IVA / IIBB en cobro" />
@@ -297,6 +405,15 @@ export default function CalculadoraReporte() {
       )}
 
       {loading && <p className="text-white/50 text-sm">Calculando…</p>}
+
+      <HeatmapMensual
+        month={heatmapMonth}
+        porDia={monthDaily?.month === heatmapMonth ? monthDaily.por_dia : null}
+        selectedDay={mode === 'day' ? anchor : null}
+        todayYmd={todayYmd}
+        onSelectDay={onSelectDay}
+        loading={heatmapLoading}
+      />
     </div>
   );
 }
