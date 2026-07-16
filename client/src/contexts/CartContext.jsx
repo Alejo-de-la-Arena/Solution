@@ -70,8 +70,15 @@ export function CartProvider({ children }) {
     });
   };
 
+  /** El combo son 2 unidades taggeadas; si quedan menos, el tag ya no representa un combo. */
+  const clearBrokenComboTag = (items) => {
+    const taggedUnits = items.reduce((acc, item) => acc + (item.combo_tag ? item.quantity : 0), 0);
+    if (taggedUnits === 0 || taggedUnits >= 2) return items;
+    return items.map(item => (item.combo_tag ? { ...item, combo_tag: undefined } : item));
+  };
+
   const removeFromCart = (productId) => {
-    setCart(prev => prev.filter(item => item.id !== productId));
+    setCart(prev => clearBrokenComboTag(prev.filter(item => item.id !== productId)));
   };
 
   const updateQuantity = (productId, quantity) => {
@@ -79,9 +86,9 @@ export function CartProvider({ children }) {
       removeFromCart(productId);
       return;
     }
-    setCart(prev => prev.map(item =>
+    setCart(prev => clearBrokenComboTag(prev.map(item =>
       item.id === productId ? { ...item, quantity } : item
-    ));
+    )));
   };
 
   const clearCart = useCallback(() => setCart([]), []);
