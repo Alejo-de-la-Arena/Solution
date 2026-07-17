@@ -7,6 +7,7 @@ const { sendPurchaseEvent } = require('../services/metaCapi');
 const { applyAdminTestMode } = require('../lib/testMode');
 const { attachCogsToOrderItemRows } = require('../lib/orderItems');
 const { extractFinancialsFromMpPayment, upsertOrderFinancials } = require('../lib/orderFinancials');
+const { extractRealShippingCost } = require('../lib/shippingCost');
 
 const router = express.Router();
 const MP_API = 'https://api.mercadopago.com';
@@ -593,6 +594,14 @@ router.post('/mercadopago/create-order', async (req, res) => {
     shipping_notes: (shipping_notes || '').trim() || null,
     shipping_method: (shipping_method || '').trim() || 'standard',
     shipping_cost: shipping,
+    // Costo real de Correo (≠ shipping_cost cuando hay envío gratis). En órdenes
+    // de prueba el shipping se fuerza a 0, así que el costo real también es 0.
+    shipping_original_price: isAdminTest
+      ? 0
+      : extractRealShippingCost(shipping_quote_payload, shipping_quote_response, {
+          mode: shippingMode,
+          serviceType: shippingServiceType,
+        }),
     payment_method: 'mercadopago',
     shipping_provider: shippingProvider || null,
     shipping_mode: shippingMode || null,
@@ -810,6 +819,14 @@ router.post('/mercadopago/create-preference', async (req, res) => {
     shipping_notes: (shipping_notes || '').trim() || null,
     shipping_method: (shipping_method || '').trim() || 'standard',
     shipping_cost: shipping,
+    // Costo real de Correo (≠ shipping_cost cuando hay envío gratis). En órdenes
+    // de prueba el shipping se fuerza a 0, así que el costo real también es 0.
+    shipping_original_price: isAdminTest
+      ? 0
+      : extractRealShippingCost(shipping_quote_payload, shipping_quote_response, {
+          mode: shippingMode,
+          serviceType: shippingServiceType,
+        }),
     payment_method: 'mercadopago',
     shipping_provider: shippingProvider || null,
     shipping_mode: shippingMode || null,
@@ -1019,6 +1036,14 @@ router.post('/mercadopago/process-card-payment', async (req, res) => {
       shipping_notes: (shipping_notes || '').trim() || null,
       shipping_method: (shipping_method || '').trim() || 'standard',
       shipping_cost: tmShipping,
+      // Costo real de Correo (≠ shipping_cost cuando hay envío gratis). En
+      // órdenes de prueba el shipping se fuerza a 0, igual que el costo real.
+      shipping_original_price: isAdminTest
+        ? 0
+        : extractRealShippingCost(shipping_quote_payload, shipping_quote_response, {
+            mode: shippingModeClean,
+            serviceType: shippingServiceTypeClean,
+          }),
       payment_method: 'mercadopago',
       shipping_provider: shippingProviderClean || null,
       shipping_mode: shippingModeClean || null,

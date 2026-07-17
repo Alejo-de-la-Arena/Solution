@@ -5,6 +5,7 @@ const { applyAdminTestMode } = require('../lib/testMode');
 const { sendPaymentConfirmationEmail, sendAdminSaleNotificationEmail } = require('../services/email');
 const { attachCogsToOrderItemRows } = require('../lib/orderItems');
 const { extractFinancialsFromNavePayment, upsertOrderFinancials } = require('../lib/orderFinancials');
+const { extractRealShippingCost } = require('../lib/shippingCost');
 
 const router = express.Router();
 
@@ -167,6 +168,14 @@ router.post('/nave/create-payment', async (req, res) => {
       shipping_notes: (shipping_notes || '').trim() || null,
       shipping_method: (shipping_method || '').trim() || 'standard',
       shipping_cost: shipping,
+      // Costo real de Correo (≠ shipping_cost cuando hay envío gratis). En
+      // órdenes de prueba el shipping se fuerza a 0, igual que el costo real.
+      shipping_original_price: isAdminTest
+        ? 0
+        : extractRealShippingCost(shipping_quote_payload, shipping_quote_response, {
+            mode: shippingMode,
+            serviceType: shippingServiceType,
+          }),
       payment_method: 'nave',
       // ── Proveedor de envío cotizado ──
       shipping_provider: (shipping_provider || '').trim() || null,

@@ -65,6 +65,28 @@ export async function deleteFixedExpense(id) {
   return adminFetch(`/expenses/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
+// ── Pauta publicitaria (gasto diario variable) ───────────────────────────────
+
+export async function listDailyPauta(from, to) {
+  const params = new URLSearchParams({ from, to });
+  const data = await adminFetch(`/daily-expenses?${params.toString()}`);
+  return data.items || [];
+}
+
+/** Carga (upsert) la pauta de un día. amount puede ser 0 (= confirmado sin pauta). */
+export async function setDailyPauta(date, amount, { category = 'pauta', notes } = {}) {
+  return adminFetch(`/daily-expenses/${encodeURIComponent(date)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ amount, category, ...(notes != null ? { notes } : {}) }),
+  });
+}
+
+/** Borra la pauta de un día → vuelve a estado "no cargado" (reactiva el aviso). */
+export async function clearDailyPauta(date, { category = 'pauta' } = {}) {
+  const qs = category ? `?category=${encodeURIComponent(category)}` : '';
+  return adminFetch(`/daily-expenses/${encodeURIComponent(date)}${qs}`, { method: 'DELETE' });
+}
+
 // ── Reporte ────────────────────────────────────────────────────────────────
 
 export async function getFinanceReport(from, to, { daily = false } = {}) {
