@@ -121,22 +121,29 @@ export default function HeatmapMensual({ month, porDia, selectedDay, todayYmd, o
           }
 
           const sinVentas = d.ordenes === 0;
+          const pautaFalta = d.pauta_sin_cargar;
           return (
             <button
               key={fecha}
               type="button"
               onClick={() => onSelectDay(fecha)}
               style={sinVentas ? {} : cellStyle(d)}
-              title={`${fecha} · ${d.ordenes} orden(es) · Ganancia neta $ ${formatARS(d.ganancia_neta)}`}
+              title={`${fecha} · ${d.ordenes} orden(es) · Ganancia neta $ ${formatARS(d.ganancia_neta)}${pautaFalta ? ' · ⚠ pauta sin cargar' : ''}`}
               aria-label={`Ver desglose del ${fecha}`}
               className={[
-                'h-14 rounded border flex flex-col items-center justify-center gap-0.5 transition',
+                'relative h-14 rounded border flex flex-col items-center justify-center gap-0.5 transition',
                 sinVentas ? 'bg-white/[0.04] border-white/5 text-white/30' : 'border-transparent text-white/90',
                 isToday ? 'border-dashed !border-white/50' : '',
                 isSelected ? 'ring-1 ring-[rgb(255,0,255)]' : '',
                 'hover:ring-1 hover:ring-white/40',
               ].join(' ')}
             >
+              {pautaFalta && (
+                <span
+                  className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-yellow-400/80"
+                  aria-hidden="true"
+                />
+              )}
               <span className="text-xs leading-none">{dayNum}</span>
               <span className="font-mono tabular-nums text-[10px] leading-none opacity-80">
                 {sinVentas ? '—' : compactARS(d.ganancia_neta)}
@@ -158,6 +165,10 @@ export default function HeatmapMensual({ month, porDia, selectedDay, todayYmd, o
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: `rgba(${GREEN.join(',')},0.5)` }} />
           por encima del promedio
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-yellow-400/80" />
+          sin pauta cargada
         </span>
         {avg != null && (
           <span className="ml-auto font-mono tabular-nums text-white/40">
