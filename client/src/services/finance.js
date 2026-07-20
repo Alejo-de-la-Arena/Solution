@@ -87,6 +87,16 @@ export async function clearDailyPauta(date, { category = 'pauta' } = {}) {
   return adminFetch(`/daily-expenses/${encodeURIComponent(date)}${qs}`, { method: 'DELETE' });
 }
 
+// ── Cargo mensual sobre facturación (switch on/off + %) ──────────────────────
+
+/** Prende/apaga y fija el % del cargo sobre facturación de un mes (YYYY-MM). */
+export async function setMonthlyCharge(month, { enabled, percentage }) {
+  return adminFetch(`/monthly-charges/${encodeURIComponent(month)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ enabled, percentage }),
+  });
+}
+
 // ── Reporte ────────────────────────────────────────────────────────────────
 
 export async function getFinanceReport(from, to, { daily = false } = {}) {
