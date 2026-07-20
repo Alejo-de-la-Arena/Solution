@@ -61,8 +61,15 @@ export async function updateFixedExpense(id, expense) {
   });
 }
 
-export async function deleteFixedExpense(id) {
-  return adminFetch(`/expenses/${encodeURIComponent(id)}`, { method: 'DELETE' });
+/**
+ * Elimina un gasto fijo.
+ *  - purge=false (default): cierre suave (effective_until = hoy). Deja de
+ *    aplicar pero sigue impactando los meses donde ya estuvo vigente.
+ *  - purge=true: borrado real de TODOS los períodos (gastos de prueba/error).
+ */
+export async function deleteFixedExpense(id, { purge = false } = {}) {
+  const qs = purge ? '?purge=true' : '';
+  return adminFetch(`/expenses/${encodeURIComponent(id)}${qs}`, { method: 'DELETE' });
 }
 
 // ── Pauta publicitaria (gasto diario variable) ───────────────────────────────
