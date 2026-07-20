@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getFinanceReport, setDailyPauta, clearDailyPauta } from '../../../services/finance';
+import { getFinanceReport, setDailyPauta, clearDailyPauta, setMonthlyCharge } from '../../../services/finance';
 import { toYMDLocal, parseYMD } from '../../../components/admin/AdminDatePicker';
 import HeatmapMensual from './HeatmapMensual';
 
@@ -100,6 +100,7 @@ function exportReportCsv(report) {
   rows.push(['Ganancia operativa', r.ganancia_operativa]);
   rows.push(['Gastos fijos', -r.gastos_fijos]);
   rows.push(['Pauta publicitaria', -(r.pauta || 0)]);
+  rows.push(['Cargo sobre facturación', -(r.cargo_facturacion || 0)]);
   rows.push(['Devoluciones y contracargos', -(r.perdidas_devoluciones || 0)]);
   rows.push(['Ganancia neta', r.ganancia_neta]);
   rows.push(['Margen %', r.margen_pct]);
@@ -157,6 +158,9 @@ export default function CalculadoraReporte() {
   const [error, setError] = useState(null);
   const [pautaInput, setPautaInput] = useState('');
   const [pautaSaving, setPautaSaving] = useState(false);
+  const [chargeEnabled, setChargeEnabled] = useState(false);
+  const [chargePctInput, setChargePctInput] = useState('7');
+  const [chargeSaving, setChargeSaving] = useState(false);
   const monthCacheRef = useRef(new Map()); // 'YYYY-MM' → por_dia
   const breakdownRef = useRef(null);
   const requestIdRef = useRef(0); // descarta respuestas fuera de orden al navegar rápido
@@ -176,6 +180,19 @@ export default function CalculadoraReporte() {
     if (mode !== 'day' || !report) return;
     setPautaInput(dayHasPauta ? String(report.resumen.pauta ?? '') : '');
   }, [report, mode, anchor, dayHasPauta]);
+
+  // Setting del cargo mensual para el mes del ancla (el switch edita ese mes,
+  // sin importar la vista). Viene en detalle.cargo_por_mes; si falta, default off/7%.
+  const anchorMonth = anchor.slice(0, 7);
+  const chargeMonthSetting = useMemo(
+    () => (report?.detalle?.cargo_por_mes || []).find((m) => m.month === anchorMonth) || null,
+    [report, anchorMonth]
+  );
+  useEffect(() => {
+    if (!report) return;
+    setChargeEnabled(chargeMonthSetting?.enabled ?? false);
+    setChargePctInput(String(chargeMonthSetting?.percentage ?? 7));
+  }, [report, chargeMonthSetting]);
 
   const load = useCallback(async ({ refresh = false } = {}) => {
     const reqId = ++requestIdRef.current;
@@ -255,6 +272,27 @@ export default function CalculadoraReporte() {
       setError(e.message || 'Error borrando pauta');
     } finally {
       setPautaSaving(false);
+    }
+  };
+
+  // Guarda el cargo del mes del ancla (enabled + %). El switch pasa el próximo
+  // estado; el botón "aplicar %" reusa el estado actual del switch.
+  const saveCharge = async (nextEnabled) => {
+    const pct = Number(chargePctInput);
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+      setError('Porcentaje inválido (0 a 100)');
+      return;
+    }
+    try {
+      setChargeSaving(true);
+      setError(null);
+      setChargeEnabled(nextEnabled); // feedback inmediato del switch
+      await setMonthlyCharge(anchorMonth, { enabled: nextEnabled, percentage: pct });
+      await load({ refresh: true });
+    } catch (e) {
+      setError(e.message || 'Error guardando cargo');
+    } finally {
+      setChargeSaving(false);
     }
   };
 
@@ -392,6 +430,61 @@ export default function CalculadoraReporte() {
                 ) : (
                   <span className="text-yellow-300/80 text-xs">⚠ sin cargar — se asume $0</span>
                 )}
+              </div>
+            )}
+            {/* Cargo mensual sobre facturación (switch on/off + %). */}
+            {r.cargo_facturacion > 0 && (
+              <Line
+                label="Cargo sobre facturación"
+                value={r.cargo_facturacion}
+                negative
+                hint={
+                  report.detalle.cargo_por_mes.length === 1
+                    ? `${chargeMonthSetting?.percentage ?? 7}% s/ facturado`
+                    : 's/ facturado'
+                }
+              />
+            )}
+            <div className="py-3 border-t border-white/5 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={chargeEnabled}
+                aria-label="Activar cargo sobre facturación"
+                onClick={() => saveCharge(!chargeEnabled)}
+                disabled={chargeSaving}
+                className={`relative w-10 h-5 rounded-full transition disabled:opacity-50 ${chargeEnabled ? 'bg-[rgb(255,0,255)]' : 'bg-white/15'}`}
+              >
+                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${chargeEnabled ? 'left-5' : 'left-0.5'}`} />
+              </button>
+              <span className="text-sm text-white/60">
+                Cargo sobre facturación
+                {mode !== 'month' && <span className="text-white/30 text-xs ml-1">(mes {anchorMonth})</span>}
+              </span>
+              <div className="flex items-center gap-1.5 ml-auto">
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={chargePctInput}
+                  onChange={(e) => setChargePctInput(e.target.value)}
+                  className="w-16 bg-white/5 border border-white/15 rounded px-2 py-1 text-sm font-mono tabular-nums text-right focus:outline-none focus:border-[rgb(255,0,255)]"
+                />
+                <span className="text-white/40 text-sm">%</span>
+                <button
+                  type="button"
+                  onClick={() => saveCharge(chargeEnabled)}
+                  disabled={chargeSaving}
+                  className="text-xs uppercase tracking-widest border border-white/20 rounded px-3 py-1.5 text-white/70 hover:text-white hover:border-white/40 transition disabled:opacity-50"
+                >
+                  {chargeSaving ? '…' : 'Aplicar'}
+                </button>
+              </div>
+            </div>
+            {report.avisos.cargo_facturacion_no_configurado && (
+              <div className="text-orange-200/80 text-xs -mt-1 mb-1">
+                ⚠ Falta aplicar la migración <code>monthly_revenue_charges</code>; el cargo aún no impacta.
               </div>
             )}
             {r.perdidas_devoluciones > 0 && (

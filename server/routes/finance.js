@@ -45,6 +45,15 @@ function isValidDateStr(s) {
   return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
 }
 
+function isValidMonthStr(s) {
+  return typeof s === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(s);
+}
+
+/** 'YYYY-MM' → 'YYYY-MM-01' (día 1 del mes, como lo guarda monthly_revenue_charges). */
+function monthToFirstDay(month) {
+  return `${month}-01`;
+}
+
 function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -225,10 +234,10 @@ router.delete('/expenses/:id', async (req, res) => {
 // (que repite el mismo monto). La ausencia de fila = día no cargado; una fila
 // con amount=0 = confirmado sin gasto.
 
-// La tabla daily_expenses puede no existir todavía (migración pendiente). El
-// error llega distinto según la capa: 42P01 desde Postgres directo, PGRST205
-// desde PostgREST (no está en el schema cache). Tratamos ambos como "pendiente".
-function isMissingDailyExpenses(error) {
+// Una tabla nueva puede no existir todavía (migración pendiente). El error llega
+// distinto según la capa: 42P01 desde Postgres directo, PGRST205 desde PostgREST
+// (no está en el schema cache). Tratamos ambos como "tabla pendiente".
+function isMissingTableError(error) {
   const code = String(error?.code || '');
   return code === '42P01' || code === 'PGRST205';
 }
@@ -251,7 +260,7 @@ router.get('/daily-expenses', async (req, res) => {
     .lte('expense_date', to)
     .order('expense_date', { ascending: false });
   if (error) {
-    if (isMissingDailyExpenses(error)) return res.json({ items: [], table_missing: true });
+    if (isMissingTableError(error)) return res.json({ items: [], table_missing: true });
     console.error('[finance] GET /daily-expenses error:', error);
     return res.status(500).json({ error: 'Error leyendo pauta' });
   }
@@ -283,7 +292,7 @@ router.put('/daily-expenses/:date', async (req, res) => {
     .select('id, expense_date, category, amount, notes, updated_at')
     .single();
   if (error) {
-    if (isMissingDailyExpenses(error)) {
+    if (isMissingTableError(error)) {
       return res.status(503).json({ error: 'Falta aplicar la migración daily_expenses en la base' });
     }
     console.error('[finance] PUT /daily-expenses error:', error);
@@ -312,6 +321,72 @@ router.delete('/daily-expenses/:date', async (req, res) => {
     return res.status(500).json({ error: 'Error borrando pauta' });
   }
   return res.json({ ok: true });
+});
+
+// ── Cargo mensual sobre facturación (switch on/off + %) ──────────────────────
+// monthly_revenue_charges: por mes, un % sobre lo facturado que aplica sólo si
+// está ON. Ausencia de fila = OFF (default 7% en la UI al prender).
+
+const DEFAULT_REVENUE_CHARGE_PCT = 7;
+
+router.get('/monthly-charges/:month', async (req, res) => {
+  const user = await assertAdmin(req, res);
+  if (!user) return;
+  if (!supabase) return res.status(503).json({ error: 'Base de datos no configurada' });
+
+  const month = String(req.params.month || '').trim();
+  if (!isValidMonthStr(month)) return res.status(400).json({ error: 'month debe ser YYYY-MM' });
+
+  const { data, error } = await supabase
+    .from('monthly_revenue_charges')
+    .select('month, enabled, percentage')
+    .eq('month', monthToFirstDay(month))
+    .maybeSingle();
+  if (error) {
+    if (isMissingTableError(error)) {
+      return res.json({ month, enabled: false, percentage: DEFAULT_REVENUE_CHARGE_PCT, exists: false, table_missing: true });
+    }
+    console.error('[finance] GET /monthly-charges error:', error);
+    return res.status(500).json({ error: 'Error leyendo cargo mensual' });
+  }
+  // Sin fila → OFF con el % por defecto (lo que verá el switch al abrir el mes).
+  if (!data) return res.json({ month, enabled: false, percentage: DEFAULT_REVENUE_CHARGE_PCT, exists: false });
+  return res.json({ month, enabled: data.enabled, percentage: toNumber(data.percentage), exists: true });
+});
+
+router.put('/monthly-charges/:month', async (req, res) => {
+  const user = await assertAdmin(req, res);
+  if (!user) return;
+  if (!supabase) return res.status(503).json({ error: 'Base de datos no configurada' });
+
+  const month = String(req.params.month || '').trim();
+  if (!isValidMonthStr(month)) return res.status(400).json({ error: 'month debe ser YYYY-MM' });
+
+  const enabled = req.body?.enabled === true || req.body?.enabled === 'true';
+  const pctRaw = req.body?.percentage;
+  const percentage = pctRaw === undefined || pctRaw === null || pctRaw === ''
+    ? DEFAULT_REVENUE_CHARGE_PCT
+    : Number(pctRaw);
+  if (!Number.isFinite(percentage) || percentage < 0 || percentage > 100) {
+    return res.status(400).json({ error: 'percentage inválido (0 a 100)' });
+  }
+
+  const { data, error } = await supabase
+    .from('monthly_revenue_charges')
+    .upsert(
+      { month: monthToFirstDay(month), enabled, percentage, updated_at: new Date().toISOString(), created_by: user.id },
+      { onConflict: 'month' }
+    )
+    .select('month, enabled, percentage')
+    .single();
+  if (error) {
+    if (isMissingTableError(error)) {
+      return res.status(503).json({ error: 'Falta aplicar la migración monthly_revenue_charges en la base' });
+    }
+    console.error('[finance] PUT /monthly-charges error:', error);
+    return res.status(500).json({ error: 'Error guardando cargo mensual' });
+  }
+  return res.json({ month, enabled: data.enabled, percentage: toNumber(data.percentage), exists: true });
 });
 
 // ── Reporte mensual / por rango ─────────────────────────────────────────────
@@ -566,6 +641,69 @@ router.get('/report', async (req, res) => {
     dias_sin_pauta.reverse(); // más reciente primero
   }
 
+  // ── Cargo mensual sobre facturación (switch on/off + % por mes) ──
+  // Por cada mes del rango: si está ON, se descuenta percentage% de lo facturado
+  // (ingresos brutos) de ese mes. Tolerante a que la tabla no exista aún.
+  const firstMonthStart = `${from.slice(0, 7)}-01`;
+  const lastMonthStart = `${to.slice(0, 7)}-01`;
+  let chargeSettingsPresente = true;
+  const chargeByMonth = new Map(); // 'YYYY-MM' → { enabled, percentage }
+  {
+    const { data: cr, error: cErr } = await supabase
+      .from('monthly_revenue_charges')
+      .select('month, enabled, percentage')
+      .gte('month', firstMonthStart)
+      .lte('month', lastMonthStart);
+    if (cErr) {
+      chargeSettingsPresente = false;
+      console.warn('[finance] /report monthly_revenue_charges no disponible:', cErr.message);
+    } else {
+      for (const row of cr || []) {
+        chargeByMonth.set(String(row.month).slice(0, 7), {
+          enabled: row.enabled === true,
+          percentage: toNumber(row.percentage),
+        });
+      }
+    }
+  }
+  // Ingresos brutos por mes (base del cargo), agrupando por mes ART del pago.
+  const ingresosByMonth = new Map();
+  for (const o of orders) {
+    const mm = artYmd(o.mp_paid_at || o.nave_paid_at).slice(0, 7);
+    ingresosByMonth.set(mm, (ingresosByMonth.get(mm) || 0) + toNumber(o.total));
+  }
+  // Factor de cargo por mes (pct/100 si está ON, 0 si OFF) — reutilizado en la
+  // serie diaria para prorratear sin re-mirar la config.
+  const chargeFactorForMonth = (mm) => {
+    const cfg = chargeByMonth.get(mm);
+    return cfg && cfg.enabled ? cfg.percentage / 100 : 0;
+  };
+  const cargo_facturacion = [...ingresosByMonth.entries()].reduce(
+    (s, [mm, ing]) => s + ing * chargeFactorForMonth(mm),
+    0
+  );
+  // Detalle por mes del rango (incluye meses sin fila, como OFF al 7% default),
+  // para que el switch de la UI tenga estado en cualquier vista.
+  const cargo_por_mes = [];
+  for (let mCursor = firstMonthStart; mCursor <= lastMonthStart; ) {
+    const mm = mCursor.slice(0, 7);
+    const cfg = chargeByMonth.get(mm);
+    const enabled = cfg ? cfg.enabled : false;
+    const percentage = cfg ? cfg.percentage : DEFAULT_REVENUE_CHARGE_PCT;
+    const ingresos = ingresosByMonth.get(mm) || 0;
+    cargo_por_mes.push({
+      month: mm,
+      enabled,
+      percentage: Number(percentage.toFixed(2)),
+      ingresos: Number(ingresos.toFixed(2)),
+      cargo: Number((enabled ? ingresos * (percentage / 100) : 0).toFixed(2)),
+    });
+    // Avanzar un mes (aritmética de calendario sobre el día 1).
+    const y = Number(mm.slice(0, 4));
+    const mo = Number(mm.slice(5, 7));
+    mCursor = mo === 12 ? `${y + 1}-01-01` : `${y}-${String(mo + 1).padStart(2, '0')}-01`;
+  }
+
   // ── Cálculos agregados ──
   const ingresos_brutos = orders.reduce((s, o) => s + toNumber(o.total), 0);
 
@@ -687,7 +825,7 @@ router.get('/report', async (req, res) => {
   });
   const perdidas_devoluciones = devoluciones_detalle.reduce((s, d) => s + d.perdida, 0);
 
-  const ganancia_neta = ganancia_operativa - gastos_fijos - pauta - perdidas_devoluciones;
+  const ganancia_neta = ganancia_operativa - gastos_fijos - pauta - cargo_facturacion - perdidas_devoluciones;
   const margen_pct = ingresos_brutos > 0 ? (ganancia_neta / ingresos_brutos) * 100 : 0;
 
   // ── Breakdowns ──
@@ -744,7 +882,7 @@ router.get('/report', async (req, res) => {
       dayMap.set(d, {
         fecha: d, ordenes: 0, ingresos_brutos: 0, neto: 0,
         envio: 0, envio_cobrado: 0, quebranto_envio_gratis: 0,
-        cogs: 0, gastos_fijos: 0, pauta: 0, perdidas_devoluciones: 0,
+        cogs: 0, gastos_fijos: 0, pauta: 0, cargo_facturacion: 0, perdidas_devoluciones: 0,
       });
     }
 
@@ -775,10 +913,12 @@ router.get('/report', async (req, res) => {
       d.pauta = pautaByDate.get(d.fecha) || 0;
       // Días sin pauta cargada quedan marcados para pintar el heatmap distinto.
       d.pauta_sin_cargar = pautaTablePresente && d.fecha <= hoyArtReport && !pautaByDate.has(d.fecha);
-      const ganancia = d.neto - d.envio - d.cogs - d.gastos_fijos - d.pauta - d.perdidas_devoluciones;
+      // Cargo sobre facturación: % del mes de ESTE día aplicado a su facturado.
+      d.cargo_facturacion = d.ingresos_brutos * chargeFactorForMonth(d.fecha.slice(0, 7));
+      const ganancia = d.neto - d.envio - d.cogs - d.gastos_fijos - d.pauta - d.cargo_facturacion - d.perdidas_devoluciones;
       for (const k of [
         'ingresos_brutos', 'neto', 'envio', 'envio_cobrado', 'quebranto_envio_gratis',
-        'cogs', 'gastos_fijos', 'pauta', 'perdidas_devoluciones',
+        'cogs', 'gastos_fijos', 'pauta', 'cargo_facturacion', 'perdidas_devoluciones',
       ]) {
         d[k] = Number(d[k].toFixed(2));
       }
@@ -805,6 +945,7 @@ router.get('/report', async (req, res) => {
       ganancia_operativa: Number(ganancia_operativa.toFixed(2)),
       gastos_fijos: Number(gastos_fijos.toFixed(2)),
       pauta: Number(pauta.toFixed(2)),
+      cargo_facturacion: Number(cargo_facturacion.toFixed(2)),
       perdidas_devoluciones: Number(perdidas_devoluciones.toFixed(2)),
       ganancia_neta: Number(ganancia_neta.toFixed(2)),
       margen_pct: Number(margen_pct.toFixed(2)),
@@ -821,6 +962,8 @@ router.get('/report', async (req, res) => {
       dias_sin_pauta,
       pauta_dias_sin_cargar: dias_sin_pauta.length,
       pauta_no_configurada: !pautaTablePresente,
+      // Cargo mensual: flag de que la tabla todavía no existe (migración pendiente).
+      cargo_facturacion_no_configurado: !chargeSettingsPresente,
     },
     detalle: {
       ordenes: orders.length,
@@ -829,6 +972,8 @@ router.get('/report', async (req, res) => {
       unidades_por_sku,
       por_canal,
       por_metodo_pago,
+      // Estado del cargo por cada mes del rango (para el switch de la UI).
+      cargo_por_mes,
     },
   });
 });
