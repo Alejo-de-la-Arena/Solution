@@ -106,13 +106,35 @@ export default function CalculadoraGastos() {
     });
   };
 
-  const onDelete = async (id) => {
-    if (!window.confirm('Cerrar este gasto fijo (effective_until = hoy)?')) return;
+  // Cierre suave: deja de aplicar desde hoy pero SIGUE impactando los meses
+  // donde ya estuvo vigente. Para gastos reales que terminaron.
+  const onClose = async (exp) => {
+    if (!window.confirm(
+      `¿Cerrar "${exp.name}"?\n\n` +
+      `Deja de aplicar desde hoy, pero SIGUE impactando los reportes de los ` +
+      `meses donde ya estuvo vigente (es un gasto real que terminó).`
+    )) return;
     try {
-      await deleteFixedExpense(id);
+      await deleteFixedExpense(exp.id);
       await refresh();
     } catch (err) {
       setError(err.message || 'Error cerrando gasto');
+    }
+  };
+
+  // Borrado real: saca el gasto de TODOS los períodos, histórico incluido.
+  // Para gastos de prueba o cargados por error.
+  const onPurge = async (exp) => {
+    if (!window.confirm(
+      `¿Eliminar "${exp.name}" definitivamente?\n\n` +
+      `Se borra de TODOS los períodos, incluido el histórico. Ideal para ` +
+      `gastos de prueba o cargados por error. No se puede deshacer.`
+    )) return;
+    try {
+      await deleteFixedExpense(exp.id, { purge: true });
+      await refresh();
+    } catch (err) {
+      setError(err.message || 'Error eliminando gasto');
     }
   };
 
@@ -270,25 +292,36 @@ export default function CalculadoraGastos() {
                   {exp.effective_from}
                   {exp.effective_until ? ` → ${exp.effective_until}` : ' →'}
                 </td>
-                <td className="py-3 flex gap-2">
-                  {!exp.effective_until && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => onEdit(exp)}
-                        className="text-xs uppercase tracking-widest border border-white/20 rounded px-3 py-1.5 text-white/80 hover:text-white hover:border-white/40 transition"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onDelete(exp.id)}
-                        className="text-xs uppercase tracking-widest border border-red-500/30 rounded px-3 py-1.5 text-red-300 hover:bg-red-500/10 transition"
-                      >
-                        Cerrar
-                      </button>
-                    </>
-                  )}
+                <td className="py-3">
+                  <div className="flex gap-2 justify-end flex-wrap">
+                    {!exp.effective_until && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => onEdit(exp)}
+                          className="text-xs uppercase tracking-widest border border-white/20 rounded px-3 py-1.5 text-white/80 hover:text-white hover:border-white/40 transition"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          title="Deja de aplicar desde hoy, pero sigue contando en los meses donde ya estuvo vigente"
+                          onClick={() => onClose(exp)}
+                          className="text-xs uppercase tracking-widest border border-white/20 rounded px-3 py-1.5 text-white/70 hover:text-white hover:border-white/40 transition"
+                        >
+                          Cerrar
+                        </button>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      title="Borra el gasto de TODOS los períodos, incluido el histórico (para pruebas o errores)"
+                      onClick={() => onPurge(exp)}
+                      className="text-xs uppercase tracking-widest border border-red-500/30 rounded px-3 py-1.5 text-red-300 hover:bg-red-500/10 transition"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

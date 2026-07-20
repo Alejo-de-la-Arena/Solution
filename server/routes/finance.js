@@ -217,6 +217,23 @@ router.delete('/expenses/:id', async (req, res) => {
   const id = String(req.params.id || '').trim();
   if (!id) return res.status(400).json({ error: 'id requerido' });
 
+  const purge = ['true', '1'].includes(String(req.query.purge || '').toLowerCase());
+
+  if (purge) {
+    // Borrado REAL: saca el gasto de TODOS los períodos, histórico incluido.
+    // Para gastos de prueba o cargados por error. Funciona esté vigente o ya
+    // cerrado (no filtra por effective_until).
+    const { error } = await supabase.from('fixed_expenses').delete().eq('id', id);
+    if (error) {
+      console.error('[finance] DELETE(purge) /expenses error:', error);
+      return res.status(500).json({ error: 'Error eliminando gasto' });
+    }
+    return res.json({ ok: true, purged: true });
+  }
+
+  // Cierre suave: deja de aplicar desde hoy, pero SIGUE impactando los reportes
+  // de los meses donde ya estuvo vigente (es un gasto real que terminó). Sólo
+  // aplica sobre una fila vigente.
   const { error } = await supabase
     .from('fixed_expenses')
     .update({ effective_until: todayIsoDate() })
@@ -226,7 +243,7 @@ router.delete('/expenses/:id', async (req, res) => {
     console.error('[finance] DELETE /expenses error:', error);
     return res.status(500).json({ error: 'Error cerrando gasto' });
   }
-  return res.json({ ok: true });
+  return res.json({ ok: true, purged: false });
 });
 
 // ── Pauta publicitaria (gasto diario variable) ──────────────────────────────
