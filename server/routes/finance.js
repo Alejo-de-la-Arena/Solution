@@ -58,6 +58,33 @@ function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Un `.in('col', ids)` con cientos de UUIDs arma una URL enorme: PostgREST la
+// manda como header y Supabase la rechaza con HeadersOverflowError apenas pasa
+// ~16KB (≈430 UUIDs). Partimos la lista en lotes, corremos una request por lote
+// (en paralelo) y concatenamos. Mismo resultado que un solo `.in`, sin migración.
+const IN_CHUNK_SIZE = 100;
+
+function chunk(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+async function selectInChunks(table, columns, column, ids) {
+  if (!ids || ids.length === 0) return { data: [], error: null };
+  const results = await Promise.all(
+    chunk(ids, IN_CHUNK_SIZE).map((part) =>
+      supabase.from(table).select(columns).in(column, part)
+    )
+  );
+  const rows = [];
+  for (const { data, error } of results) {
+    if (error) return { data: null, error };
+    if (data) rows.push(...data);
+  }
+  return { data: rows, error: null };
+}
+
 // ── Costos por producto ─────────────────────────────────────────────────────
 
 router.get('/costs', async (req, res) => {
@@ -575,14 +602,8 @@ router.get('/report', async (req, res) => {
   let financials = [];
   if (orderIds.length > 0) {
     const [{ data: itemsRows, error: itemsErr }, { data: finRows, error: finErr }] = await Promise.all([
-      supabase
-        .from('order_items')
-        .select('order_id, product_id, quantity, unit_price, cogs_unit')
-        .in('order_id', orderIds),
-      supabase
-        .from('order_financials')
-        .select('order_id, gross_amount, payment_fee, payment_taxes, net_received, provider')
-        .in('order_id', orderIds),
+      selectInChunks('order_items', 'order_id, product_id, quantity, unit_price, cogs_unit', 'order_id', orderIds),
+      selectInChunks('order_financials', 'order_id, gross_amount, payment_fee, payment_taxes, net_received, provider', 'order_id', orderIds),
     ]);
     if (itemsErr || finErr) {
       console.error('[finance] /report items/financials error:', itemsErr || finErr);
@@ -596,10 +617,7 @@ router.get('/report', async (req, res) => {
   const productIds = [...new Set(items.map((i) => i.product_id).filter(Boolean))];
   let products = [];
   if (productIds.length > 0) {
-    const { data: prodRows } = await supabase
-      .from('products')
-      .select('id, name, slug')
-      .in('id', productIds);
+    const { data: prodRows } = await selectInChunks('products', 'id, name, slug', 'id', productIds);
     products = prodRows || [];
   }
   const productById = Object.fromEntries(products.map((p) => [p.id, p]));
@@ -811,8 +829,8 @@ router.get('/report', async (req, res) => {
   let refundFin = [];
   if (refundIds.length > 0) {
     const [{ data: ri }, { data: rf }] = await Promise.all([
-      supabase.from('order_items').select('order_id, quantity, cogs_unit').in('order_id', refundIds),
-      supabase.from('order_financials').select('order_id, payment_fee').in('order_id', refundIds),
+      selectInChunks('order_items', 'order_id, quantity, cogs_unit', 'order_id', refundIds),
+      selectInChunks('order_financials', 'order_id, payment_fee', 'order_id', refundIds),
     ]);
     refundItems = ri || [];
     refundFin = rf || [];
