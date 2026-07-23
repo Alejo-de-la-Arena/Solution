@@ -76,7 +76,7 @@ const SLIDER_ROWS_SLUGS = [
 // Sin atar a un perfume específico (la mayoría de reseñas son de Red Desire).
 // Formato reel 9:16. Cada video carga sólo al darle play (preload="none"); el
 // poster se muestra como imagen estática hasta entonces.
-const VIDEO_BASE   = 'https://pub-83d3712d47a849629a299c4d9f15a5b6.r2.dev';
+const VIDEO_BASE   = import.meta.env.VITE_R2_BASE_URL || 'https://pub-83d3712d47a849629a299c4d9f15a5b6.r2.dev';
 const POSTER_BASE  = 'https://tpyzgrcqregtzmuirfny.supabase.co/storage/v1/object/public/solution-products/video';
 const VIDEO_REVIEWS = [
   { id: 'v1', url: `${VIDEO_BASE}/red-desire-1.mp4`, poster: `${POSTER_BASE}/thumbnails/red-desire-1-thumbnail.jpg`, accent: '#FF2D55' },
