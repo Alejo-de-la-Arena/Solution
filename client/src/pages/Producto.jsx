@@ -462,12 +462,14 @@ export default function Producto() {
                     <motion.video
                       key={activeItem.path}
                       src={activeItem.path.startsWith('http') ? activeItem.path : mediaUrl(activeItem.path)}
+                      poster={activeItem.poster ? (activeItem.poster.startsWith('http') ? activeItem.poster : mediaUrl(activeItem.poster)) : undefined}
                       style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }}
                       initial={{ opacity: 0, scale: 1.04, filter: 'blur(8px)' }}
                       animate={{ opacity: 1, scale: 1.02, filter: 'blur(0px)' }}
                       exit={{ opacity: 0, scale: 0.98, filter: 'blur(6px)' }}
                       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                       controls loop playsInline
+                      preload="none"
                     />
                   ) : activeItem && (
                     <motion.img
@@ -522,7 +524,13 @@ export default function Producto() {
                     }}
                   >
                     {item.kind === 'video'
-                      ? <video src={src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} playsInline preload="metadata" />
+                      ? <video
+                          src={src}
+                          poster={item.poster ? (item.poster.startsWith('http') ? item.poster : mediaUrl(item.poster)) : undefined}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          playsInline
+                          preload="none"
+                        />
                       : <img src={src} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     }
                   </button>

@@ -76,12 +76,13 @@ const SLIDER_ROWS_SLUGS = [
 // Sin atar a un perfume específico (la mayoría de reseñas son de Red Desire).
 // Formato reel 9:16. Cada video carga sólo al darle play (preload="none"); el
 // poster se muestra como imagen estática hasta entonces.
-const VIDEO_BASE   = 'https://tpyzgrcqregtzmuirfny.supabase.co/storage/v1/object/public/solution-products/video';
+const VIDEO_BASE   = 'https://pub-83d3712d47a849629a299c4d9f15a5b6.r2.dev';
+const POSTER_BASE  = 'https://tpyzgrcqregtzmuirfny.supabase.co/storage/v1/object/public/solution-products/video';
 const VIDEO_REVIEWS = [
-  { id: 'v1', url: `${VIDEO_BASE}/red-desire-1.mp4`, poster: `${VIDEO_BASE}/thumbnails/red-desire-1-thumbnail.jpg`, accent: '#FF2D55' },
-  { id: 'v2', url: `${VIDEO_BASE}/red-desire-2.mp4`, poster: `${VIDEO_BASE}/thumbnails/red-desire-2-thumbnail.jpg`, accent: '#00e5ff' },
-  { id: 'v3', url: `${VIDEO_BASE}/red-desire-3.mp4`, poster: `${VIDEO_BASE}/thumbnails/red-desire-3-thumbnail.jpg`, accent: '#e6a72f' },
-  { id: 'v4', url: `${VIDEO_BASE}/red-desire-4.mp4`, poster: `${VIDEO_BASE}/thumbnails/red-desire-4-thumbnail.jpg`, accent: '#378add' },
+  { id: 'v1', url: `${VIDEO_BASE}/red-desire-1.mp4`, poster: `${POSTER_BASE}/thumbnails/red-desire-1-thumbnail.jpg`, accent: '#FF2D55' },
+  { id: 'v2', url: `${VIDEO_BASE}/red-desire-2.mp4`, poster: `${POSTER_BASE}/thumbnails/red-desire-2-thumbnail.jpg`, accent: '#00e5ff' },
+  { id: 'v3', url: `${VIDEO_BASE}/red-desire-3.mp4`, poster: `${POSTER_BASE}/thumbnails/red-desire-3-thumbnail.jpg`, accent: '#e6a72f' },
+  { id: 'v4', url: `${VIDEO_BASE}/red-desire-4.mp4`, poster: `${POSTER_BASE}/thumbnails/red-desire-4-thumbnail.jpg`, accent: '#378add' },
 ];
 
 // ─── ¿Cuál es tu momento? — filas con íconos ────────────────────────────────────

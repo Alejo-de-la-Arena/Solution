@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useReveal } from '../../../hooks/useReveal';
 
-const VSL_VIDEO_URL = 'https://tpyzgrcqregtzmuirfny.supabase.co/storage/v1/object/public/solution-products/video/video-home-solution.mp4';
+const VSL_VIDEO_URL = 'https://pub-83d3712d47a849629a299c4d9f15a5b6.r2.dev/video-home-solution.mp4';
 
 export default function HeroSection() {
   const [videoReady, setVideoReady] = useState(false);
