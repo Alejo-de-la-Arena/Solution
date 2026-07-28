@@ -11,7 +11,6 @@ import { getCrossedPrice, CROSSED_PRICES } from '../lib/crossedPrices';
 import { getComboSettings, normalizeComboSettings, resolveComboImage } from '../services/combo';
 import { getTiendaSettings, normalizeTiendaSettings } from '../services/tiendaSettings';
 import TestimonialsSection from '../components/home/TestimonialsSection';
-import banderaArgentina from '../assets/bandera-argentina.svg';
 
 // ─── Static per-slug data ──────────────────────────────────────────────────────
 const SLUG_META = {
@@ -185,18 +184,6 @@ function TiendaHero({ settings }) {
 
   return (
     <section style={{ position: 'relative', overflow: 'hidden', borderBottom: '0.5px solid var(--sol-line)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)', background: 'var(--sol-bg)' }}>
-
-      {/* Estrellas mundialistas — triángulo decorativo de fondo */}
-      <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        {/* ★ arriba-centro */}
-        <div style={{ position: 'absolute', left: 0, right: 0, top: '12%', textAlign: 'center' }}>
-          <span style={{ display: 'inline-block', fontSize: 'clamp(36px, 5.5vw, 58px)', color: MUNDIAL_GOLD, opacity: 0.13, lineHeight: 1, filter: 'drop-shadow(0 0 9px rgba(212,175,55,0.50))' }}>★</span>
-        </div>
-        {/* ★ abajo-izquierda */}
-        <span style={{ position: 'absolute', left: '8%', bottom: '20%', fontSize: 'clamp(26px, 4vw, 44px)', color: MUNDIAL_GOLD, opacity: 0.11, lineHeight: 1, filter: 'drop-shadow(0 0 6px rgba(212,175,55,0.40))' }}>★</span>
-        {/* ★ abajo-derecha */}
-        <span style={{ position: 'absolute', right: '8%', bottom: '20%', fontSize: 'clamp(26px, 4vw, 44px)', color: MUNDIAL_GOLD, opacity: 0.11, lineHeight: 1, filter: 'drop-shadow(0 0 6px rgba(212,175,55,0.40))' }}>★</span>
-      </div>
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 var(--sol-section-px)', position: 'relative', zIndex: 1 }}>
 
@@ -692,29 +679,6 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
           {/* Card — único bloque: título, slider, perfil, selectores, precio y CTA */}
           <div className="sol-combo-card" style={{ position: 'relative', borderRadius: '16px', margin: '0 auto', width: '100%', padding: '20px 16px', textAlign: 'center', color: '#f0ece6', background: 'linear-gradient(160deg, #050c18 0%, #07111f 100%)', border: '0.5px solid rgba(212,175,55,0.28)', borderTop: '1.5px solid rgba(212,175,55,0.45)', boxShadow: '0 8px 40px rgba(0,0,0,0.38), 0 2px 0 rgba(212,175,55,0.12), 0 0 48px rgba(117,170,219,0.09)' }}>
 
-            {/* Badge mundialista */}
-            <motion.div
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 240, damping: 18, delay: 0.3 }}
-              style={{
-                position: 'absolute', top: 12, right: 12,
-                display: 'inline-flex', alignItems: 'center', gap: '7px',
-                background: 'linear-gradient(135deg, #0d2040 0%, #08172e 100%)',
-                border: `0.5px solid rgba(117,170,219,0.35)`,
-                borderRadius: '9999px',
-                padding: '5px 11px 5px 8px',
-                boxShadow: '0 4px 14px rgba(117,170,219,0.2)',
-                zIndex: 2,
-              }}
-            >
-              <img src={banderaArgentina} alt="" aria-hidden style={{ width: 22, height: 14, display: 'inline-block', verticalAlign: 'middle', flexShrink: 0, objectFit: 'cover', borderRadius: 1 }} />
-              <span className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700, color: MUNDIAL_CELESTE, textTransform: 'uppercase', lineHeight: 1 }}>
-                Edición Mundial
-              </span>
-              <span aria-hidden style={{ fontSize: '10px', lineHeight: 1, color: MUNDIAL_GOLD }}>★</span>
-            </motion.div>
-
             {/* 1. Título */}
             <p className="font-jakarta" style={{ fontWeight: 700, fontSize: 'clamp(16px, 3vw, 18px)', letterSpacing: '0.06em', lineHeight: 1.6, textAlign: 'center', color: '#f0ece6', margin: '36px 0 0' }}>
               LLEVÁ 2 PERFUMES SOLUTION<br />
@@ -826,10 +790,6 @@ function ComboSelect({ label, value, onChange, options, optionLabel }) {
     </div>
   );
 }
-
-// ─── Mundial 2026 ──────────────────────────────────────────────────────────────
-const MUNDIAL_CELESTE = '#75AADB';
-const MUNDIAL_GOLD    = '#D4AF37';
 
 // ─── Combo collection showcase ─────────────────────────────────────────────────
 function ComboCollectionShowcase({ settings, compact = false, maxWidth = 540 }) {
