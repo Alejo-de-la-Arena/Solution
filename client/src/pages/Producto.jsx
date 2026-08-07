@@ -11,7 +11,7 @@ import { getCrossedPrice } from '../lib/crossedPrices';
 // ─── Per-slug static content (copy, badges, reference, testimonials) ──────────
 const SLUG_DATA = {
   'red-desire': {
-    code: '01',
+    code: '03',
     subtitle: 'Pasión y seducción',
     accent: '#c0392b',
     accentGlow: 'rgba(192,57,43,0.25)',
@@ -34,14 +34,14 @@ const SLUG_DATA = {
     referenceDesc: 'Va por la misma línea olfativa — calidez especiada con fondo dulce. Ideal para otoño e invierno. Intenso y memorable para cerrar el día.',
     notes: { top: ['Castaña', 'Azúcar'], heart: ['Lavanda', 'Salvia'], base: ['Vainilla', 'Humo'] },
     family: ['Oriental', 'Dulce', 'Especiado', 'Amaderado', 'Cálido'],
-    stock: 'Más vendido · Stock limitado',
+    stock: 'En stock · Envío inmediato',
     testimonials: [
       { stars: 5, text: 'Si te gustan los perfumes dulces recomiendo el Red Desire, tiene un parecido al Stronger With You.', name: 'Juan Pérez', city: 'Buenos Aires', initial: 'J' },
       { stars: 5, text: 'Probé el Red Desire y el Black Code — los dos son un 10. Antes vendían equivalencias y ya eran buenos, ahora con perfume propio subieron el nivel.', name: 'Patricia Montone', city: 'Mar del Plata', initial: 'P' },
     ],
   },
   'black-code': {
-    code: '02',
+    code: '01',
     subtitle: 'Presencia y carácter masculino',
     accent: '#9a8060',
     accentGlow: 'rgba(154,128,96,0.22)',
@@ -64,14 +64,14 @@ const SLUG_DATA = {
     referenceDesc: 'Va por la misma línea olfativa — elegancia frutal con base amaderada. Ideal para otoño e invierno, funciona muy bien en primavera. Presencia que se recuerda.',
     notes: { top: ['Bergamota', 'Manzana', 'Grosellas', 'Lima', 'P. Rosa'], heart: ['Piña', 'Pachuli', 'Jazmín'], base: ['Musgo', 'Abedul', 'Cedro', 'Almizcles'] },
     family: ['Aromático', 'Amaderado', 'Afrutado', 'Cítrico', 'Elegante'],
-    stock: 'En stock · Envío inmediato',
+    stock: 'Más vendido · Stock limitado',
     testimonials: [
       { stars: 5, text: 'Compré el Black Code y cumple con la descripción, super elegante para usar en eventos.', name: 'Ezequiel Zotto', city: 'Mendoza', initial: 'E' },
       { stars: 5, text: 'Compré el combo de 2 para regalarle a mi hijo, están bárbaros, recomiendo.', name: 'Patricia Montone', city: 'Mar del Plata', initial: 'P' },
     ],
   },
   'yellow-bloom': {
-    code: '03',
+    code: '02',
     subtitle: 'Una explosión frutal que destaca',
     accent: '#ef9f27',
     accentGlow: 'rgba(239,159,39,0.22)',

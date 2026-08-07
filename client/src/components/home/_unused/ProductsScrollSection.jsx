@@ -20,7 +20,7 @@ const PRODUCT_META = {
   'white-ice':    { momento: 'Gym',     dotColor: '#0dd3b8', btl1: '#1a2624', btl2: '#080d0c' },
 };
 
-const BADGE_SLUG = 'red-desire';
+const BADGE_SLUG = 'black-code';
 const CARD_WIDTH = 260;   // mobile base
 const CARD_GAP   = 14;
 
