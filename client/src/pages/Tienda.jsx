@@ -20,7 +20,7 @@ const SLUG_META = {
     momento:    'Noche',
     dotColor:   '#c0392b',
     notes:      ['Vainilla', 'Cardamomo', 'Ámbar'],
-    featured:   true,
+    featured:   false,
   },
   'black-code': {
     subtitle:   'Presencia y carácter',
@@ -28,7 +28,7 @@ const SLUG_META = {
     momento:    'Salida',
     dotColor:   '#888888',
     notes:      ['Piña ahumada', 'Cuero', 'Madera'],
-    featured:   false,
+    featured:   true,
   },
   'deep-blue': {
     subtitle:   'Elegancia clásica',
@@ -59,16 +59,16 @@ const SLUG_META = {
 // Número de colección por slug (orden de la maqueta)
 const CARD_NUM = {
   'black-code':   '01',
-  'red-desire':   '02',
-  'yellow-bloom': '03',
+  'yellow-bloom': '02',
+  'red-desire':   '03',
   'deep-blue':    '04',
   'white-ice':    '05',
 };
 
 // Slugs de cada fila del slider (labels vienen de tienda_settings)
 const SLIDER_ROWS_SLUGS = [
-  ['red-desire', 'black-code'],
-  ['deep-blue', 'yellow-bloom', 'white-ice'],
+  ['black-code', 'yellow-bloom', 'red-desire'],
+  ['deep-blue', 'white-ice'],
 ];
 
 // ─── Videos de reseñas ──────────────────────────────────────────────────────────
@@ -287,7 +287,7 @@ function SliderCard({ perfume, index }) {
   const slug       = (perfume.slug || '').trim().toLowerCase();
   const meta       = SLUG_META[slug] || {};
   const accent     = perfume.accent_color || ACCENT_COLORS[index] || 'var(--sol-green)';
-  const isFeatured = meta.featured || slug === 'red-desire';
+  const isFeatured = Boolean(meta.featured);
   const price      = perfume.price ? `$${Number(perfume.price).toLocaleString('es-AR')}` : '';
   const crossed    = getCrossedPrice(slug);
   const num        = CARD_NUM[slug] || String(index + 1).padStart(2, '0');
