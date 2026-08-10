@@ -66,6 +66,7 @@ export function productToPerfume(p) {
     tagline: p.tagline || '',
     price: Number(p.price_retail) || 0,
     price_wholesale: Number(p.price_wholesale) || 0,
+    isOutOfStock: !!p.is_out_of_stock,
     image: fallbackImage,
     images,
     videos,

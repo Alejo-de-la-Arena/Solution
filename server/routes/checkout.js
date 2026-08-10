@@ -5,6 +5,7 @@ const { applyAdminTestMode } = require('../lib/testMode');
 const { sendOrderEmail } = require('../services/email');
 const { attachCogsToOrderItemRows } = require('../lib/orderItems');
 const { extractRealShippingCost } = require('../lib/shippingCost');
+const { assertItemsInStock } = require('../lib/stock');
 
 /**
  * POST /api/checkout
@@ -64,6 +65,11 @@ router.post('/', async (req, res) => {
 
   if (cleanItems.length === 0) {
     return res.status(400).json({ error: 'El carrito está vacío' });
+  }
+
+  const stockCheck = await assertItemsInStock(cleanItems);
+  if (!stockCheck.ok) {
+    return res.status(409).json({ error: stockCheck.error });
   }
 
   const shippingInput = shipping_cost != null ? Number(shipping_cost) : 0;

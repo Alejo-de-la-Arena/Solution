@@ -316,6 +316,11 @@ function SliderCard({ perfume, index }) {
             Más vendido
           </span>
         )}
+        {perfume.isOutOfStock && (
+          <span className="font-jakarta" style={{ position: 'absolute', top: 10, right: 10, zIndex: 2, fontSize: '8px', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', background: '#1a1a1a', color: '#fff', padding: '4px 8px' }}>
+            Sin stock
+          </span>
+        )}
         <span className="font-jakarta" style={{ position: 'absolute', bottom: 8, right: 10, zIndex: 2, fontSize: '9px', letterSpacing: '0.1em', color: 'rgba(244,241,236,0.25)' }}>
           N°/{num}
         </span>
@@ -391,20 +396,24 @@ function SliderCard({ perfume, index }) {
           <button
             type="button"
             onClick={() => addToCart(perfume)}
+            disabled={perfume.isOutOfStock}
             className="font-jakarta"
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
               padding: '12px', background: accent, color: '#000',
               border: 'none', fontSize: '10px', fontWeight: 700, letterSpacing: '0.18em',
-              textTransform: 'uppercase', cursor: 'pointer', transition: 'opacity 0.3s',
+              textTransform: 'uppercase', cursor: perfume.isOutOfStock ? 'not-allowed' : 'pointer', transition: 'opacity 0.3s',
+              opacity: perfume.isOutOfStock ? 0.5 : 1,
             }}
-            onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+            onMouseEnter={e => { if (!perfume.isOutOfStock) e.currentTarget.style.opacity = '0.85'; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = perfume.isOutOfStock ? '0.5' : '1'; }}
           >
-            <svg style={{ width: 13, height: 13, stroke: 'currentColor', fill: 'none', strokeWidth: 1.6 }} viewBox="0 0 24 24" aria-hidden>
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Agregar al carrito
+            {!perfume.isOutOfStock && (
+              <svg style={{ width: 13, height: 13, stroke: 'currentColor', fill: 'none', strokeWidth: 1.6 }} viewBox="0 0 24 24" aria-hidden>
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            )}
+            {perfume.isOutOfStock ? 'Sin stock' : 'Agregar al carrito'}
           </button>
         </div>
       </div>
@@ -733,17 +742,17 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
             <button
               type="button"
               onClick={handleAddCombo}
-              disabled={!perfume1 || !perfume2}
+              disabled={!perfume1 || !perfume2 || perfume1.isOutOfStock || perfume2.isOutOfStock}
               className="font-jakarta"
               style={{
                 display: 'flex', width: '100%', marginTop: '12px', alignItems: 'center', justifyContent: 'center', gap: '10px',
                 padding: '14px', background: '#00e5ff', color: '#000',
                 border: 'none', fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em',
                 textTransform: 'uppercase', cursor: 'pointer', transition: 'opacity 0.3s',
-                opacity: (!perfume1 || !perfume2) ? 0.4 : 1,
+                opacity: (!perfume1 || !perfume2 || perfume1.isOutOfStock || perfume2.isOutOfStock) ? 0.4 : 1,
               }}
-              onMouseEnter={e => { if (perfume1 && perfume2) e.currentTarget.style.opacity = '0.85'; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = (!perfume1 || !perfume2) ? '0.4' : '1'; }}
+              onMouseEnter={e => { if (perfume1 && perfume2 && !perfume1.isOutOfStock && !perfume2.isOutOfStock) e.currentTarget.style.opacity = '0.85'; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = (!perfume1 || !perfume2 || perfume1.isOutOfStock || perfume2.isOutOfStock) ? '0.4' : '1'; }}
             >
               {cfg.cta_text} →
             </button>
@@ -778,7 +787,9 @@ function ComboSelect({ label, value, onChange, options, optionLabel }) {
           }}
         >
           {options.map((p) => (
-            <option key={p.id} value={p.id}>{optionLabel(p)}</option>
+            <option key={p.id} value={p.id} disabled={p.isOutOfStock}>
+              {optionLabel(p)}{p.isOutOfStock ? ' · Sin stock' : ''}
+            </option>
           ))}
         </select>
         <span aria-hidden style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#00e5ff', display: 'flex' }}>

@@ -8,6 +8,7 @@ const { applyAdminTestMode } = require('../lib/testMode');
 const { attachCogsToOrderItemRows } = require('../lib/orderItems');
 const { extractFinancialsFromMpPayment, upsertOrderFinancials } = require('../lib/orderFinancials');
 const { extractRealShippingCost } = require('../lib/shippingCost');
+const { assertItemsInStock } = require('../lib/stock');
 
 const router = express.Router();
 const MP_API = 'https://api.mercadopago.com';
@@ -571,6 +572,9 @@ router.post('/mercadopago/create-order', async (req, res) => {
     }));
   if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
 
+  const stockCheck = await assertItemsInStock(cleanItems);
+  if (!stockCheck.ok) return res.status(409).json({ error: stockCheck.error });
+
   const { items: tmItems, shipping, applied: isAdminTest } = await applyAdminTestMode(req, cleanItems, shippingCostNum, { tag: '[MP-create-order]' });
   const subtotal = tmItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
   const orderTotal = subtotal + shipping;
@@ -797,6 +801,9 @@ router.post('/mercadopago/create-preference', async (req, res) => {
     }));
   if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
 
+  const stockCheck = await assertItemsInStock(cleanItems);
+  if (!stockCheck.ok) return res.status(409).json({ error: stockCheck.error });
+
   const { items: tmItems, shipping, applied: isAdminTest } = await applyAdminTestMode(req, cleanItems, shippingCostNum, { tag: '[MP-create-preference]' });
   const subtotal = tmItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
   const orderTotal = subtotal + shipping;
@@ -1013,6 +1020,9 @@ router.post('/mercadopago/process-card-payment', async (req, res) => {
         combo_tag: (i.combo_tag || '').trim() || null,
       }));
     if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
+
+    const stockCheck = await assertItemsInStock(cleanItems);
+    if (!stockCheck.ok) return res.status(409).json({ error: stockCheck.error });
 
     const { items: tmItems, shipping: tmShipping, applied: isAdminTest } = await applyAdminTestMode(req, cleanItems, shippingCostNum, { tag: '[MP-process-card-payment]' });
     const subtotal = tmItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);

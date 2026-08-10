@@ -306,6 +306,7 @@ const PRODUCT_EDITABLE_FIELDS = {
   price_retail:      { type: 'number',  min: 0 },
   price_wholesale:   { type: 'number',  min: 0 },
   is_active:         { type: 'boolean' },
+  is_out_of_stock:   { type: 'boolean' },
 };
 
 function validateProductPatch(body) {

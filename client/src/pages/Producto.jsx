@@ -423,9 +423,15 @@ export default function Producto() {
             <span className="font-jakarta" style={{ position: 'absolute', top: 16, left: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', zIndex: 2 }}>
               N°/{data.code || '??'} · Solution
             </span>
-            <span className="font-jakarta" style={{ position: 'absolute', top: 16, right: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--accent)', zIndex: 2 }}>
-              ● En stock
-            </span>
+            {perfume.isOutOfStock ? (
+              <span className="font-jakarta" style={{ position: 'absolute', top: 16, right: 18, fontSize: '9px', fontWeight: 600, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#fff', background: '#1a1a1a', padding: '4px 8px', zIndex: 2 }}>
+                Sin stock
+              </span>
+            ) : (
+              <span className="font-jakarta" style={{ position: 'absolute', top: 16, right: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--accent)', zIndex: 2 }}>
+                ● En stock
+              </span>
+            )}
             <span className="font-jakarta" style={{ position: 'absolute', bottom: 16, left: 18, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--sol-muted)', zIndex: 2 }}>
               EDP · 60ML
             </span>
@@ -781,20 +787,22 @@ export default function Producto() {
             <button
               type="button"
               onClick={() => addToCart(perfume)}
+              disabled={perfume.isOutOfStock}
               className="font-jakarta"
               style={{
                 display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'center', gap: 14,
                 padding: '20px', background: 'var(--accent)', color: 'var(--sol-bg)',
                 border: 'none', fontSize: '12px', fontWeight: 700, letterSpacing: '0.18em',
-                textTransform: 'uppercase', cursor: 'pointer',
+                textTransform: 'uppercase', cursor: perfume.isOutOfStock ? 'not-allowed' : 'pointer',
                 position: 'relative', overflow: 'hidden',
                 transition: 'opacity 0.3s',
+                opacity: perfume.isOutOfStock ? 0.5 : 1,
               }}
-              onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
-              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+              onMouseEnter={e => { if (!perfume.isOutOfStock) e.currentTarget.style.opacity = '0.88'; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = perfume.isOutOfStock ? '0.5' : '1'; }}
             >
-              <span>Agregar al carrito</span>
-              <span style={{ display: 'inline-block', transition: 'transform 0.3s' }}>→</span>
+              <span>{perfume.isOutOfStock ? 'Sin stock' : 'Agregar al carrito'}</span>
+              {!perfume.isOutOfStock && <span style={{ display: 'inline-block', transition: 'transform 0.3s' }}>→</span>}
             </button>
           </div>
 
@@ -938,19 +946,21 @@ export default function Producto() {
           <button
             type="button"
             onClick={() => addToCart(perfume)}
+            disabled={perfume.isOutOfStock}
             className="font-jakarta"
             style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 14,
               padding: '20px 32px', background: 'var(--accent)', color: 'var(--sol-bg)',
               border: 'none', fontSize: '12px', fontWeight: 700, letterSpacing: '0.18em',
-              textTransform: 'uppercase', cursor: 'pointer', width: '100%', maxWidth: '420px',
+              textTransform: 'uppercase', cursor: perfume.isOutOfStock ? 'not-allowed' : 'pointer', width: '100%', maxWidth: '420px',
               transition: 'opacity 0.3s',
+              opacity: perfume.isOutOfStock ? 0.5 : 1,
             }}
-            onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
-            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+            onMouseEnter={e => { if (!perfume.isOutOfStock) e.currentTarget.style.opacity = '0.88'; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = perfume.isOutOfStock ? '0.5' : '1'; }}
           >
-            <span>Agregar al carrito · {price}</span>
-            <span>→</span>
+            <span>{perfume.isOutOfStock ? 'Sin stock' : `Agregar al carrito · ${price}`}</span>
+            {!perfume.isOutOfStock && <span>→</span>}
           </button>
         </div>
       </section>

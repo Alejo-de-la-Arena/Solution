@@ -6,6 +6,7 @@ const { sendPaymentConfirmationEmail, sendAdminSaleNotificationEmail } = require
 const { attachCogsToOrderItemRows } = require('../lib/orderItems');
 const { extractFinancialsFromNavePayment, upsertOrderFinancials } = require('../lib/orderFinancials');
 const { extractRealShippingCost } = require('../lib/shippingCost');
+const { assertItemsInStock } = require('../lib/stock');
 
 const router = express.Router();
 
@@ -146,6 +147,9 @@ router.post('/nave/create-payment', async (req, res) => {
       combo_tag: (i.combo_tag || '').trim() || null,
     }));
   if (cleanItems.length === 0) return res.status(400).json({ error: 'El carrito está vacío' });
+
+  const stockCheck = await assertItemsInStock(cleanItems);
+  if (!stockCheck.ok) return res.status(409).json({ error: stockCheck.error });
 
   const { items: tmItems, shipping: tmShipping, applied: isAdminTest } = await applyAdminTestMode(req, cleanItems, shippingCostNum, { tag: '[Nave]' });
   const subtotal = tmItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);

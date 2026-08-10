@@ -36,6 +36,7 @@ export default function AdminProductEditor({ product, onProductUpdated }) {
     price_retail: product.price_retail ?? '',
     price_wholesale: product.price_wholesale ?? '',
     is_active: !!product.is_active,
+    is_out_of_stock: !!product.is_out_of_stock,
   }));
   const [images, setImages] = useState(product.product_images || []);
   const [videos, setVideos] = useState(product.product_videos || []);
@@ -51,6 +52,7 @@ export default function AdminProductEditor({ product, onProductUpdated }) {
       price_retail: product.price_retail ?? '',
       price_wholesale: product.price_wholesale ?? '',
       is_active: !!product.is_active,
+      is_out_of_stock: !!product.is_out_of_stock,
     });
     setImages(product.product_images || []);
     setVideos(product.product_videos || []);
@@ -67,7 +69,7 @@ export default function AdminProductEditor({ product, onProductUpdated }) {
   }
 
   const handleChange = (field) => (e) => {
-    const val = field === 'is_active' ? e.target.checked : e.target.value;
+    const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setForm((prev) => ({ ...prev, [field]: val }));
   };
 
@@ -83,6 +85,7 @@ export default function AdminProductEditor({ product, onProductUpdated }) {
         price_retail: form.price_retail === '' ? 0 : Number(form.price_retail),
         price_wholesale: form.price_wholesale === '' ? 0 : Number(form.price_wholesale),
         is_active: form.is_active,
+        is_out_of_stock: form.is_out_of_stock,
       };
       const updated = await updateAdminProduct(product.id, payload);
       setImages(updated.product_images || []);
@@ -152,6 +155,19 @@ export default function AdminProductEditor({ product, onProductUpdated }) {
               />
               <span className="text-sm text-white/80">
                 Producto activo <span className="text-white/50">(aparece en /tienda)</span>
+              </span>
+            </label>
+          </div>
+          <div className="md:col-span-2">
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={form.is_out_of_stock}
+                onChange={handleChange('is_out_of_stock')}
+                className="w-4 h-4 accent-[rgb(0,255,255)]"
+              />
+              <span className="text-sm text-white/80">
+                Sin stock <span className="text-white/50">(deshabilita compra)</span>
               </span>
             </label>
           </div>
