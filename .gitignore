@@ -69,3 +69,8 @@ logs/
 # =========================
 # si no querés trackear cosas locales del CLI
 supabase/.temp/.claude/
+
+# =========================
+# Claude Code (worktrees internos)
+# =========================
+.claude/worktrees/
