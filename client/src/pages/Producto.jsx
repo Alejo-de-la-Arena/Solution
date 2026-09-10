@@ -761,8 +761,10 @@ export default function Producto() {
               </div>
             </div>
             <div className="font-jakarta" style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--sol-muted)', marginBottom: '22px', position: 'relative' }}>
-              <strong style={{ color: 'var(--sol-ink-dim)', fontWeight: 400 }}>{data.stock || 'En stock'}</strong>
-              {' · '}Hasta 2 cuotas sin interés
+              <strong style={{ color: 'var(--sol-ink-dim)', fontWeight: 400 }}>
+                {perfume.isOutOfStock ? 'Sin stock' : (data.stock || 'En stock')}
+              </strong>
+              {!perfume.isOutOfStock && <>{' · '}Hasta 2 cuotas sin interés</>}
             </div>
 
             {/* Trust row */}
