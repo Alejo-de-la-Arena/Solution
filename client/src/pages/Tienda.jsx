@@ -8,7 +8,6 @@ import { mediaUrl } from '../lib/mediaUrl';
 import { getStoreProductImages } from '../lib/storeProductImages';
 import { useCart } from '../contexts/CartContext';
 import { getCrossedPrice, CROSSED_PRICES } from '../lib/crossedPrices';
-import { getComboSettings, normalizeComboSettings, resolveComboImage } from '../services/combo';
 import { getTiendaSettings, normalizeTiendaSettings } from '../services/tiendaSettings';
 import TestimonialsSection from '../components/home/TestimonialsSection';
 
@@ -97,18 +96,7 @@ const MOMENTOS = [
 export default function Tienda() {
   const [perfumes, setPerfumes]               = useState([]);
   const [loading, setLoading]                 = useState(true);
-  const [selectedPerfume1, setSelectedPerfume1] = useState(null);
-  const [selectedPerfume2, setSelectedPerfume2] = useState(null);
-  const [comboSettings, setComboSettings]     = useState(null);
   const [tiendaSettings, setTiendaSettings]   = useState(() => normalizeTiendaSettings(null));
-
-  useEffect(() => {
-    let cancelled = false;
-    getComboSettings()
-      .then((row) => { if (!cancelled) setComboSettings(normalizeComboSettings(row)); })
-      .catch(() => { if (!cancelled) setComboSettings(normalizeComboSettings(null)); });
-    return () => { cancelled = true; };
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,21 +113,11 @@ export default function Tienda() {
         if (cancelled) return;
         const list = rows.map(productToPerfume).filter(Boolean);
         setPerfumes(list);
-        if (list.length > 0 && selectedPerfume1 === null) setSelectedPerfume1(list[0].id);
-        if (list.length > 1 && selectedPerfume2 === null) setSelectedPerfume2(list[1].id);
       })
       .catch(() => { if (!cancelled) setPerfumes([]); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
-
-  useEffect(() => {
-    if (perfumes.length > 0 && !selectedPerfume1) setSelectedPerfume1(perfumes[0].id);
-    if (perfumes.length > 1 && !selectedPerfume2) setSelectedPerfume2(perfumes[1].id);
-  }, [perfumes, selectedPerfume1, selectedPerfume2]);
-
-  const perfume1 = perfumes.find(p => p.id === selectedPerfume1);
-  const perfume2 = perfumes.find(p => p.id === selectedPerfume2);
 
   if (loading) {
     return (
@@ -153,18 +131,7 @@ export default function Tienda() {
     <div style={{ background: 'var(--sol-bg)', color: 'var(--sol-ink)', minHeight: '100vh' }}>
       <TiendaHero settings={tiendaSettings} />
 
-      {perfumes.length >= 2 && (
-        <TiendaComboSection
-          perfumes={perfumes}
-          selectedPerfume1={selectedPerfume1}
-          setSelectedPerfume1={setSelectedPerfume1}
-          selectedPerfume2={selectedPerfume2}
-          setSelectedPerfume2={setSelectedPerfume2}
-          perfume1={perfume1}
-          perfume2={perfume2}
-          settings={comboSettings}
-        />
-      )}
+      {perfumes.length >= 2 && <TiendaComboSection perfumes={perfumes} />}
 
       <ProductSlidersSection perfumes={perfumes} settings={tiendaSettings} />
 
@@ -642,34 +609,18 @@ function MomentoSection({ settings }) {
 }
 
 // ─── Combo section ─────────────────────────────────────────────────────────────
-function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, selectedPerfume2, setSelectedPerfume2, perfume1, perfume2, settings }) {
+function TiendaComboSection({ perfumes }) {
   const { addToCart } = useCart();
-  const headRef = useReveal();
   const bodyRef = useReveal();
-
-  const cfg = settings || normalizeComboSettings(null);
+  const perfume1 = perfumes.find((perfume) => perfume.slug === 'black-code');
+  const perfume2 = perfumes.find((perfume) => perfume.slug === 'white-ice');
+  const blackAccent = perfume1?.accent_color || 'rgb(0,255,255)';
+  const whiteAccent = perfume2?.accent_color || 'rgb(255,0,255)';
 
   const handleAddCombo = () => {
     if (perfume1) addToCart({ ...perfume1, combo_tag: 'Combo' });
     if (perfume2) addToCart({ ...perfume2, combo_tag: 'Combo' });
   };
-
-  const SLUG_ORDER = ['red-desire', 'yellow-bloom', 'black-code', 'white-ice', 'deep-blue'];
-  const orderedPerfumes = [...perfumes].sort((a, b) => {
-    const ai = SLUG_ORDER.indexOf((a.slug || '').toLowerCase());
-    const bi = SLUG_ORDER.indexOf((b.slug || '').toLowerCase());
-    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-  });
-
-  // Texto de cada <option>: "NOMBRE / REFERENCIA" desde combo_settings, con
-  // fallback al name del producto + referencia de SLUG_META.
-  function optionLabel(p) {
-    const slug = (p.slug || '').trim().toLowerCase();
-    const opt = cfg.options?.[slug];
-    const name = (opt?.name || p.name || '').trim();
-    const reference = (opt?.reference || SLUG_META[slug]?.reference || '').trim();
-    return reference ? `${name} / ${reference}` : name;
-  }
 
   return (
     <section id="combo" style={{ background: 'var(--sol-bg)', color: 'var(--sol-ink)', paddingTop: 'var(--sol-section-py)', paddingBottom: 'var(--sol-section-py)', borderBottom: '0.5px solid var(--sol-line)' }}>
@@ -689,40 +640,36 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
           <div className="sol-combo-card" style={{ position: 'relative', borderRadius: '16px', margin: '0 auto', width: '100%', padding: '20px 16px', textAlign: 'center', color: '#f0ece6', background: 'linear-gradient(160deg, #050c18 0%, #07111f 100%)', border: '0.5px solid rgba(212,175,55,0.28)', borderTop: '1.5px solid rgba(212,175,55,0.45)', boxShadow: '0 8px 40px rgba(0,0,0,0.38), 0 2px 0 rgba(212,175,55,0.12), 0 0 48px rgba(117,170,219,0.09)' }}>
 
             {/* 1. Título */}
-            <p className="font-jakarta" style={{ fontWeight: 700, fontSize: 'clamp(16px, 3vw, 18px)', letterSpacing: '0.06em', lineHeight: 1.6, textAlign: 'center', color: '#f0ece6', margin: '36px 0 0' }}>
-              LLEVÁ 2 PERFUMES SOLUTION<br />
-              <span style={{ marginLeft: '-9px' }}>+ PERFUMERO DE REGALO</span><br />
-              + ENVÍO GRATIS + 30% OFF
-            </p>
+            <div style={{ margin: '16px 0 0' }}>
+              <h2 className="font-jakarta" style={{ margin: 0, fontSize: 'clamp(22px, calc(8vw - 8px), 26px)', fontWeight: 700, letterSpacing: '0.07em', lineHeight: 1.05, textTransform: 'uppercase', whiteSpace: 'nowrap', color: '#f0ece6' }}>
+                Combo Día &amp; Noche
+              </h2>
+              <p className="font-jakarta" style={{ margin: '14px 0 0', fontSize: 'clamp(14px, 3.4vw, 18px)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                <span style={{ color: whiteAccent }}>White Ice</span>
+                <span style={{ color: 'rgba(240,236,230,0.6)', padding: '0 8px' }}>+</span>
+                <span style={{ color: blackAccent }}>Black Code</span>
+              </p>
+              <p className="font-jakarta" style={{ margin: '12px 0 0', fontSize: 'clamp(13px, 3vw, 16px)', letterSpacing: '0.035em', color: 'rgba(240,236,230,0.68)' }}>
+                La combinación perfecta para el equilibrio de tu día
+              </p>
+            </div>
 
             {/* 2. Slider reducido */}
-            <div style={{ marginTop: '12px' }}>
-              <ComboCollectionShowcase settings={cfg} compact maxWidth={360} />
+            <div style={{ marginTop: '22px' }}>
+              <ComboCollectionShowcase compact maxWidth={420} />
             </div>
 
             {/* 3. Selectores */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
-              <ComboSelect
-                label={cfg.select_label_1}
-                value={selectedPerfume1}
-                onChange={setSelectedPerfume1}
-                options={orderedPerfumes}
-                optionLabel={optionLabel}
-              />
-              <ComboSelect
-                label={cfg.select_label_2}
-                value={selectedPerfume2}
-                onChange={setSelectedPerfume2}
-                options={orderedPerfumes}
-                optionLabel={optionLabel}
-              />
+            <div className="font-jakarta" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '10px 18px', marginTop: '18px', color: 'rgba(240,236,230,0.84)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase' }}>
+              <ComboBenefit>Perfumero portátil de regalo</ComboBenefit>
+              <ComboBenefit>Envío gratis</ComboBenefit>
             </div>
 
             {/* 6. Precio */}
-            <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center' }}>
+            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
               {perfume1 && perfume2 && (() => {
-                const cp1 = CROSSED_PRICES[(perfume1.slug || '').toLowerCase().trim()];
-                const cp2 = CROSSED_PRICES[(perfume2.slug || '').toLowerCase().trim()];
+                const cp1 = CROSSED_PRICES[perfume1.slug];
+                const cp2 = CROSSED_PRICES[perfume2.slug];
                 const crossedSum = cp1 && cp2 ? cp1 + cp2 : null;
                 return crossedSum ? (
                   <span className="font-jakarta" style={{ fontSize: '13px', color: 'rgba(240,236,230,0.45)', textDecoration: 'line-through', letterSpacing: '0.04em' }}>
@@ -754,7 +701,7 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
               onMouseEnter={e => { if (perfume1 && perfume2 && !perfume1.isOutOfStock && !perfume2.isOutOfStock) e.currentTarget.style.opacity = '0.85'; }}
               onMouseLeave={e => { e.currentTarget.style.opacity = (!perfume1 || !perfume2 || perfume1.isOutOfStock || perfume2.isOutOfStock) ? '0.4' : '1'; }}
             >
-              {cfg.cta_text} →
+              Agregar combo al carrito →
             </button>
 
           </div>{/* end card */}
@@ -764,66 +711,30 @@ function TiendaComboSection({ perfumes, selectedPerfume1, setSelectedPerfume1, s
   );
 }
 
-// ─── Combo select (native, custom chevron) ─────────────────────────────────────
-function ComboSelect({ label, value, onChange, options, optionLabel }) {
+// ─── Combo collection showcase ─────────────────────────────────────────────────
+function ComboBenefit({ children }) {
   return (
-    <div style={{ textAlign: 'left' }}>
-      <label className="font-jakarta" style={{ display: 'block', fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(240,236,230,0.45)', marginBottom: '8px' }}>
-        {label}
-      </label>
-      <div style={{ position: 'relative' }}>
-        <select
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          className="font-jakarta sol-combo-select"
-          style={{
-            width: '100%', minHeight: '42px',
-            padding: '10px 40px 10px 14px',
-            background: 'rgba(255,255,255,0.09)', color: '#f0ece6',
-            border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: 0,
-            fontSize: '13px', letterSpacing: '0.12em', textTransform: 'uppercase',
-            appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none',
-            cursor: 'pointer', outline: 'none',
-          }}
-        >
-          {options.map((p) => (
-            <option key={p.id} value={p.id} disabled={p.isOutOfStock}>
-              {optionLabel(p)}{p.isOutOfStock ? ' · Sin stock' : ''}
-            </option>
-          ))}
-        </select>
-        <span aria-hidden style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#00e5ff', display: 'flex' }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 9l6 6 6-6" />
-          </svg>
-        </span>
-      </div>
-    </div>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <rect x="3" y="8" width="18" height="13" rx="1" />
+        <path d="M12 8v13M3 12h18M12 8H8.5a2.5 2.5 0 1 1 2.5-2.5V8Zm0 0h3.5A2.5 2.5 0 1 0 13 5.5V8Z" />
+      </svg>
+      {children}
+    </span>
   );
 }
 
-// ─── Combo collection showcase ─────────────────────────────────────────────────
-function ComboCollectionShowcase({ settings, compact = false, maxWidth = 540 }) {
-  const cfg = settings || normalizeComboSettings(null);
+function ComboCollectionShowcase({ compact = false, maxWidth = 540 }) {
+  const cfg = {};
   const radius = compact ? 16 : 30;
-  const img1 = resolveComboImage(cfg.image_1);
-  const img2 = resolveComboImage(cfg.image_2);
   const slides = [
-    img1 ? { src: img1, alt: 'Colección completa Solution' } : null,
-    img2 ? { src: img2, alt: 'Colección completa Solution' } : null,
-  ].filter(Boolean);
-  const hasRotation = slides.length > 1;
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  useEffect(() => {
-    if (!hasRotation) return undefined;
-    const interval = window.setInterval(() => {
-      setActiveIndex(prev => (prev + 1) % slides.length);
-    }, 5000);
-    return () => window.clearInterval(interval);
-  }, [hasRotation, slides.length]);
-
-  if (slides.length === 0) return null;
+    {
+      src: 'https://tpyzgrcqregtzmuirfny.supabase.co/storage/v1/object/public/solution-products/combo/combo-black-code-&-white-ice.jpg',
+      alt: 'Combo Día y Noche: Black Code y White Ice',
+    },
+  ];
+  const activeIndex = 0;
+  const hasRotation = false;
 
   return (
     <div style={{ position: 'relative', width: '100%', maxWidth: compact ? `clamp(260px, 82vw, ${maxWidth}px)` : maxWidth, margin: '0 auto' }}>
