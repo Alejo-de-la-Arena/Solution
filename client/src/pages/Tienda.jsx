@@ -725,69 +725,11 @@ function ComboBenefit({ children }) {
 }
 
 function ComboCollectionShowcase({ compact = false, maxWidth = 540 }) {
-  const cfg = {};
-  const radius = compact ? 16 : 30;
-  const slides = [
-    {
-      src: 'https://tpyzgrcqregtzmuirfny.supabase.co/storage/v1/object/public/solution-products/combo/combo-black-code-&-white-ice.jpg',
-      alt: 'Combo Día y Noche: Black Code y White Ice',
-    },
-  ];
-  const activeIndex = 0;
-  const hasRotation = false;
+  const src = 'https://tpyzgrcqregtzmuirfny.supabase.co/storage/v1/object/public/solution-products/combo/combo-black-code-&-white-ice.jpg';
 
   return (
-    <div style={{ position: 'relative', width: '100%', maxWidth: compact ? `clamp(260px, 82vw, ${maxWidth}px)` : maxWidth, margin: '0 auto' }}>
-      <motion.div
-        style={{ position: 'absolute', inset: 0, borderRadius: radius, filter: 'blur(70px)', background: 'radial-gradient(circle at center, rgba(0,229,255,0.12) 0%, rgba(0,0,0,0) 78%)' }}
-        animate={{ opacity: [0.12, 0.18, 0.12], scale: [0.985, 1.02, 0.985] }}
-        transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <div style={{ position: 'relative', zIndex: 1, overflow: 'hidden', borderRadius: radius, border: '0.5px solid var(--sol-line)', boxShadow: compact ? '0 14px 36px rgba(0,0,0,0.4)' : '0 24px 70px rgba(0,0,0,0.44)' }}>
-        <div style={{ position: 'relative', aspectRatio: '4/5', overflow: 'hidden' }}>
-          {slides.map((slide, index) => (
-            <motion.div key={slide.src} style={{ position: 'absolute', inset: 0 }} initial={false}
-              animate={{ opacity: activeIndex === index ? 1 : 0 }}
-              transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <motion.img src={slide.src} alt="" aria-hidden style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.12)', filter: 'blur(22px)', opacity: 0.28 }} draggable={false} />
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.28)' }} />
-              <div style={{ position: 'absolute', inset: 0 }}>
-                <motion.img src={slide.src} alt={slide.alt} style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center' }}
-                  animate={{ scale: activeIndex === index ? 1.01 : 1.02 }}
-                  transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
-                  draggable={false}
-                />
-              </div>
-            </motion.div>
-          ))}
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(0,0,0,0.10) 0%,rgba(0,0,0,0.04) 38%,rgba(0,0,0,0.22) 100%)', pointerEvents: 'none' }} />
-          {!compact && cfg.showcase_title && (
-            <div style={{ position: 'absolute', top: 16, left: 16, borderRadius: 100, border: '0.5px solid var(--sol-line)', background: 'rgba(0,0,0,0.35)', padding: '6px 14px', backdropFilter: 'blur(8px)' }}>
-              <p className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)' }}>
-                {cfg.showcase_title}
-              </p>
-            </div>
-          )}
-          {!compact && cfg.showcase_subtitle && (
-            <div style={{ position: 'absolute', bottom: 16, left: 16, borderRadius: 100, border: '0.5px solid rgba(224,64,251,0.4)', background: 'rgba(224,64,251,0.15)', padding: '6px 14px', backdropFilter: 'blur(8px)' }}>
-              <p className="font-jakarta" style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#e040fb' }}>
-                {cfg.showcase_subtitle}
-              </p>
-            </div>
-          )}
-          {!compact && hasRotation && (
-            <div style={{ position: 'absolute', bottom: 16, right: 16, display: 'flex', alignItems: 'center', gap: '6px', borderRadius: 100, border: '0.5px solid var(--sol-line)', background: 'rgba(0,0,0,0.35)', padding: '6px 12px', backdropFilter: 'blur(8px)' }}>
-              {slides.map((_, index) => (
-                <motion.span key={index} style={{ display: 'block', height: 5, borderRadius: 100 }}
-                  animate={{ width: activeIndex === index ? 18 : 6, opacity: activeIndex === index ? 1 : 0.35, backgroundColor: activeIndex === index ? '#fff' : 'rgba(255,255,255,0.6)' }}
-                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+    <div style={{ width: '100%', maxWidth: compact ? `clamp(260px, 82vw, ${maxWidth}px)` : maxWidth, margin: '0 auto' }}>
+      <img src={src} alt="Combo Día y Noche: Black Code y White Ice" style={{ display: 'block', width: '100%', height: 'auto' }} draggable={false} />
     </div>
   );
 }
