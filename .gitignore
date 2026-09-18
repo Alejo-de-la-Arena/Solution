@@ -74,3 +74,6 @@ supabase/.temp/.claude/
 # Claude Code (worktrees internos)
 # =========================
 .claude/worktrees/
+
+# Videos locales de migración (archivos pesados; no versionar)
+/_migracion-videos/
