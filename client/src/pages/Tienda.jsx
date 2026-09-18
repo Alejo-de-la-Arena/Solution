@@ -743,7 +743,7 @@ function ComboCollectionShowcase({ compact = false, maxWidth = 540 }) {
         animate={{ opacity: [0.12, 0.18, 0.12], scale: [0.985, 1.02, 0.985] }}
         transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut' }}
       />
-      <div style={{ position: 'relative', zIndex: 1, overflow: 'hidden', borderRadius: radius, border: '0.5px solid var(--sol-line)', background: '#050505', boxShadow: compact ? '0 14px 36px rgba(0,0,0,0.4)' : '0 24px 70px rgba(0,0,0,0.44)' }}>
+      <div style={{ position: 'relative', zIndex: 1, overflow: 'hidden', borderRadius: radius, border: '0.5px solid var(--sol-line)', boxShadow: compact ? '0 14px 36px rgba(0,0,0,0.4)' : '0 24px 70px rgba(0,0,0,0.44)' }}>
         <div style={{ position: 'relative', aspectRatio: '4/5', overflow: 'hidden' }}>
           {slides.map((slide, index) => (
             <motion.div key={slide.src} style={{ position: 'absolute', inset: 0 }} initial={false}

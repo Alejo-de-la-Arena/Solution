@@ -1,0 +1,80 @@
+=== 0826aed7-bd92-4635-966f-53961c450bf8.mp4 ===
+
+ ⛅️ wrangler 4.113.0
+────────────────────
+Resource location: remote 
+
+Creating object "0826aed7-bd92-4635-966f-53961c450bf8.mp4" in bucket "solution-media".
+Upload complete.
+=== 610a5bf0-dd81-4c13-84fa-bbe43f27ceee.mp4 ===
+
+ ⛅️ wrangler 4.113.0
+────────────────────
+Resource location: remote 
+
+Creating object "610a5bf0-dd81-4c13-84fa-bbe43f27ceee.mp4" in bucket "solution-media".
+Upload complete.
+=== 791e3831-98a6-4f25-8269-1091e8dfe415.mp4 ===
+
+ ⛅️ wrangler 4.113.0
+────────────────────
+Resource location: remote 
+
+Creating object "791e3831-98a6-4f25-8269-1091e8dfe415.mp4" in bucket "solution-media".
+Upload complete.
+=== 7dc2880c-1c8e-4a9b-97ac-4d7f5df2b229.mp4 ===
+
+ ⛅️ wrangler 4.113.0
+────────────────────
+Resource location: remote 
+
+Creating object "7dc2880c-1c8e-4a9b-97ac-4d7f5df2b229.mp4" in bucket "solution-media".
+Upload complete.
+=== ddebe5cb-b9a8-49a4-a5eb-afd9517b8bed.mp4 ===
+
+ ⛅️ wrangler 4.113.0
+────────────────────
+Resource location: remote 
+
+Creating object "ddebe5cb-b9a8-49a4-a5eb-afd9517b8bed.mp4" in bucket "solution-media".
+Upload complete.
+=== red-desire-1.mp4 ===
+
+ ⛅️ wrangler 4.113.0
+────────────────────
+Resource location: remote 
+
+Creating object "red-desire-1.mp4" in bucket "solution-media".
+Upload complete.
+=== red-desire-2.mp4 ===
+
+ ⛅️ wrangler 4.113.0
+────────────────────
+Resource location: remote 
+
+Creating object "red-desire-2.mp4" in bucket "solution-media".
+Upload complete.
+=== red-desire-3.mp4 ===
+
+ ⛅️ wrangler 4.113.0
+────────────────────
+Resource location: remote 
+
+Creating object "red-desire-3.mp4" in bucket "solution-media".
+Upload complete.
+=== red-desire-4.mp4 ===
+
+ ⛅️ wrangler 4.113.0
+────────────────────
+Resource location: remote 
+
+Creating object "red-desire-4.mp4" in bucket "solution-media".
+Upload complete.
+=== video-home-solution.mp4 ===
+
+ ⛅️ wrangler 4.113.0
+────────────────────
+Resource location: remote 
+
+Creating object "video-home-solution.mp4" in bucket "solution-media".
+Upload complete.
